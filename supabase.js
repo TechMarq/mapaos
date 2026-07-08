@@ -83,61 +83,132 @@ async function dbReconcileReservations() {
     }
 }
 
-// Log in a user (Checks if email exists and returns status)
-async function dbLoginUser(email) {
+// Log in a user securely via Supabase Auth (GoTrue)
+async function dbLoginUser(email, password) {
     const formattedEmail = email.toLowerCase().trim();
     if (!supabaseClientInstance) {
         alert("Erro: Banco de dados não conectado. Configure as chaves nas configurações.");
-        return { success: false };
+        return { success: false, error: 'Banco de dados desconectado.' };
     }
     
     try {
-        const { data, error } = await supabaseClientInstance
+        // Native Supabase sign-in
+        const { data: authData, error: authError } = await supabaseClientInstance.auth.signInWithPassword({
+            email: formattedEmail,
+            password: password
+        });
+
+        if (authError) {
+            // Handle common translation to Portuguese
+            let errMsg = authError.message;
+            if (errMsg === 'Invalid login credentials') {
+                errMsg = 'Email ou senha incorretos.';
+            }
+            return { success: false, error: errMsg };
+        }
+
+        const userId = authData.user.id;
+
+        // Fetch corresponding profile for authorization status check
+        const { data: profile, error: profileError } = await supabaseClientInstance
             .from('profiles')
             .select('*')
-            .eq('email', formattedEmail)
+            .eq('id', userId)
             .single();
-            
-        if (error && error.code !== 'PGRST116') throw error; // PGRST116 is not found
-        
-        if (data) {
-            localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(data));
-            return { success: true, user: data };
-        } else {
-            // Auto-create as Pendente if logging in for the first time
-            const newUser = await dbRegisterUser({
+
+        if (profileError || !profile) {
+            // Create fallback profile row if missing (useful for migrated accounts)
+            const fallbackProfile = {
+                id: userId,
                 name: formattedEmail.split('@')[0].toUpperCase(),
                 email: formattedEmail,
-                phone: '—'
-            });
-            return { success: true, user: newUser };
+                phone: '—',
+                status: formattedEmail === 'master@mapaos.com' ? 'Aprovado' : 'Pendente',
+                role: formattedEmail === 'master@mapaos.com' ? 'Master' : 'User'
+            };
+            const { data: newProfile } = await supabaseClientInstance
+                .from('profiles')
+                .insert([fallbackProfile])
+                .select()
+                .single();
+            
+            if (newProfile && newProfile.status === 'Pendente') {
+                await supabaseClientInstance.auth.signOut();
+                return { success: true, user: newProfile };
+            }
+            localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(newProfile || fallbackProfile));
+            return { success: true, user: newProfile || fallbackProfile };
         }
+
+        // Check if access has expired
+        if (profile.status === 'Aprovado' && profile.expires_at) {
+            const expiresAt = new Date(profile.expires_at);
+            if (expiresAt < new Date()) {
+                await supabaseClientInstance
+                    .from('profiles')
+                    .update({ status: 'Expirado' })
+                    .eq('id', userId);
+                profile.status = 'Expirado';
+            }
+        }
+
+        // If not approved, sign out natively immediately
+        if (profile.status !== 'Aprovado' && profile.role !== 'Master') {
+            await supabaseClientInstance.auth.signOut();
+        }
+
+        localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(profile));
+        return { success: true, user: profile };
+
     } catch (err) {
         console.error('Supabase login check error:', err);
-        return { success: false };
+        return { success: false, error: 'Erro de conexão com o banco.' };
     }
 }
 
-// Register a new user profile
+// Register a new user profile securely via Supabase Auth
 async function dbRegisterUser(profile) {
     if (!supabaseClientInstance) return null;
     const formattedEmail = profile.email.toLowerCase().trim();
-    const newProfile = {
-        name: profile.name,
-        email: formattedEmail,
-        phone: profile.phone || '—',
-        status: 'Pendente',
-        role: 'User'
-    };
 
     try {
-        const { data, error } = await supabaseClientInstance
+        // 1. Native Supabase Sign Up (Creates secure encrypted credential under auth.users)
+        const { data: authData, error: authError } = await supabaseClientInstance.auth.signUp({
+            email: formattedEmail,
+            password: profile.password,
+            options: {
+                data: {
+                    name: profile.name,
+                    phone: profile.phone || '—'
+                }
+            }
+        });
+
+        if (authError) throw authError;
+
+        if (!authData || !authData.user) return null;
+
+        const userId = authData.user.id;
+
+        // 2. Populate public.profiles table using the native Auth UUID
+        const newProfile = {
+            id: userId, // Match same ID
+            name: profile.name,
+            email: formattedEmail,
+            phone: profile.phone || '—',
+            status: 'Pendente',
+            role: 'User'
+        };
+
+        const { data: createdProfile, error: profileErr } = await supabaseClientInstance
             .from('profiles')
             .insert([newProfile])
             .select()
             .single();
-        if (error) throw error;
-        return data;
+
+        if (profileErr) throw profileErr;
+        return createdProfile;
+
     } catch (err) {
         console.error('Supabase registration error:', err);
         return null;
@@ -160,19 +231,55 @@ async function dbGetPendingUsers() {
     }
 }
 
-// Approve a user profile
+// Approve a user profile (sets expires_at = now + 30 days)
 async function dbApproveUser(userId) {
     if (!supabaseClientInstance) return false;
     try {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
         const { error } = await supabaseClientInstance
             .from('profiles')
-            .update({ status: 'Aprovado' })
+            .update({ status: 'Aprovado', expires_at: expiresAt.toISOString() })
             .eq('id', userId);
         if (error) throw error;
         return true;
     } catch (err) {
         console.error('Supabase approve profile error:', err);
         return false;
+    }
+}
+
+// Renew a user profile access (+30 days from today)
+async function dbRenewUser(userId) {
+    if (!supabaseClientInstance) return false;
+    try {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        const { error } = await supabaseClientInstance
+            .from('profiles')
+            .update({ status: 'Aprovado', expires_at: expiresAt.toISOString() })
+            .eq('id', userId);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase renew profile error:', err);
+        return false;
+    }
+}
+
+// Get ALL profiles (Master use only)
+async function dbGetAllUsers() {
+    if (!supabaseClientInstance) return [];
+    try {
+        const { data, error } = await supabaseClientInstance
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.error('Supabase get all profiles error:', err);
+        return [];
     }
 }
 
@@ -188,6 +295,25 @@ async function dbRejectUser(userId) {
         return true;
     } catch (err) {
         console.error('Supabase reject profile error:', err);
+        return false;
+    }
+}
+
+// Update a user profile name and phone
+async function dbUpdateProfile(userId, updates) {
+    if (!supabaseClientInstance) return false;
+    try {
+        const { error } = await supabaseClientInstance
+            .from('profiles')
+            .update({
+                name: updates.name,
+                phone: updates.phone
+            })
+            .eq('id', userId);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase update profile error:', err);
         return false;
     }
 }

@@ -274,178 +274,92 @@
     <!-- TopAppBar -->
     <div id="top-app-bar"></div>
     <!-- Main Content -->
-    <main
-        class="pt-32 px-container-padding-mobile md:px-container-padding-desktop max-w-5xl mx-auto space-y-stack-gap-md md:space-y-stack-gap-lg">
+    <main class="pt-32 px-container-padding-mobile md:px-container-padding-desktop max-w-5xl mx-auto space-y-stack-gap-md md:space-y-stack-gap-lg">
         <div class="mb-8">
-            <h2
-                class="font-display-xl text-display-xl text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary-fixed-dim mb-2">
-                Ajustes</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant">Gerencie suas preferências de conta e
-                segurança.</p>
+            <h2 class="font-display-xl text-display-xl text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary-fixed-dim mb-2">Ajustes</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Gerencie seu perfil e preferências de exibição.</p>
         </div>
+        
         <div class="grid grid-cols-1 md:grid-cols-12 gap-stack-gap-md">
-            <!-- Left Column: Profile & Security -->
+            <!-- Left Column: User Profile -->
             <div class="md:col-span-7 space-y-stack-gap-md">
                 <!-- Profile Section -->
                 <section class="glass-card rounded-xl p-6 md:p-8">
-                    <h3
-                        class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">person</span> Perfil
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">person</span> Meu Perfil
                     </h3>
                     <div class="flex flex-col md:flex-row gap-8 items-start mb-6">
-                        <div class="relative group">
-                            <div
-                                class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/50 shadow-lg shadow-primary/20">
-                                <img alt="Profile Picture" class="w-full h-full object-cover"
-                                    data-alt="A cinematic, high-fashion portrait of a young professional user avatar, bathed in moody teal and azure rim lighting against a deep slate background, matching the premium glassmorphism dark mode aesthetic."
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC433IXVgy5HvjTHs2MNsZUQSpjvSgCUXvgvpBkQuXbZWBPcNY-Xph7nOs6awnna9ykHIGaV4-T8-ESHMFlFmAbvOwoi1_HKwO3ZftRVN6IkItk41p_4WVKVTWfemaBi3uQIcl2KYIn0CWWQ2Z1sFCa6W0ju6mafFO4Y_G8xJYBE10eEa332klhJGJsfqROOwC_3AzcCL_d6L1NpaWDTnCsI5WC1F-eQLFu1FctsLjh8lOi_2uU8-BC">
+                        <div class="relative group mx-auto md:mx-0">
+                            <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/50 shadow-lg shadow-primary/20 flex items-center justify-center bg-white/5">
+                                <span class="material-symbols-outlined text-primary text-5xl">account_circle</span>
                             </div>
-                            <button
-                                class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span class="material-symbols-outlined text-white">photo_camera</span>
-                            </button>
                         </div>
                         <div class="flex-1 w-full space-y-4">
                             <div>
-                                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Nome
-                                    Completo</label>
-                                <input
-                                    class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface"
-                                    type="text" value="Jane Doe">
+                                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Nome Completo</label>
+                                <input id="profile-name-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface" type="text" placeholder="Carregando...">
                             </div>
                             <div>
-                                <label
-                                    class="block font-label-sm text-label-sm text-on-surface-variant mb-2">E-mail</label>
-                                <input
-                                    class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface"
-                                    type="email" value="jane.doe@example.com">
+                                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Contato (Telefone)</label>
+                                <input id="profile-phone-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface" type="tel" placeholder="Carregando...">
                             </div>
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button
-                            class="btn-primary font-label-sm text-label-sm text-on-primary px-6 py-2.5 rounded-full transition-transform active:scale-95">Salvar
-                            Alterações</button>
-                    </div>
-                </section>
-                <!-- Security Section -->
-                <section class="glass-card rounded-xl p-6 md:p-8">
-                    <h3
-                        class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-secondary-container">shield_lock</span> Segurança
-                    </h3>
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
                             <div>
-                                <h4 class="font-body-md text-body-md text-on-surface font-medium">Autenticação de Dois
-                                    Fatores</h4>
-                                <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Adicione uma camada
-                                    extra de segurança.</p>
+                                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">E-mail (Não editável)</label>
+                                <input id="profile-email-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface opacity-50 cursor-not-allowed" type="email" disabled readonly>
                             </div>
-                            <label class="ios-toggle">
-                                <input checked="" type="checkbox">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div>
-                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Alterar
-                                Senha</label>
-                            <div class="flex gap-4">
-                                <input
-                                    class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface"
-                                    placeholder="Nova Senha" type="password">
-                                <button
-                                    class="btn-glass font-label-sm text-label-sm text-on-surface px-6 py-3 rounded-lg whitespace-nowrap active:scale-95 transition-transform">Atualizar</button>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Nível de Acesso</label>
+                                    <input id="profile-role-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface opacity-50 cursor-not-allowed" type="text" disabled readonly>
+                                </div>
+                                <div>
+                                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Status da Conta</label>
+                                    <input id="profile-status-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface opacity-50 cursor-not-allowed" type="text" disabled readonly>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <div class="flex justify-end border-t border-white/10 pt-4 mt-6">
+                        <button id="btn-save-profile" class="btn-primary font-label-sm text-label-sm text-on-primary px-6 py-2.5 rounded-full transition-transform active:scale-95 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">save</span> Salvar Alterações
+                        </button>
+                    </div>
                 </section>
-
-                <!-- Supabase Integration Section -->
+            </div>
+            
+            <!-- Right Column: Preferences & Master panel -->
+            <div class="md:col-span-5 space-y-stack-gap-md">
+                <!-- Appearance Section -->
                 <section class="glass-card rounded-xl p-6 md:p-8">
                     <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-secondary">database</span> Conexão Supabase
+                        <span class="material-symbols-outlined text-tertiary-fixed-dim">tune</span> Preferências
                     </h3>
                     <div class="space-y-4">
-                        <div>
-                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Supabase Project URL</label>
-                            <input id="supabase-url-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface" type="text" placeholder="https://xxxx.supabase.co">
-                        </div>
-                        <div>
-                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Supabase Anon Key</label>
-                            <input id="supabase-key-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                        </div>
-                        <div class="flex justify-end pt-2">
-                            <button id="btn-save-supabase" class="btn-primary font-label-sm text-label-sm text-on-primary px-6 py-2.5 rounded-full transition-transform active:scale-95">
-                                Conectar Banco
+                        <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-wider">APARÊNCIA</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button class="glass-input rounded-lg py-4 flex flex-col items-center gap-2 border-primary bg-white/10">
+                                <span class="material-symbols-outlined text-on-surface">dark_mode</span>
+                                <span class="font-label-sm text-label-sm text-on-surface">Escuro</span>
+                            </button>
+                            <button class="glass-input rounded-lg py-4 flex flex-col items-center gap-2 opacity-50 hover:opacity-100">
+                                <span class="material-symbols-outlined text-on-surface">light_mode</span>
+                                <span class="font-label-sm text-label-sm text-on-surface">Claro</span>
                             </button>
                         </div>
                     </div>
                 </section>
 
-                <!-- User Approval Section (Visible to Master only) -->
-                <section id="master-approval-section" class="glass-card rounded-xl p-6 md:p-8 hidden">
-                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">group_add</span> Aprovação de Usuários
+                <!-- Admin Card (Shown conditionally) -->
+                <section id="master-panel-card" class="glass-card rounded-xl p-6 md:p-8 border-primary/20 hidden">
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary">admin_panel_settings</span> Painel Master
                     </h3>
-                    <div id="pending-users-list" class="space-y-4">
-                        <!-- Pending users populated dynamically -->
-                        <p class="text-on-surface-variant text-sm">Nenhum cadastro pendente no momento.</p>
-                    </div>
-                </section>
-            </div>
-            <!-- Right Column: Preferences & Subscriptions -->
-            <div class="md:col-span-5 space-y-stack-gap-md">
-                <!-- Preferences Section -->
-                <section class="glass-card rounded-xl p-6 md:p-8 h-full">
-                    <h3
-                        class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-tertiary-fixed-dim">tune</span> Preferências
-                    </h3>
-                    <div class="space-y-6">
-                        <!-- Notification Toggles -->
-                        <div class="space-y-4">
-                            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-wider">NOTIFICAÇÕES
-                            </h4>
-                            <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                                <div>
-                                    <h5 class="font-body-md text-body-md text-on-surface">Notificações Push</h5>
-                                    <p class="font-label-sm text-label-sm text-on-surface-variant">Alertas no seu
-                                        dispositivo.</p>
-                                </div>
-                                <label class="ios-toggle">
-                                    <input checked="" type="checkbox">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                                <div>
-                                    <h5 class="font-body-md text-body-md text-on-surface">Resumos por E-mail</h5>
-                                    <p class="font-label-sm text-label-sm text-on-surface-variant">Resumos semanais.</p>
-                                </div>
-                                <label class="ios-toggle">
-                                    <input type="checkbox">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                        <!-- Appearance -->
-                        <div class="space-y-4 pt-4">
-                            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-wider">APARÊNCIA</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <button
-                                    class="glass-input rounded-lg py-4 flex flex-col items-center gap-2 border-primary bg-white/10">
-                                    <span class="material-symbols-outlined text-on-surface">dark_mode</span>
-                                    <span class="font-label-sm text-label-sm text-on-surface">Escuro</span>
-                                </button>
-                                <button
-                                    class="glass-input rounded-lg py-4 flex flex-col items-center gap-2 opacity-50 hover:opacity-100">
-                                    <span class="material-symbols-outlined text-on-surface">light_mode</span>
-                                    <span class="font-label-sm text-label-sm text-on-surface">Claro</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="font-label-sm text-label-sm text-on-surface-variant mb-6">
+                        Gerencie aprovações de novos acessos e prazos de validade da licença de 30 dias.
+                    </p>
+                    <a href="master.html" class="w-full btn-primary font-label-sm text-label-sm text-on-primary py-3 rounded-xl transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">group</span> Acessar Painel Master
+                    </a>
                 </section>
             </div>
         </div>
@@ -458,83 +372,64 @@
     <script src="navigation.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const urlInput = document.getElementById('supabase-url-input');
-            const keyInput = document.getElementById('supabase-key-input');
-            const saveBtn = document.getElementById('btn-save-supabase');
+            const nameInput = document.getElementById('profile-name-input');
+            const phoneInput = document.getElementById('profile-phone-input');
+            const emailInput = document.getElementById('profile-email-input');
+            const roleInput = document.getElementById('profile-role-input');
+            const statusInput = document.getElementById('profile-status-input');
+            const saveProfileBtn = document.getElementById('btn-save-profile');
+            const masterPanelCard = document.getElementById('master-panel-card');
 
-            if (urlInput && keyInput) {
-                urlInput.value = localStorage.getItem('MAPAOS_SUPABASE_URL') || '';
-                keyInput.value = localStorage.getItem('MAPAOS_SUPABASE_KEY') || '';
-            }
-
-            if (saveBtn) {
-                saveBtn.addEventListener('click', () => {
-                    const url = urlInput.value.trim();
-                    const key = keyInput.value.trim();
-
-                    localStorage.setItem('MAPAOS_SUPABASE_URL', url);
-                    localStorage.setItem('MAPAOS_SUPABASE_KEY', key);
-
-                    alert('Configurações do Supabase salvas com sucesso! A página será reiniciada para aplicar as alterações.');
-                    window.location.reload();
-                });
-            }
-
-            // User access control / Master Approval Dashboard
+            // Load currently logged-in user profile
             const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
             if (loggedUserRaw) {
-                const loggedUser = JSON.parse(loggedUserRaw);
-                if (loggedUser.role === 'Master') {
-                    const approvalSection = document.getElementById('master-approval-section');
-                    if (approvalSection) {
-                        approvalSection.classList.remove('hidden');
-                        loadPendingUsers();
-                    }
+                const user = JSON.parse(loggedUserRaw);
+                
+                if (nameInput) nameInput.value = user.name || '';
+                if (phoneInput) phoneInput.value = user.phone || '';
+                if (emailInput) emailInput.value = user.email || '';
+                if (roleInput) roleInput.value = user.role || 'User';
+                if (statusInput) statusInput.value = user.status || 'Pendente';
+
+                // If user is Master, reveal the admin panel navigation card
+                if (user.role === 'Master' && masterPanelCard) {
+                    masterPanelCard.classList.remove('hidden');
                 }
+                
+                // Set click action to update the user profile
+                if (saveProfileBtn) {
+                    saveProfileBtn.addEventListener('click', async () => {
+                        const newName = nameInput.value.trim();
+                        const newPhone = phoneInput.value.trim();
+                        
+                        if (!newName) {
+                            alert('O campo nome não pode estar vazio.');
+                            return;
+                        }
+
+                        saveProfileBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
+                        saveProfileBtn.disabled = true;
+
+                        const success = await dbUpdateProfile(user.id, { name: newName, phone: newPhone });
+                        
+                        saveProfileBtn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> Salvar Alterações';
+                        saveProfileBtn.disabled = false;
+
+                        if (success) {
+                            // Update localstorage cache
+                            user.name = newName;
+                            user.phone = newPhone;
+                            localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(user));
+                            alert('Perfil atualizado com sucesso!');
+                        } else {
+                            alert('Erro ao atualizar o perfil. Tente novamente.');
+                        }
+                    });
+                }
+            } else {
+                window.location.href = 'login.html';
             }
         });
-
-        function loadPendingUsers() {
-            const list = document.getElementById('pending-users-list');
-            if (!list) return;
-
-            dbGetPendingUsers().then(users => {
-                list.innerHTML = '';
-                if (!users || users.length === 0) {
-                    list.innerHTML = '<p class="text-on-surface-variant text-sm">Nenhum cadastro pendente no momento.</p>';
-                    return;
-                }
-
-                users.forEach(user => {
-                    const item = document.createElement('div');
-                    item.className = "flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-lg bg-white/5 border border-white/5 gap-4";
-                    item.innerHTML = `
-                        <div>
-                            <h4 class="font-body-md text-body-md text-on-surface font-semibold">${user.name}</h4>
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${user.email} • ${user.phone}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="approveUser('${user.id}')" class="px-4 py-2 rounded-lg bg-secondary text-surface text-label-sm font-label-sm font-bold active:scale-95 transition-transform hover:opacity-90">Aprovar</button>
-                            <button onclick="rejectUser('${user.id}')" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-on-surface text-label-sm font-label-sm active:scale-95 transition-transform">Recusar</button>
-                        </div>
-                    `;
-                    list.appendChild(item);
-                });
-            });
-        }
-
-        window.approveUser = function(id) {
-            dbApproveUser(id).then(() => {
-                loadPendingUsers();
-            });
-        };
-
-        window.rejectUser = function(id) {
-            dbRejectUser(id).then(() => {
-                loadPendingUsers();
-            });
-        };
     </script>
 </body>
-
 </html>

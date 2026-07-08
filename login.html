@@ -229,8 +229,8 @@
                         </div>
                         <div class="relative group">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">lock</span>
-                            <input class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password" />
-                            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+                            <input id="login-password" class="glass-input w-full h-14 pl-12 pr-12 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password" />
+                            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors" type="button" onclick="togglePassword('login-password', this)">
                                 <span class="material-symbols-outlined">visibility</span>
                             </button>
                         </div>
@@ -286,13 +286,17 @@
                         <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Senha</label>
                         <div class="relative group">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">lock</span>
-                            <input id="register-password" class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password" />
+                            <input id="register-password" class="glass-input w-full h-14 pl-12 pr-12 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password" />
+                            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors" type="button" onclick="togglePassword('register-password', this)">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
                         </div>
                     </div>
                     <!-- CTA Button -->
                     <button class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-14 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2 btn-register-submit">
                         <span>Cadastrar</span>
                         <span class="material-symbols-outlined text-lg">person_add</span>
+                    </button>
                 </form>
                 <!-- Footer Link -->
                 <div class="mt-4 text-center">
@@ -402,9 +406,15 @@
                 e.preventDefault();
                 const emailInput = document.getElementById('login-email');
                 const email = emailInput ? emailInput.value.trim() : '';
+                const passwordInput = document.getElementById('login-password');
+                const password = passwordInput ? passwordInput.value : '';
 
                 if (!email) {
                     alert('Por favor, informe seu email.');
+                    return;
+                }
+                if (!password) {
+                    alert('Por favor, informe sua senha.');
                     return;
                 }
 
@@ -417,13 +427,21 @@
                     <span class="ml-2">Entrando...</span>
                 `;
 
-                dbLoginUser(email).then(result => {
+                dbLoginUser(email, password).then(result => {
                     setTimeout(() => {
                         loginBtn.innerHTML = originalContent;
-                        if (result.user.status === 'Pendente') {
+                        if (!result || !result.success) {
+                            alert(result ? result.error : 'Erro ao conectar com o banco de dados. Verifique sua conexão.');
+                        } else if (result.user.status === 'Pendente') {
                             alert('Sua conta está em análise por um administrador master. Aguarde a aprovação do acesso.');
                         } else if (result.user.status === 'Rejeitado') {
                             alert('Seu acesso foi negado pelo administrador master.');
+                        } else if (result.user.status === 'Expirado') {
+                            alert('Seu acesso de 30 dias expirou. Entre em contato com o administrador master para renovação.');
+                        } else if (result.user.role === 'Master') {
+                            // Redirect Master to control panel
+                            if (loader) loader.classList.remove('opacity-0', 'pointer-events-none');
+                            setTimeout(() => { window.location.href = 'master.html'; }, 1500);
                         } else {
                             if (loader) {
                                 loader.classList.remove('opacity-0', 'pointer-events-none');
@@ -445,8 +463,9 @@
                 const nameVal = document.getElementById('register-name').value;
                 const emailVal = document.getElementById('register-email').value;
                 const phoneVal = document.getElementById('register-phone').value;
+                const passwordVal = document.getElementById('register-password').value;
 
-                if (!nameVal || !emailVal || !phoneVal) {
+                if (!nameVal || !emailVal || !phoneVal || !passwordVal) {
                     alert('Por favor, preencha todos os campos.');
                     return;
                 }
@@ -463,12 +482,17 @@
                 dbRegisterUser({
                     name: nameVal,
                     email: emailVal,
-                    phone: phoneVal
-                }).then(() => {
+                    phone: phoneVal,
+                    password: passwordVal
+                }).then((user) => {
                     setTimeout(() => {
                         registerBtn.innerHTML = originalContent;
-                        alert('Cadastro realizado com sucesso! Sua conta entrou em análise e aguarda liberação.');
-                        switchCard('login-card');
+                        if (user) {
+                            alert('Cadastro realizado com sucesso! Sua conta entrou em análise e aguarda liberação.');
+                            switchCard('login-card');
+                        } else {
+                            alert('Erro ao realizar o cadastro. Certifique-se de que a tabela "profiles" foi criada no console do Supabase usando o script SQL.');
+                        }
                     }, 1500);
                 });
             });
@@ -520,6 +544,21 @@
                 }
                 e.target.value = v;
             });
+        }
+
+        // Toggle password fields visibility
+        window.togglePassword = function(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('.material-symbols-outlined');
+            if (input && icon) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.textContent = 'visibility_off';
+                } else {
+                    input.type = 'password';
+                    icon.textContent = 'visibility';
+                }
+            }
         }
     </script>
 </body>

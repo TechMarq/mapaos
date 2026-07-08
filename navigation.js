@@ -1,10 +1,26 @@
-// Route Guard: Redirect unauthenticated users immediately to login.html
+// Route Guard: Redirect unauthenticated users immediately to login.html, and protect roles
 (function() {
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
-    const loggedUser = localStorage.getItem('MAPAOS_LOGGED_USER');
-    if (!loggedUser && pageName !== 'login.html') {
-        window.location.href = 'login.html';
+    const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+    
+    if (!loggedUserRaw) {
+        if (pageName !== 'login.html') {
+            window.location.href = 'login.html';
+        }
+    } else {
+        const loggedUser = JSON.parse(loggedUserRaw);
+        if (loggedUser.role === 'Master') {
+            // Master account is restricted to master.html and login.html only
+            if (pageName !== 'master.html' && pageName !== 'login.html') {
+                window.location.href = 'master.html';
+            }
+        } else {
+            // Standard users cannot access master.html
+            if (pageName === 'master.html') {
+                window.location.href = 'index.html';
+            }
+        }
     }
 })();
 
@@ -96,14 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
-                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" required />
+                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" pattern="[0-9]*" required />
                             </div>
                         </div>
                         <div class="flex flex-col gap-unit">
                             <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
-                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" required />
+                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" pattern="[0-9]*" required />
                             </div>
                         </div>
                     </div>
