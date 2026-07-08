@@ -1,3 +1,13 @@
+// Route Guard: Redirect unauthenticated users immediately to login.html
+(function() {
+    const currentPath = window.location.pathname;
+    const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
+    const loggedUser = localStorage.getItem('MAPAOS_LOGGED_USER');
+    if (!loggedUser && pageName !== 'login.html') {
+        window.location.href = 'login.html';
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
@@ -300,6 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('a[href]').forEach(link => {
         link.addEventListener('click', (e) => {
             const href = link.getAttribute('href');
+            if (href === 'login.html') {
+                localStorage.removeItem('MAPAOS_LOGGED_USER');
+            }
             if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                 e.preventDefault();
                 fadeInLoaderAndRedirect(href);
