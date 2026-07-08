@@ -1,0 +1,4 @@
+window.MAPAOS_ENV = {
+  SUPABASE_URL: "https://xqzzggwakgebynlvubit.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxenpnZ3dha2dlYnlubHZ1Yml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0ODg5NTMsImV4cCI6MjA5OTA2NDk1M30.SbvVabeoebwY7TeRjj5aOrHVykbvcIpLnC_Y3Q8g2zo"
+};

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+
+<head>
+
+
+
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <!-- Favicon & PWA App Features -->
+    <link rel="icon" type="image/png" href="img/mapaos-logo-sf.png">
+    <link rel="apple-touch-icon" href="img/mapaos-logo-sf.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Mapa.OS - Ajustes</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#1ee0ac",
+                        "inverse-surface": "#dae2fd",
+                        "on-tertiary": "#690005",
+                        "on-background": "#dae2fd",
+                        "primary": "#adc6ff",
+                        "primary-container": "#4b8eff",
+                        "surface-variant": "#2d3449",
+                        "on-error": "#690005",
+                        "on-primary": "#002e69",
+                        "secondary-container": "#00d8a4",
+                        "on-tertiary-container": "#5c0004",
+                        "surface-container-lowest": "#060e20",
+                        "tertiary": "#ffb4ab",
+                        "on-primary-fixed": "#001a41",
+                        "on-secondary": "#003828",
+                        "inverse-on-surface": "#283044",
+                        "on-primary-fixed-variant": "#004493",
+                        "tertiary-container": "#fb584e",
+                        "on-secondary-container": "#005841",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface": "#0b1326",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#005bc1",
+                        "secondary": "#44f5be",
+                        "on-primary-container": "#00285c",
+                        "outline-variant": "#414755",
+                        "surface-bright": "#31394d",
+                        "surface-container-low": "#131b2e",
+                        "tertiary-fixed-dim": "#ffb4ab",
+                        "on-tertiary-fixed-variant": "#92040d",
+                        "background": "#0b1326",
+                        "surface-tint": "#adc6ff",
+                        "outline": "#8b90a0",
+                        "tertiary-fixed": "#ffdad6",
+                        "surface-container-highest": "#2d3449",
+                        "on-surface": "#dae2fd",
+                        "on-tertiary-fixed": "#410002",
+                        "on-surface-variant": "#c1c6d7",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container": "#171f33",
+                        "surface-container-high": "#222a3d",
+                        "secondary-fixed": "#50fdc7",
+                        "error-container": "#93000a",
+                        "surface-dim": "#0b1326",
+                        "on-secondary-fixed": "#002116",
+                        "on-secondary-fixed-variant": "#00513c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "20px",
+                        "stack-gap-lg": "48px",
+                        "gutter": "16px",
+                        "stack-gap-sm": "12px",
+                        "stack-gap-md": "24px",
+                        "container-padding-desktop": "40px",
+                        "unit": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": [
+                            "Inter"
+                        ],
+                        "label-sm": [
+                            "Inter"
+                        ],
+                        "body-md": [
+                            "Inter"
+                        ],
+                        "display-xl": [
+                            "Inter"
+                        ],
+                        "headline-lg-mobile": [
+                            "Inter"
+                        ]
+                    },
+                    "fontSize": {
+                        "headline-lg": [
+                            "32px",
+                            {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "label-sm": [
+                            "13px",
+                            {
+                                "lineHeight": "1",
+                                "letterSpacing": "0.02em",
+                                "fontWeight": "500"
+                            }
+                        ],
+                        "body-md": [
+                            "16px",
+                            {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "display-xl": [
+                            "64px",
+                            {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "headline-lg-mobile": [
+                            "28px",
+                            {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                            }
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(180deg, #0b1326 0%, #171f33 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+
+        .ambient-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(75, 142, 255, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: theme('colors.primary');
+            box-shadow: 0 0 15px rgba(173, 198, 255, 0.2);
+            outline: none;
+        }
+
+        .ios-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 30px;
+        }
+
+        .ios-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background-color: theme('colors.secondary-container');
+            border-color: theme('colors.secondary-container');
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, theme('colors.primary-container'), theme('colors.primary'));
+            box-shadow: 0 4px 15px rgba(75, 142, 255, 0.3);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="text-on-background min-h-screen pb-32">
+    <div class="ambient-glow"></div>
+    <!-- TopAppBar -->
+    <div id="top-app-bar"></div>
+    <!-- Main Content -->
+    <main
+        class="pt-32 px-container-padding-mobile md:px-container-padding-desktop max-w-5xl mx-auto space-y-stack-gap-md md:space-y-stack-gap-lg">
+        <div class="mb-8">
+            <h2
+                class="font-display-xl text-display-xl text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary-fixed-dim mb-2">
+                Ajustes</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Gerencie suas preferências de conta e
+                segurança.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-stack-gap-md">
+            <!-- Left Column: Profile & Security -->
+            <div class="md:col-span-7 space-y-stack-gap-md">
+                <!-- Profile Section -->
+                <section class="glass-card rounded-xl p-6 md:p-8">
+                    <h3
+                        class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">person</span> Perfil
+                    </h3>
+                    <div class="flex flex-col md:flex-row gap-8 items-start mb-6">
+                        <div class="relative group">
+                            <div
+                                class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/50 shadow-lg shadow-primary/20">
+                                <img alt="Profile Picture" class="w-full h-full object-cover"
+                                    data-alt="A cinematic, high-fashion portrait of a young professional user avatar, bathed in moody teal and azure rim lighting against a deep slate background, matching the premium glassmorphism dark mode aesthetic."
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC433IXVgy5HvjTHs2MNsZUQSpjvSgCUXvgvpBkQuXbZWBPcNY-Xph7nOs6awnna9ykHIGaV4-T8-ESHMFlFmAbvOwoi1_HKwO3ZftRVN6IkItk41p_4WVKVTWfemaBi3uQIcl2KYIn0CWWQ2Z1sFCa6W0ju6mafFO4Y_G8xJYBE10eEa332klhJGJsfqROOwC_3AzcCL_d6L1NpaWDTnCsI5WC1F-eQLFu1FctsLjh8lOi_2uU8-BC">
+                            </div>
+                            <button
+                                class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <span class="material-symbols-outlined text-white">photo_camera</span>
+                            </button>
+                        </div>
+                        <div class="flex-1 w-full space-y-4">
+                            <div>
+                                <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Nome
+                                    Completo</label>
+                                <input
+                                    class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface"
+                                    type="text" value="Jane Doe">
+                            </div>
+                            <div>
+                                <label
+                                    class="block font-label-sm text-label-sm text-on-surface-variant mb-2">E-mail</label>
+                                <input
+                                    class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface"
+                                    type="email" value="jane.doe@example.com">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button
+                            class="btn-primary font-label-sm text-label-sm text-on-primary px-6 py-2.5 rounded-full transition-transform active:scale-95">Salvar
+                            Alterações</button>
+                    </div>
+                </section>
+                <!-- Security Section -->
+                <section class="glass-card rounded-xl p-6 md:p-8">
+                    <h3
+                        class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary-container">shield_lock</span> Segurança
+                    </h3>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
+                            <div>
+                                <h4 class="font-body-md text-body-md text-on-surface font-medium">Autenticação de Dois
+                                    Fatores</h4>
+                                <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Adicione uma camada
+                                    extra de segurança.</p>
+                            </div>
+                            <label class="ios-toggle">
+                                <input checked="" type="checkbox">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Alterar
+                                Senha</label>
+                            <div class="flex gap-4">
+                                <input
+                                    class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface"
+                                    placeholder="Nova Senha" type="password">
+                                <button
+                                    class="btn-glass font-label-sm text-label-sm text-on-surface px-6 py-3 rounded-lg whitespace-nowrap active:scale-95 transition-transform">Atualizar</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Supabase Integration Section -->
+                <section class="glass-card rounded-xl p-6 md:p-8">
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary">database</span> Conexão Supabase
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Supabase Project URL</label>
+                            <input id="supabase-url-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface" type="text" placeholder="https://xxxx.supabase.co">
+                        </div>
+                        <div>
+                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Supabase Anon Key</label>
+                            <input id="supabase-key-input" class="glass-input w-full rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button id="btn-save-supabase" class="btn-primary font-label-sm text-label-sm text-on-primary px-6 py-2.5 rounded-full transition-transform active:scale-95">
+                                Conectar Banco
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- User Approval Section (Visible to Master only) -->
+                <section id="master-approval-section" class="glass-card rounded-xl p-6 md:p-8 hidden">
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">group_add</span> Aprovação de Usuários
+                    </h3>
+                    <div id="pending-users-list" class="space-y-4">
+                        <!-- Pending users populated dynamically -->
+                        <p class="text-on-surface-variant text-sm">Nenhum cadastro pendente no momento.</p>
+                    </div>
+                </section>
+            </div>
+            <!-- Right Column: Preferences & Subscriptions -->
+            <div class="md:col-span-5 space-y-stack-gap-md">
+                <!-- Preferences Section -->
+                <section class="glass-card rounded-xl p-6 md:p-8 h-full">
+                    <h3
+                        class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-tertiary-fixed-dim">tune</span> Preferências
+                    </h3>
+                    <div class="space-y-6">
+                        <!-- Notification Toggles -->
+                        <div class="space-y-4">
+                            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-wider">NOTIFICAÇÕES
+                            </h4>
+                            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                                <div>
+                                    <h5 class="font-body-md text-body-md text-on-surface">Notificações Push</h5>
+                                    <p class="font-label-sm text-label-sm text-on-surface-variant">Alertas no seu
+                                        dispositivo.</p>
+                                </div>
+                                <label class="ios-toggle">
+                                    <input checked="" type="checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                                <div>
+                                    <h5 class="font-body-md text-body-md text-on-surface">Resumos por E-mail</h5>
+                                    <p class="font-label-sm text-label-sm text-on-surface-variant">Resumos semanais.</p>
+                                </div>
+                                <label class="ios-toggle">
+                                    <input type="checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Appearance -->
+                        <div class="space-y-4 pt-4">
+                            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-wider">APARÊNCIA</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <button
+                                    class="glass-input rounded-lg py-4 flex flex-col items-center gap-2 border-primary bg-white/10">
+                                    <span class="material-symbols-outlined text-on-surface">dark_mode</span>
+                                    <span class="font-label-sm text-label-sm text-on-surface">Escuro</span>
+                                </button>
+                                <button
+                                    class="glass-input rounded-lg py-4 flex flex-col items-center gap-2 opacity-50 hover:opacity-100">
+                                    <span class="material-symbols-outlined text-on-surface">light_mode</span>
+                                    <span class="font-label-sm text-label-sm text-on-surface">Claro</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar (Mobile Only) -->
+    <div id="bottom-nav-bar"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.env.js"></script>
+    <script src="supabase.js"></script>
+    <script src="navigation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlInput = document.getElementById('supabase-url-input');
+            const keyInput = document.getElementById('supabase-key-input');
+            const saveBtn = document.getElementById('btn-save-supabase');
+
+            if (urlInput && keyInput) {
+                urlInput.value = localStorage.getItem('MAPAOS_SUPABASE_URL') || '';
+                keyInput.value = localStorage.getItem('MAPAOS_SUPABASE_KEY') || '';
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const url = urlInput.value.trim();
+                    const key = keyInput.value.trim();
+
+                    localStorage.setItem('MAPAOS_SUPABASE_URL', url);
+                    localStorage.setItem('MAPAOS_SUPABASE_KEY', key);
+
+                    alert('Configurações do Supabase salvas com sucesso! A página será reiniciada para aplicar as alterações.');
+                    window.location.reload();
+                });
+            }
+
+            // User access control / Master Approval Dashboard
+            const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+            if (loggedUserRaw) {
+                const loggedUser = JSON.parse(loggedUserRaw);
+                if (loggedUser.role === 'Master') {
+                    const approvalSection = document.getElementById('master-approval-section');
+                    if (approvalSection) {
+                        approvalSection.classList.remove('hidden');
+                        loadPendingUsers();
+                    }
+                }
+            }
+        });
+
+        function loadPendingUsers() {
+            const list = document.getElementById('pending-users-list');
+            if (!list) return;
+
+            dbGetPendingUsers().then(users => {
+                list.innerHTML = '';
+                if (!users || users.length === 0) {
+                    list.innerHTML = '<p class="text-on-surface-variant text-sm">Nenhum cadastro pendente no momento.</p>';
+                    return;
+                }
+
+                users.forEach(user => {
+                    const item = document.createElement('div');
+                    item.className = "flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-lg bg-white/5 border border-white/5 gap-4";
+                    item.innerHTML = `
+                        <div>
+                            <h4 class="font-body-md text-body-md text-on-surface font-semibold">${user.name}</h4>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${user.email} • ${user.phone}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="approveUser('${user.id}')" class="px-4 py-2 rounded-lg bg-secondary text-surface text-label-sm font-label-sm font-bold active:scale-95 transition-transform hover:opacity-90">Aprovar</button>
+                            <button onclick="rejectUser('${user.id}')" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-on-surface text-label-sm font-label-sm active:scale-95 transition-transform">Recusar</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            });
+        }
+
+        window.approveUser = function(id) {
+            dbApproveUser(id).then(() => {
+                loadPendingUsers();
+            });
+        };
+
+        window.rejectUser = function(id) {
+            dbRejectUser(id).then(() => {
+                loadPendingUsers();
+            });
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!-- Favicon & PWA App Features -->
+    <link rel="icon" type="image/png" href="img/mapaos-logo-sf.png">
+    <link rel="apple-touch-icon" href="img/mapaos-logo-sf.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Mapa.OS - Login</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #adc6ff;
+            box-shadow: 0 0 15px rgba(173, 198, 255, 0.2);
+            outline: none;
+        }
+
+        .primary-glow {
+            box-shadow: 0 0 20px rgba(75, 142, 255, 0.4);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shimmer-border {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer-border::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.1),
+                    transparent);
+            transform: rotate(45deg);
+            animation: shimmer 4s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%) rotate(45deg);
+            }
+
+            100% {
+                transform: translateX(100%) rotate(45deg);
+            }
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#4b8eff",
+                        "on-tertiary-fixed-variant": "#92040d",
+                        "on-tertiary": "#690005",
+                        "on-background": "#dae2fd",
+                        "surface-tint": "#adc6ff",
+                        "primary": "#adc6ff",
+                        "surface": "#0b1326",
+                        "on-secondary": "#003828",
+                        "inverse-surface": "#dae2fd",
+                        "on-primary-fixed-variant": "#004493",
+                        "on-tertiary-fixed": "#410002",
+                        "inverse-primary": "#005bc1",
+                        "tertiary": "#ffb4ab",
+                        "surface-container": "#171f33",
+                        "tertiary-container": "#fb584e",
+                        "primary-fixed": "#d8e2ff",
+                        "on-secondary-fixed-variant": "#00513c",
+                        "surface-container-highest": "#2d3449",
+                        "secondary-fixed": "#50fdc7",
+                        "surface-variant": "#2d3449",
+                        "surface-bright": "#31394d",
+                        "secondary-fixed-dim": "#1ee0ac",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-container": "#005841",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-primary": "#002e69",
+                        "on-surface-variant": "#c1c6d7",
+                        "on-primary-container": "#00285c",
+                        "tertiary-fixed-dim": "#ffb4ab",
+                        "error": "#ffb4ab",
+                        "secondary": "#44f5be",
+                        "inverse-on-surface": "#283044",
+                        "on-tertiary-container": "#5c0004",
+                        "tertiary-fixed": "#ffdad6",
+                        "on-error": "#690005",
+                        "surface-container-high": "#222a3d",
+                        "outline": "#8b90a0",
+                        "secondary-container": "#00d8a4",
+                        "error-container": "#93000a",
+                        "on-primary-fixed": "#001a41",
+                        "background": "#0b1326",
+                        "surface-container-low": "#131b2e",
+                        "outline-variant": "#414755",
+                        "surface-dim": "#0b1326",
+                        "on-secondary-fixed": "#002116",
+                        "surface-container-lowest": "#060e20",
+                        "on-surface": "#dae2fd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-desktop": "40px",
+                        "stack-gap-lg": "48px",
+                        "stack-gap-sm": "12px",
+                        "gutter": "16px",
+                        "unit": "8px",
+                        "stack-gap-md": "24px",
+                        "container-padding-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "display-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+                        "label-sm": ["13px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display-xl": ["64px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+
+<body
+    class="bg-surface text-on-surface font-body-md overflow-hidden h-screen w-screen flex items-center justify-center p-container-padding-mobile md:p-container-padding-desktop">
+    <!-- Atmospheric Background Overlay -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+
+        <div class="absolute -top-1/4 -right-1/4 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[160px]"></div>
+        <div class="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[120px]"></div>
+    </div>
+    <!-- Login Container -->
+    <main class="relative z-10 w-full max-w-[440px] flex flex-col items-center">
+        <!-- Brand Identity -->
+        <header class="mb-8 flex flex-col items-center gap-3 animate-float">
+            <img src="img/mapaos-logocompleto.svg" alt="MapaOS Logo" class="h-24 object-contain drop-shadow-sm">
+            <p class="text-on-surface-variant/80 font-label-sm text-label-sm uppercase tracking-widest mt-1">
+                Interface de Reservas Inteligente
+            </p>
+        </header>
+        <!-- Card Container -->
+        <div class="w-full relative min-h-[460px]">
+            <!-- Glassmorphic Login Card -->
+            <section id="login-card" class="glass-card w-full p-stack-gap-md md:p-stack-gap-lg rounded-lg flex flex-col gap-stack-gap-md border-t-white/20 transition-all duration-300 transform scale-100 opacity-100">
+                <div class="space-y-unit">
+                    <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Bem-vindo</h2>
+                    <p class="text-on-surface-variant text-body-md">Acesse sua conta para continuar.</p>
+                </div>
+                <!-- Form -->
+                <form class="flex flex-col gap-stack-gap-md" onsubmit="event.preventDefault();">
+                    <!-- Email Field -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Email</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">alternate_email</span>
+                            <input id="login-email" class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="exemplo@email.com" type="email" />
+                        </div>
+                    </div>
+                    <!-- Password Field -->
+                    <div class="flex flex-col gap-unit">
+                        <div class="flex justify-between items-center px-1">
+                            <label class="text-label-sm font-label-sm text-on-surface-variant">Senha</label>
+                            <a class="text-label-sm font-label-sm text-primary hover:text-primary-fixed-dim transition-colors cursor-pointer" onclick="switchCard('forgot-card')">Esqueceu a senha?</a>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">lock</span>
+                            <input class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password" />
+                            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- CTA Button -->
+                    <button class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-14 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-unit btn-login-submit">
+                        <span>Entrar</span>
+                        <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                    </button>
+                </form>
+                <!-- Social Login Divider -->
+                <div class="flex items-center gap-stack-gap-sm">
+                    <div class="h-[1px] flex-1 bg-white/10"></div>
+                    <span class="text-label-sm font-label-sm text-on-surface-variant/50">ou acesse com</span>
+                    <div class="h-[1px] flex-1 bg-white/10"></div>
+                </div>
+                <!-- Social Buttons -->
+                <div class="grid grid-cols-2 gap-stack-gap-sm">
+                    <button class="h-12 rounded-xl glass-input flex items-center justify-center gap-unit hover:bg-white/10 transition-colors">
+                        <svg class="w-5 h-5 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+                        </svg>
+                        <span class="text-label-sm font-label-sm">Google</span>
+                    </button>
+                </div>
+                <!-- Footer Link -->
+                <div class="mt-4 text-center">
+                    <p class="text-body-md text-on-surface-variant">
+                        Ainda não possui acesso?
+                        <a class="text-primary font-bold hover:underline transition-all cursor-pointer" onclick="switchCard('register-card')">Criar conta</a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Glassmorphic Register Card -->
+            <section id="register-card" class="glass-card w-full p-stack-gap-md md:p-stack-gap-lg rounded-lg flex flex-col gap-stack-gap-md border-t-white/20 transition-all duration-300 transform scale-95 opacity-0 pointer-events-none absolute top-0 left-0">
+                <div class="space-y-unit">
+                    <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Criar Conta</h2>
+                    <p class="text-on-surface-variant text-body-md">Cadastre-se para começar a usar o MapaOS.</p>
+                </div>
+                <form class="flex flex-col gap-4" onsubmit="event.preventDefault();">
+                    <!-- Name Field -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nome Completo</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">person</span>
+                            <input id="register-name" class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Seu nome" type="text" />
+                        </div>
+                    </div>
+                    <!-- Email Field -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Email</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">alternate_email</span>
+                            <input id="register-email" class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="exemplo@email.com" type="email" />
+                        </div>
+                    </div>
+                    <!-- Phone Field -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Contato (Telefone)</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">phone</span>
+                            <input id="register-phone" class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="(XX) XXXXX-XXXX" type="tel" maxlength="15" required />
+                        </div>
+                    </div>
+                    <!-- Password Field -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Senha</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">lock</span>
+                            <input id="register-password" class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password" />
+                        </div>
+                    </div>
+                    <!-- CTA Button -->
+                    <button class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-14 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2 btn-register-submit">
+                        <span>Cadastrar</span>
+                        <span class="material-symbols-outlined text-lg">person_add</span>
+                    </button>
+                </form>
+                <!-- Social Register Divider -->
+                <div class="flex items-center gap-stack-gap-sm">
+                    <div class="h-[1px] flex-1 bg-white/10"></div>
+                    <span class="text-label-sm font-label-sm text-on-surface-variant/50">ou crie com</span>
+                    <div class="h-[1px] flex-1 bg-white/10"></div>
+                </div>
+                <!-- Social Register Button -->
+                <div class="grid grid-cols-1 gap-stack-gap-sm">
+                    <button class="h-12 rounded-xl glass-input flex items-center justify-center gap-unit hover:bg-white/10 transition-colors">
+                        <svg class="w-5 h-5 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+                        </svg>
+                        <span class="text-label-sm font-label-sm">Registrar com Google</span>
+                    </button>
+                </div>
+                <!-- Footer Link -->
+                <div class="mt-4 text-center">
+                    <p class="text-body-md text-on-surface-variant">
+                        Já possui uma conta?
+                        <a class="text-primary font-bold hover:underline transition-all cursor-pointer" onclick="switchCard('login-card')">Entrar</a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Glassmorphic Forgot Password Card -->
+            <section id="forgot-card" class="glass-card w-full p-stack-gap-md md:p-stack-gap-lg rounded-lg flex flex-col gap-stack-gap-md border-t-white/20 transition-all duration-300 transform scale-95 opacity-0 pointer-events-none absolute top-0 left-0">
+                <div class="space-y-unit">
+                    <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Recuperar Senha</h2>
+                    <p class="text-on-surface-variant text-body-md">Digite seu e-mail para receber as instruções.</p>
+                </div>
+                <form class="flex flex-col gap-4" onsubmit="event.preventDefault();">
+                    <!-- Email Field -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Email</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">alternate_email</span>
+                            <input class="glass-input w-full h-14 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="exemplo@email.com" type="email" />
+                        </div>
+                    </div>
+                    <!-- CTA Button -->
+                    <button class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-14 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2 btn-forgot-submit">
+                        <span>Enviar Email</span>
+                        <span class="material-symbols-outlined text-lg">mail</span>
+                    </button>
+                </form>
+                <!-- Footer Link -->
+                <div class="mt-4 text-center">
+                    <p class="text-body-md text-on-surface-variant">
+                        Lembrou a senha?
+                        <a class="text-primary font-bold hover:underline transition-all cursor-pointer" onclick="switchCard('login-card')">Voltar ao login</a>
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+    <!-- Global Loading Overlay -->
+    <div id="global-loader"
+        class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#060e20] opacity-0 pointer-events-none transition-opacity duration-500 ease-out">
+        <div class="relative flex flex-col items-center">
+            <img src="img/mapaos-logo-loading.gif" alt="Carregando..."
+                class="w-40 h-40 object-contain rounded-full shadow-2xl border border-primary/20">
+            <div class="mt-6 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                <span class="w-2.5 h-2.5 bg-secondary-fixed rounded-full animate-bounce"
+                    style="animation-delay: 0.2s"></span>
+                <span class="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.env.js"></script>
+    <script src="supabase.js"></script>
+    <!-- Interactive micro-interactions script -->
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+
+            // Subtle parallax effect for background blobs
+            const blobs = document.querySelectorAll('.blur-[160px], .blur-[120px]');
+            blobs.forEach((blob, i) => {
+                const speed = (i + 1) * 20;
+                const shiftX = (x - 0.5) * speed;
+                const shiftY = (y - 0.5) * speed;
+                blob.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
+            });
+        });
+
+        // Switch Card Animation Logic
+        function switchCard(cardId) {
+            const cards = ['login-card', 'register-card', 'forgot-card'];
+            cards.forEach(id => {
+                const card = document.getElementById(id);
+                if (card) {
+                    if (id === cardId) {
+                        card.classList.remove('hidden');
+                        // Force layout recalculation for transitions
+                        card.offsetHeight;
+                        card.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                        card.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
+                    } else {
+                        card.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
+                        card.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                        setTimeout(() => {
+                            if (card.classList.contains('opacity-0')) {
+                                card.classList.add('hidden');
+                            }
+                        }, 300);
+                    }
+                }
+            });
+        }
+
+        const loader = document.getElementById('global-loader');
+
+        // Login Submit Trigger
+        const loginBtn = document.querySelector('.btn-login-submit');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const emailInput = document.getElementById('login-email');
+                const email = emailInput ? emailInput.value.trim() : '';
+
+                if (!email) {
+                    alert('Por favor, informe seu email.');
+                    return;
+                }
+
+                const originalContent = loginBtn.innerHTML;
+                loginBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="ml-2">Entrando...</span>
+                `;
+
+                dbLoginUser(email).then(result => {
+                    setTimeout(() => {
+                        loginBtn.innerHTML = originalContent;
+                        if (result.user.status === 'Pendente') {
+                            alert('Sua conta está em análise por um administrador master. Aguarde a aprovação do acesso.');
+                        } else if (result.user.status === 'Rejeitado') {
+                            alert('Seu acesso foi negado pelo administrador master.');
+                        } else {
+                            if (loader) {
+                                loader.classList.remove('opacity-0', 'pointer-events-none');
+                            }
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 1500);
+                        }
+                    }, 1000);
+                });
+            });
+        }
+
+        // Register Submit Trigger
+        const registerBtn = document.querySelector('.btn-register-submit');
+        if (registerBtn) {
+            registerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const nameVal = document.getElementById('register-name').value;
+                const emailVal = document.getElementById('register-email').value;
+                const phoneVal = document.getElementById('register-phone').value;
+
+                if (!nameVal || !emailVal || !phoneVal) {
+                    alert('Por favor, preencha todos os campos.');
+                    return;
+                }
+
+                const originalContent = registerBtn.innerHTML;
+                registerBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="ml-2">Registrando...</span>
+                `;
+                
+                dbRegisterUser({
+                    name: nameVal,
+                    email: emailVal,
+                    phone: phoneVal
+                }).then(() => {
+                    setTimeout(() => {
+                        registerBtn.innerHTML = originalContent;
+                        alert('Cadastro realizado com sucesso! Sua conta entrou em análise e aguarda liberação.');
+                        switchCard('login-card');
+                    }, 1500);
+                });
+            });
+        }
+
+        // Forgot Password Submit Trigger
+        const forgotBtn = document.querySelector('.btn-forgot-submit');
+        if (forgotBtn) {
+            forgotBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const originalContent = forgotBtn.innerHTML;
+                forgotBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="ml-2">Enviando...</span>
+                `;
+                setTimeout(() => {
+                    if (loader) {
+                        loader.classList.remove('opacity-0', 'pointer-events-none');
+                    }
+                    setTimeout(() => {
+                        if (loader) {
+                            loader.classList.add('opacity-0', 'pointer-events-none');
+                        }
+                        forgotBtn.innerHTML = originalContent;
+                        switchCard('login-card');
+                    }, 1500);
+                }, 1000);
+            });
+        }
+
+        // Phone Input Mask: (XX) XXXXX-XXXX / (XX) XXXX-XXXX
+        const phoneInput = document.getElementById('register-phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 11) v = v.slice(0, 11);
+                
+                if (v.length > 10) {
+                    v = `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
+                } else if (v.length > 6) {
+                    v = `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`;
+                } else if (v.length > 2) {
+                    v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+                } else if (v.length > 0) {
+                    v = `(${v}`;
+                }
+                e.target.value = v;
+            });
+        }
+    </script>
+</body>
+
+</html>

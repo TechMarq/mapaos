@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <!-- Favicon & PWA App Features -->
+    <link rel="icon" type="image/png" href="img/mapaos-logo-sf.png">
+    <link rel="apple-touch-icon" href="img/mapaos-logo-sf.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Mapa.OS - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#1ee0ac",
+                        "inverse-surface": "#dae2fd",
+                        "on-tertiary": "#690005",
+                        "on-background": "#dae2fd",
+                        "primary": "#adc6ff",
+                        "primary-container": "#4b8eff",
+                        "surface-variant": "#2d3449",
+                        "on-error": "#690005",
+                        "on-primary": "#002e69",
+                        "secondary-container": "#00d8a4",
+                        "on-tertiary-container": "#5c0004",
+                        "surface-container-lowest": "#060e20",
+                        "tertiary": "#ffb4ab",
+                        "on-primary-fixed": "#001a41",
+                        "on-secondary": "#003828",
+                        "inverse-on-surface": "#283044",
+                        "on-primary-fixed-variant": "#004493",
+                        "tertiary-container": "#fb584e",
+                        "on-secondary-container": "#005841",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface": "#0b1326",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#005bc1",
+                        "secondary": "#44f5be",
+                        "on-primary-container": "#00285c",
+                        "outline-variant": "#414755",
+                        "surface-bright": "#31394d",
+                        "surface-container-low": "#131b2e",
+                        "tertiary-fixed-dim": "#ffb4ab",
+                        "on-tertiary-fixed-variant": "#92040d",
+                        "background": "#0b1326",
+                        "surface-tint": "#adc6ff",
+                        "outline": "#8b90a0",
+                        "tertiary-fixed": "#ffdad6",
+                        "surface-container-highest": "#2d3449",
+                        "on-surface": "#dae2fd",
+                        "on-tertiary-fixed": "#410002",
+                        "on-surface-variant": "#c1c6d7",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container": "#171f33",
+                        "surface-container-high": "#222a3d",
+                        "secondary-fixed": "#50fdc7",
+                        "error-container": "#93000a",
+                        "surface-dim": "#0b1326",
+                        "on-secondary-fixed": "#002116",
+                        "on-secondary-fixed-variant": "#00513c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "20px",
+                        "stack-gap-lg": "48px",
+                        "gutter": "16px",
+                        "stack-gap-sm": "12px",
+                        "stack-gap-md": "24px",
+                        "container-padding-desktop": "40px",
+                        "unit": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": [
+                            "Inter"
+                        ],
+                        "label-sm": [
+                            "Inter"
+                        ],
+                        "body-md": [
+                            "Inter"
+                        ],
+                        "display-xl": [
+                            "Inter"
+                        ],
+                        "headline-lg-mobile": [
+                            "Inter"
+                        ]
+                    },
+                    "fontSize": {
+                        "headline-lg": [
+                            "32px",
+                            {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "label-sm": [
+                            "13px",
+                            {
+                                "lineHeight": "1",
+                                "letterSpacing": "0.02em",
+                                "fontWeight": "500"
+                            }
+                        ],
+                        "body-md": [
+                            "16px",
+                            {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "display-xl": [
+                            "64px",
+                            {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "headline-lg-mobile": [
+                            "28px",
+                            {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                            }
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(180deg, #0b1326 0%, #171f33 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5), inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+        }
+
+        .ambient-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(75, 142, 255, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="text-on-surface font-body-md text-body-md antialiased pb-32 md:pb-8 pt-24 md:pt-28">
+    <div class="ambient-glow"></div>
+    <!-- TopAppBar -->
+    <div id="top-app-bar"></div>
+    <!-- Main Content -->
+    <main class="max-w-[1200px] mx-auto px-container-padding-mobile md:px-container-padding-desktop">
+        <!-- Header Section -->
+        <div class="mb-stack-gap-md md:mb-stack-gap-lg">
+            <h1
+                class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">
+                Visão Geral</h1>
+            <p class="text-on-surface-variant mt-2">Sua atividade e métricas recentes.</p>
+        </div>
+        <!-- Bento Grid for Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-gap-md md:mb-stack-gap-lg">
+            <!-- Total Reservations -->
+            <div
+                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
+                <div class="flex justify-between items-start">
+                    <span
+                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">TOTAL</span>
+                    <span class="material-symbols-outlined text-primary text-xl">book_online</span>
+                </div>
+                <div>
+                    <div id="stat-total" class="font-headline-lg-mobile text-headline-lg-mobile text-primary-fixed-dim">0</div>
+                </div>
+            </div>
+            <!-- Completed -->
+            <div
+                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
+                <div class="flex justify-between items-start">
+                    <span
+                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">CONCLUÍDOS</span>
+                    <span class="material-symbols-outlined text-secondary-fixed text-xl">check_circle</span>
+                </div>
+                <div>
+                    <div id="stat-completed" class="font-headline-lg-mobile text-headline-lg-mobile text-secondary-fixed">0</div>
+                </div>
+            </div>
+            <!-- Pending -->
+            <div
+                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
+                <div class="flex justify-between items-start">
+                    <span
+                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">PENDENTES</span>
+                    <span class="material-symbols-outlined text-tertiary-fixed text-xl">schedule</span>
+                </div>
+                <div>
+                    <div id="stat-pending" class="font-headline-lg-mobile text-headline-lg-mobile text-tertiary-fixed">0</div>
+                </div>
+            </div>
+            <!-- Paid -->
+            <div
+                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
+                <div class="flex justify-between items-start">
+                    <span
+                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">PAGOS</span>
+                    <span class="material-symbols-outlined text-secondary-container text-xl">payments</span>
+                </div>
+                <div>
+                    <div id="stat-paid" class="font-headline-lg-mobile text-headline-lg-mobile text-secondary-container">0</div>
+                </div>
+            </div>
+        </div>
+        <!-- Chart Section -->
+        <div class="glass-card rounded-[2rem] p-stack-gap-md md:p-stack-gap-lg w-full">
+            <div class="flex justify-between items-center mb-stack-gap-md">
+                <h2 class="font-body-md text-body-md font-semibold text-on-surface">Reservas por Dia</h2>
+                <div class="flex gap-2">
+                    <button
+                        class="font-label-sm text-label-sm px-3 py-1.5 rounded-full bg-primary/20 text-primary-fixed-dim border border-primary/30">Semana</button>
+                    <button
+                        class="font-label-sm text-label-sm px-3 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10 hover:bg-white/10 transition-colors">Mês</button>
+                </div>
+            </div>
+            <div class="relative h-[300px] w-full">
+                <canvas id="reservationsChart" width="300" height="300"
+                    style="display: block; box-sizing: border-box; height: 300px; width: 300px;"></canvas>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <div id="bottom-nav-bar"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.env.js"></script>
+    <script src="supabase.js"></script>
+    <script src="navigation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            let chartData = [0, 0, 0, 0, 0, 0, 0];
+
+            // Update Bento Grid stats and chart data from Database
+            if (typeof dbGetReservations === 'function') {
+                try {
+                    const reservations = await dbGetReservations();
+                    const total = reservations.length;
+                    const paid = reservations.filter(r => r.status === 'Paga').length;
+                    const pending = reservations.filter(r => r.status === 'Pendente').length;
+                    
+                    document.getElementById('stat-total').innerText = total.toLocaleString('pt-BR');
+                    document.getElementById('stat-completed').innerText = paid.toLocaleString('pt-BR');
+                    document.getElementById('stat-pending').innerText = pending.toLocaleString('pt-BR');
+                    document.getElementById('stat-paid').innerText = paid.toLocaleString('pt-BR');
+
+                    // Calculate Day of Week counts for chart
+                    reservations.forEach(r => {
+                        if (r.date && r.date.includes('/')) {
+                            const parts = r.date.split('/');
+                            if (parts.length === 3) {
+                                const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                                let dayIndex = dateObj.getDay() - 1; // 0 (Monday) to 6 (Sunday)
+                                if (dayIndex === -1) dayIndex = 6;   // Sunday becomes 6
+                                if (dayIndex >= 0 && dayIndex <= 6) {
+                                    chartData[dayIndex]++;
+                                }
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error('Error loading dashboard stats:', err);
+                }
+            }
+
+            const ctx = document.getElementById('reservationsChart').getContext('2d');
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(75, 142, 255, 0.4)');
+            gradient.addColorStop(1, 'rgba(75, 142, 255, 0.0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Reservas',
+                        data: chartData,
+                        borderColor: '#adc6ff',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#adc6ff',
+                        pointBorderColor: '#0b1326',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(11, 19, 38, 0.8)',
+                            titleColor: '#dae2fd',
+                            bodyColor: '#c1c6d7',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#8b90a0',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false,
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                color: '#8b90a0',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                },
+                                padding: 10
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                }
+            });
+        });
+    </script>
+
+
+</body>
+
+</html>
