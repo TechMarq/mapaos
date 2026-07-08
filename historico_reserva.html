@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <!-- Favicon & PWA App Features -->
-    <link rel="icon" type="image/png" href="img/mapaos-logo-sf.png?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="img/mapaos-logo-sf.png?v=2">
+    <link rel="icon" type="image/svg+xml" href="img/mapaos-logo-sf.svg?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/mapaos-logo-sf.svg?v=2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
@@ -156,41 +156,77 @@
             <p class="font-body-md text-on-surface-variant/70 mt-1">Gerencie suas ordens de serviço e pagamentos.</p>
         </div>
         <!-- Filters Section -->
-        <section class="flex flex-col md:flex-row gap-4 mb-stack-gap-md">
-            <div class="flex-1 flex gap-2 overflow-x-auto scrollbar-hide">
-                <button
-                    class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm border-primary/40 text-primary flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm" data-icon="calendar_month">calendar_month</span>
-                    Agosto
-                </button>
-                <button
-                    class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-on-surface-variant/80 hover:text-primary transition-colors flex items-center gap-2">
+        <section class="flex flex-col gap-3 mb-stack-gap-md">
+            <!-- Unified Filters & Actions Container -->
+            <div class="flex flex-wrap gap-2 items-center">
+                <!-- Date Range Selector -->
+                <div class="relative flex items-center shrink-0">
+                    <span class="material-symbols-outlined absolute left-4 text-on-surface-variant text-sm pointer-events-none">calendar_month</span>
+                    <select id="select-date-filter" class="pl-10 pr-8 py-2 glass-card rounded-full text-label-sm font-label-sm border border-white/10 bg-transparent text-on-surface hover:text-primary transition-colors focus:ring-0 outline-none appearance-none cursor-pointer">
+                        <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
+                        <option value="7D" class="bg-[#0b1326] text-on-surface">7D (Últimos 7 dias)</option>
+                        <option value="15D" class="bg-[#0b1326] text-on-surface">15D (Últimos 15 dias)</option>
+                        <option value="30D" class="bg-[#0b1326] text-on-surface">30D (Últimos 30 dias)</option>
+                        <option value="anterior" class="bg-[#0b1326] text-on-surface">Mês Anterior</option>
+                        <option value="custom" class="bg-[#0b1326] text-on-surface">Personalizado...</option>
+                    </select>
+                </div>
+
+                <!-- Custom Date Picker Inputs -->
+                <div id="custom-date-container" class="hidden flex flex-wrap items-center gap-2 shrink-0">
+                    <input type="date" id="custom-start-date" class="glass-input px-3 py-1.5 rounded-xl text-xs bg-transparent border border-white/10 text-on-surface focus:ring-0 outline-none" />
+                    <span class="text-xs text-on-surface-variant">até</span>
+                    <input type="date" id="custom-end-date" class="glass-input px-3 py-1.5 rounded-xl text-xs bg-transparent border border-white/10 text-on-surface focus:ring-0 outline-none" />
+                </div>
+
+                <!-- Sorting Selector -->
+                <div class="relative flex items-center shrink-0">
+                    <span class="material-symbols-outlined absolute left-4 text-on-surface-variant text-sm pointer-events-none">swap_vert</span>
+                    <select id="select-sort-order" class="pl-10 pr-8 py-2 glass-card rounded-full text-label-sm font-label-sm border border-white/10 bg-transparent text-on-surface hover:text-primary transition-colors focus:ring-0 outline-none appearance-none cursor-pointer">
+                        <option value="desc" class="bg-[#0b1326] text-on-surface">Mais Recentes</option>
+                        <option value="asc" class="bg-[#0b1326] text-on-surface">Mais Antigas</option>
+                    </select>
+                </div>
+
+                <!-- Status Filter button -->
+                <button id="btn-status-filter" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-on-surface-variant/80 hover:text-primary transition-colors flex items-center gap-2 shrink-0">
                     <span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
-                    Todos Status
+                    <span id="status-filter-text">Todos Status</span>
                 </button>
-                <button
-                    class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-on-surface-variant/80 hover:text-primary transition-colors">
-                    Esta Semana
-                </button>
-                <button id="btn-reconciliation" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-secondary hover:bg-secondary/10 hover:border-secondary/30 transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">account_balance</span>
+
+                <!-- Conciliação (Reconciliation) button -->
+                <button id="btn-reconciliation" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-secondary hover:bg-secondary/10 hover:border-secondary/30 transition-all flex items-center gap-2 shrink-0">
+                    <span class="material-symbols-outlined text-sm">upload</span>
                     Conciliação
                 </button>
+
+                <!-- Export button -->
+                <button id="btn-export" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-primary hover:bg-primary/10 hover:border-primary/30 transition-all flex items-center gap-2 shrink-0">
+                    <span class="material-symbols-outlined text-sm">download</span>
+                    Exportar
+                </button>
+
+                <!-- View Mode Toggle -->
+                <button id="btn-toggle-view" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-primary hover:bg-primary/10 hover:border-primary/30 transition-all flex items-center gap-2 shrink-0" title="Alternar Visualização">
+                    <span id="view-mode-icon" class="material-symbols-outlined text-sm">view_list</span>
+                    <span id="view-mode-text">Lista</span>
+                </button>
             </div>
-            <div class="glass-card flex items-center px-4 py-2 rounded-xl border-white/10 w-full md:w-64">
-                <span class="material-symbols-outlined text-on-surface-variant mr-2" data-icon="search">search</span>
-                <input
-                    class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full p-0 placeholder:text-on-surface-variant/50"
-                    placeholder="Buscar OS ou cliente..." type="text">
+
+            <!-- Search Input Block -->
+            <div class="w-full flex justify-stretch sm:justify-start">
+                <div class="glass-card flex items-center px-4 py-2 rounded-xl border-white/10 w-full sm:w-64">
+                    <span class="material-symbols-outlined text-on-surface-variant mr-2" data-icon="search">search</span>
+                    <input id="search-input" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full p-0 placeholder:text-on-surface-variant/50" placeholder="Buscar OS ou cliente..." type="text">
+                </div>
             </div>
         </section>
         <!-- Reservations List -->
         <div id="reservations-list-container" class="space-y-4"></div>
         <!-- Pagination/Load More -->
         <div class="mt-stack-gap-md text-center">
-            <button
-                class="px-8 py-3 glass-card rounded-xl text-on-surface font-semibold hover:bg-white/10 transition-all">
-                Ver reservas de Julho
+            <button id="btn-load-julho" class="px-8 py-3 glass-card rounded-xl text-on-surface font-semibold hover:bg-white/10 transition-all">
+                Ver todas as reservas
             </button>
         </div>
     </main>
@@ -223,7 +259,86 @@
         </div>
     </div>
 
+    <!-- Edit Reservation Modal -->
+    <div id="edit-reservation-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-card w-[90%] max-w-[500px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Editar Reserva</h3>
+                    <p class="text-on-surface-variant text-sm mt-1">Ajuste os dados desta ordem de serviço.</p>
+                </div>
+                <button id="close-edit-modal" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <form id="edit-reservation-form" class="flex flex-col gap-4">
+                <input type="hidden" id="edit-reserva-id" />
+                <!-- Cliente -->
+                <div class="flex flex-col gap-unit">
+                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Cliente</label>
+                    <div class="relative group">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">domain</span>
+                        <input id="edit-client-name" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Nome do cliente..." required />
+                    </div>
+                </div>
+
+                <!-- Data e Hora -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Data</label>
+                        <div class="relative">
+                            <input id="edit-date-display" class="glass-input w-full h-12 px-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="DD/MM/AAAA" type="text" maxlength="10" required />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Horário</label>
+                        <div class="relative">
+                            <input id="edit-time-display" class="glass-input w-full h-12 px-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="HH:MM" type="text" maxlength="5" required />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nº OS/Voucher e Nº Reserva -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
+                            <input id="edit-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" required />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
+                            <input id="edit-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" required />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="flex flex-col gap-unit">
+                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Observações</label>
+                    <div class="relative group">
+                        <span class="material-symbols-outlined absolute left-4 top-3 text-on-surface-variant group-focus-within:text-primary transition-colors">notes</span>
+                        <textarea id="edit-notes" class="glass-input w-full pl-12 pr-4 py-2.5 rounded-xl text-on-surface placeholder:text-on-surface-variant/40 h-20 resize-none" placeholder="Observações adicionais..."></textarea>
+                    </div>
+                </div>
+
+                <!-- CTA Submit Button -->
+                <button type="submit" id="btn-edit-submit" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-12 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2">
+                    <span>Salvar Alterações</span>
+                    <span class="material-symbols-outlined text-lg">check</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
     <script src="navigation.js"></script>
@@ -238,15 +353,133 @@
             });
         });
 
+        let allReservations = [];
+        let statusFilter = 'Todos'; // 'Todos', 'Pendente', 'Paga'
+        let dateRangeFilter = 'Todos'; // 'Todos', '7D', '15D', '30D', 'anterior', 'custom'
+        let sortOrder = 'desc'; // 'desc' (most recent first) or 'asc' (oldest first)
+        let searchQuery = '';
+        let currentFilteredReservations = [];
+        let viewMode = localStorage.getItem('MAPAOS_VIEW_MODE') || 'list'; // 'cards' or 'list'
+
+        function parseItemDate(dateStr) {
+            if (dateStr && dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+            }
+            return new Date(0);
+        }
+
+        function parseItemDateTime(dateStr, timeStr) {
+            if (!dateStr) return new Date(0);
+            const dateParts = dateStr.includes('/') ? dateStr.split('/') : [];
+            if (dateParts.length === 3) {
+                const timeParts = (timeStr && timeStr.includes(':')) ? timeStr.split(':') : ['00', '00'];
+                return new Date(Number(dateParts[2]), Number(dateParts[1]) - 1, Number(dateParts[0]), Number(timeParts[0]), Number(timeParts[1]));
+            }
+            return new Date(0);
+        }
+
         // Render reservations dynamically from database helper
-        async function loadAndRenderReservations() {
+        async function loadAndRenderReservations(forceReload = true) {
             const container = document.getElementById('reservations-list-container');
             if (!container) return;
 
-            const reservations = await dbGetReservations();
+            if (forceReload || allReservations.length === 0) {
+                allReservations = await dbGetReservations();
+            }
             container.innerHTML = '';
 
-            reservations.forEach((item, index) => {
+            // Apply in-memory filters
+            let filtered = allReservations;
+
+            // 1. Status Filter
+            if (statusFilter !== 'Todos') {
+                filtered = filtered.filter(item => item.status === statusFilter);
+            }
+
+            // 2. Date Range Filter
+            if (dateRangeFilter !== 'Todos') {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+
+                if (dateRangeFilter === '7D') {
+                    const limitDate = new Date();
+                    limitDate.setDate(today.getDate() - 7);
+                    limitDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= limitDate && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === '15D') {
+                    const limitDate = new Date();
+                    limitDate.setDate(today.getDate() - 15);
+                    limitDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= limitDate && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === '30D') {
+                    const limitDate = new Date();
+                    limitDate.setDate(today.getDate() - 30);
+                    limitDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= limitDate && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === 'anterior') {
+                    const firstDayPrevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastDayPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= firstDayPrevMonth && itemDate <= lastDayPrevMonth;
+                    });
+                } else if (dateRangeFilter === 'custom') {
+                    const startVal = document.getElementById('custom-start-date').value;
+                    const endVal = document.getElementById('custom-end-date').value;
+                    if (startVal && endVal) {
+                        const startDate = new Date(startVal + 'T00:00:00');
+                        const endDate = new Date(endVal + 'T23:59:59');
+                        filtered = filtered.filter(item => {
+                            const itemDate = parseItemDate(item.date);
+                            return itemDate >= startDate && itemDate <= endDate;
+                        });
+                    }
+                }
+            }
+
+            // 3. Search Filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(item => 
+                    item.client_name.toLowerCase().includes(query) || 
+                    item.os_number.toLowerCase().includes(query) ||
+                    (item.reserva_number && item.reserva_number.toLowerCase().includes(query))
+                );
+            }
+
+            // 4. Sort Filter (Crescente / Decrescente por Data e Horário)
+            filtered.sort((a, b) => {
+                const dateTimeA = parseItemDateTime(a.date, a.time);
+                const dateTimeB = parseItemDateTime(b.date, b.time);
+                return sortOrder === 'desc' ? dateTimeB - dateTimeA : dateTimeA - dateTimeB;
+            });
+
+            // Update Toggle View Button icon and text dynamically
+            const btnToggleView = document.getElementById('btn-toggle-view');
+            const viewModeIcon = document.getElementById('view-mode-icon');
+            const viewModeText = document.getElementById('view-mode-text');
+            if (viewModeIcon && viewModeText) {
+                if (viewMode === 'cards') {
+                    viewModeIcon.textContent = 'view_list';
+                    viewModeText.textContent = 'Lista';
+                } else {
+                    viewModeIcon.textContent = 'grid_view';
+                    viewModeText.textContent = 'Cards';
+                }
+            }
+
+            container.innerHTML = '';
+            filtered.forEach((item, index) => {
                 const isPaid = item.status === 'Paga';
                 const borderBg = isPaid ? 'bg-secondary' : 'bg-orange-400';
                 const iconWrapperColor = isPaid 
@@ -270,34 +503,101 @@
                     }
                 }
 
-                const itemHTML = `
-                    <div class="glass-card glass-card-hover p-5 rounded-2xl relative overflow-hidden group"
-                        style="opacity: 0; transform: translateY(20px); transition: all 0.5s ease-out;">
-                        <div class="absolute top-0 left-0 w-1 h-full ${borderBg}"></div>
-                        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                            <div class="flex gap-4 items-center">
-                                <div class="w-12 h-12 rounded-xl ${iconWrapperColor} flex items-center justify-center border">
-                                    <span class="material-symbols-outlined" data-icon="${iconName}">${iconName}</span>
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-label-sm text-on-surface-variant text-xs opacity-60">OS #${item.os_number}</span>
-                                        <span class="px-2 py-0.5 rounded-md ${badgeColor} text-[10px] font-bold uppercase tracking-wider">${item.status}</span>
+                let itemHTML = '';
+                if (viewMode === 'list') {
+                    // Simple compact square list row
+                    itemHTML = `
+                        <div class="glass-card p-2 rounded-none relative overflow-hidden flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs mb-1 hover:bg-white/10 transition-colors duration-200"
+                            style="opacity: 0; transform: translateY(10px); transition: all 0.3s ease-out; border-left: 2.5px solid ${isPaid ? '#00f5be' : '#fb923c'}">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="px-1.5 py-0.5 rounded-sm ${badgeColor} text-[8px] font-bold uppercase tracking-wider shrink-0">${item.status}</span>
+                                <div class="flex flex-col gap-0.5 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold text-on-surface text-xs shrink-0">${item.client_name}</span>
+                                        <span class="text-on-surface-variant/60 font-medium shrink-0">OS: #${item.os_number} • Res: #${item.reserva_number}</span>
                                     </div>
-                                    <h3 class="font-headline-lg-mobile text-lg text-on-surface">${item.client_name}</h3>
-                                    <p class="font-body-md text-sm text-on-surface-variant">${formattedDate} • ${item.time}</p>
+                                    <div class="text-[10px] text-on-surface-variant/70 flex items-center gap-2 flex-wrap">
+                                        <span>${item.date} • ${item.time}</span>
+                                        ${item.driver || item.plate ? `<span class="opacity-30">|</span>` : ''}
+                                        ${item.driver ? `<span>Mot: ${item.driver}</span>` : ''}
+                                        ${item.plate ? `<span>Placa: ${item.plate}</span>` : ''}
+                                        ${item.notes ? `<span class="opacity-30">|</span><span class="italic text-primary-fixed-dim/80 truncate max-w-[200px]">Obs: ${item.notes}</span>` : ''}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between md:flex-col md:items-end md:gap-1 border-t border-white/5 pt-4 md:pt-0 md:border-none">
-                                <span class="font-label-sm text-on-surface-variant text-xs md:hidden">Valor Total</span>
-                                <div class="text-right">
-                                    <span class="${valueColor}">R$ ${item.value || '—'}</span>
-                                    <p class="text-[10px] text-on-surface-variant/50 hidden md:block">${subtext}</p>
+                            <div class="flex items-center justify-between sm:justify-end gap-3 border-t border-white/5 pt-2 sm:pt-0 sm:border-none shrink-0">
+                                <div class="text-right flex items-center gap-3 shrink-0">
+                                    <span class="${valueColor.replace('text-xl', 'text-xs')} font-semibold">Total: R$ ${item.value || '—'}</span>
+                                    ${isPaid && item.net_value ? `<span class="text-[10px] text-secondary font-medium">Liq: R$ ${item.net_value}</span>` : ''}
+                                </div>
+                                <div class="flex gap-1 shrink-0">
+                                    <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-1 rounded bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all flex items-center justify-center" title="Editar">
+                                        <span class="material-symbols-outlined text-[10px]">edit</span>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="p-1 rounded bg-white/5 border border-white/10 hover:bg-red-500/10 text-error transition-all flex items-center justify-center" title="Excluir">
+                                        <span class="material-symbols-outlined text-[10px]">delete</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // Premium card layout (current default)
+                    let extraDetailsHTML = '';
+                    if (isPaid) {
+                        const plateHTML = item.plate ? `<span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-on-surface-variant text-[10px]">Placa: ${item.plate}</span>` : '';
+                        const driverHTML = item.driver ? `<span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-on-surface-variant text-[10px]">Motorista: ${item.driver}</span>` : '';
+                        extraDetailsHTML = `
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                ${plateHTML}
+                                ${driverHTML}
+                            </div>
+                        `;
+                    }
+
+                    itemHTML = `
+                        <div class="glass-card glass-card-hover p-5 rounded-2xl relative overflow-hidden group"
+                            style="opacity: 0; transform: translateY(20px); transition: all 0.5s ease-out;">
+                            <div class="absolute top-0 left-0 w-1 h-full ${borderBg}"></div>
+                            <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                                <div class="flex gap-4 items-center">
+                                    <div class="w-12 h-12 rounded-xl ${iconWrapperColor} flex items-center justify-center border">
+                                        <span class="material-symbols-outlined" data-icon="${iconName}">${iconName}</span>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-label-sm text-on-surface-variant text-xs opacity-60">OS #${item.os_number} • Reserva: #${item.reserva_number}</span>
+                                            <span class="px-2 py-0.5 rounded-md ${badgeColor} text-[10px] font-bold uppercase tracking-wider">${item.status}</span>
+                                        </div>
+                                        <h3 class="font-headline-lg-mobile text-lg text-on-surface">${item.client_name}</h3>
+                                        <p class="font-body-md text-sm text-on-surface-variant">${formattedDate} • ${item.time}</p>
+                                        ${item.notes ? `<p class="text-xs text-on-surface-variant/80 italic mt-2 bg-white/5 border border-white/5 rounded-lg p-2.5 flex items-start gap-1.5 max-w-sm"><span class="material-symbols-outlined text-xs mt-0.5" style="font-size: 14px;">notes</span><span>Obs: ${item.notes}</span></p>` : ''}
+                                        ${extraDetailsHTML}
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between md:flex-col md:items-end md:gap-2 border-t border-white/5 pt-4 md:pt-0 md:border-none">
+                                    <div class="flex justify-between items-center w-full md:flex-col md:items-end md:gap-1">
+                                        <span class="font-label-sm text-on-surface-variant text-xs md:hidden">Valores</span>
+                                        <div class="text-right flex flex-col items-end">
+                                            <span class="${valueColor}">Total: R$ ${item.value || '—'}</span>
+                                            ${isPaid && item.net_value ? `<span class="text-[11px] text-secondary/90 font-medium">Líquido (70%): R$ ${item.net_value}</span>` : ''}
+                                            <p class="text-[10px] text-on-surface-variant/50 hidden md:block mt-0.5">${subtext}</p>
+                                        </div>
+                                    </div>
+                                    <!-- Action Buttons -->
+                                    <div class="flex gap-2 mt-2 md:mt-1">
+                                        <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all flex items-center justify-center" title="Editar">
+                                            <span class="material-symbols-outlined text-sm">edit</span>
+                                        </button>
+                                        <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center" title="Excluir">
+                                            <span class="material-symbols-outlined text-sm">delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
                 container.insertAdjacentHTML('beforeend', itemHTML);
                 
                 // Fade in animation
@@ -318,8 +618,240 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadAndRenderReservations();
+            loadAndRenderReservations(true);
+
+            // Wire filter event listeners
+            const selectDate = document.getElementById('select-date-filter');
+            const customDateContainer = document.getElementById('custom-date-container');
+            const customStartDate = document.getElementById('custom-start-date');
+            const customEndDate = document.getElementById('custom-end-date');
+            const selectSort = document.getElementById('select-sort-order');
+
+            const btnStatus = document.getElementById('btn-status-filter');
+            const txtStatus = document.getElementById('status-filter-text');
+            const searchInput = document.getElementById('search-input');
+            const btnLoadAll = document.getElementById('btn-load-julho');
+
+            // 1. Date Range Selector Trigger
+            if (selectDate) {
+                selectDate.addEventListener('change', (e) => {
+                    dateRangeFilter = e.target.value;
+                    
+                    if (dateRangeFilter === 'custom') {
+                        if (customDateContainer) customDateContainer.classList.remove('hidden');
+                    } else {
+                        if (customDateContainer) customDateContainer.classList.add('hidden');
+                        if (customStartDate) customStartDate.value = '';
+                        if (customEndDate) customEndDate.value = '';
+                        loadAndRenderReservations(false);
+                    }
+                });
+            }
+
+            // Custom date picker events
+            if (customStartDate) {
+                customStartDate.addEventListener('change', () => loadAndRenderReservations(false));
+            }
+            if (customEndDate) {
+                customEndDate.addEventListener('change', () => loadAndRenderReservations(false));
+            }
+
+            // 2. Sort Selector Trigger
+            if (selectSort) {
+                selectSort.addEventListener('change', (e) => {
+                    sortOrder = e.target.value;
+                    loadAndRenderReservations(false);
+                });
+            }
+
+            // 3. Status Filter Trigger (remains configured)
+            if (btnStatus) {
+                btnStatus.addEventListener('click', () => {
+                    if (statusFilter === 'Todos') {
+                        statusFilter = 'Pendente';
+                        txtStatus.textContent = 'Status: Pendente';
+                        btnStatus.classList.add('border-orange-400/40', 'text-orange-400');
+                        btnStatus.classList.remove('text-on-surface-variant/80');
+                    } else if (statusFilter === 'Pendente') {
+                        statusFilter = 'Paga';
+                        txtStatus.textContent = 'Status: Pago';
+                        btnStatus.classList.add('border-secondary/40', 'text-secondary');
+                        btnStatus.classList.remove('border-orange-400/40', 'text-orange-400');
+                    } else {
+                        statusFilter = 'Todos';
+                        txtStatus.textContent = 'Todos Status';
+                        btnStatus.classList.remove('border-secondary/40', 'text-secondary');
+                        btnStatus.classList.add('text-on-surface-variant/80');
+                    }
+                    loadAndRenderReservations(false);
+                });
+            }
+
+            // 4. Search Filter Input Trigger
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.trim();
+                    loadAndRenderReservations(false);
+                });
+            }
+
+            // 5. Reset All Filters Trigger
+            if (btnLoadAll) {
+                btnLoadAll.addEventListener('click', () => {
+                    statusFilter = 'Todos';
+                    dateRangeFilter = 'Todos';
+                    sortOrder = 'desc';
+                    searchQuery = '';
+                    if (selectDate) selectDate.value = 'Todos';
+                    if (selectSort) selectSort.value = 'desc';
+                    if (searchInput) searchInput.value = '';
+                    
+                    if (customDateContainer) customDateContainer.classList.add('hidden');
+                    if (customStartDate) customStartDate.value = '';
+                    if (customEndDate) customEndDate.value = '';
+                    
+                    // Reset status styling
+                    if (btnStatus) {
+                        btnStatus.classList.remove('border-secondary/40', 'text-secondary', 'border-orange-400/40', 'text-orange-400');
+                        btnStatus.classList.add('text-on-surface-variant/80');
+                        txtStatus.textContent = 'Todos Status';
+                    }
+                    loadAndRenderReservations(true);
+                });
+            }
+
+            // Export Selector Trigger
+            const btnExport = document.getElementById('btn-export');
+            if (btnExport) {
+                btnExport.addEventListener('click', exportReservationsToPDF);
+            }
+
+            // View Mode Toggle Trigger
+            const btnToggleView = document.getElementById('btn-toggle-view');
+            if (btnToggleView) {
+                btnToggleView.addEventListener('click', () => {
+                    viewMode = viewMode === 'cards' ? 'list' : 'cards';
+                    localStorage.setItem('MAPAOS_VIEW_MODE', viewMode);
+                    loadAndRenderReservations(false);
+                });
+            }
         });
+
+        // Export active filtered reservations to a styled PDF Relatório
+        async function exportReservationsToPDF() {
+            if (!currentFilteredReservations || currentFilteredReservations.length === 0) {
+                alert('Não há registros para exportar com os filtros atuais.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            // 1. Add Branding Header Banner
+            doc.setFillColor(11, 19, 38); // Dark brand background
+            doc.rect(0, 0, 210, 36, 'F');
+
+            // Brand title text
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.text("Mapa.OS", 15, 18);
+
+            // Subtitle
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(150, 160, 180);
+            doc.text("Interface de Reservas Inteligente • Relatório Financeiro", 15, 26);
+
+            // Generation Date
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.text(`Gerado em: ${dateStr}`, 145, 26);
+
+            // 2. Add Filters Description Section
+            doc.setTextColor(11, 19, 38);
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Filtros Ativos no Relatório:", 15, 46);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(70, 80, 95);
+
+            let filterText = `Período: ${dateRangeFilter === 'Todos' ? 'Todas as Datas' : dateRangeFilter}`;
+            filterText += `   |   Status: ${statusFilter}`;
+            if (searchQuery) {
+                filterText += `   |   Busca: "${searchQuery}"`;
+            }
+            doc.text(filterText, 15, 52);
+
+            // Divider Line
+            doc.setDrawColor(220, 225, 235);
+            doc.line(15, 58, 195, 58);
+
+            // 3. Prepare Table Headers and Rows
+            const tableHeaders = [["O.S.", "Reserva", "Data/Hora", "Cliente", "Motorista / Placa", "Total", "Líquido (70%)", "Status"]];
+            const tableRows = currentFilteredReservations.map(item => {
+                const driverPlate = [item.driver || '—', item.plate ? `(${item.plate})` : ''].filter(Boolean).join(' ');
+                return [
+                    item.os_number || '—',
+                    item.reserva_number || '—',
+                    `${item.date} às ${item.time}`,
+                    item.client_name || '—',
+                    driverPlate || '—',
+                    item.value ? `R$ ${item.value}` : '—',
+                    item.net_value ? `R$ ${item.net_value}` : '—',
+                    item.status
+                ];
+            });
+
+            // 4. Generate Table
+            doc.autoTable({
+                startY: 64,
+                head: tableHeaders,
+                body: tableRows,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [11, 19, 38],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 8.5
+                },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 2.5,
+                    valign: 'middle'
+                },
+                columnStyles: {
+                    0: { cellWidth: 15 },
+                    1: { cellWidth: 18 },
+                    2: { cellWidth: 26 },
+                    3: { cellWidth: 38 },
+                    4: { cellWidth: 38 },
+                    5: { cellWidth: 20 },
+                    6: { cellWidth: 22 },
+                    7: { cellWidth: 15 }
+                },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && data.column.index === 7) {
+                        const val = data.cell.raw;
+                        if (val === 'Paga') {
+                            data.cell.styles.textColor = [16, 185, 129]; // Clean green
+                            data.cell.styles.fontStyle = 'bold';
+                        } else {
+                            data.cell.styles.textColor = [249, 115, 22]; // Clean orange
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                }
+            });
+
+            // 5. Download the finished PDF file
+            const today = new Date().toISOString().slice(0, 10);
+            doc.save(`relatorio_reservas_${today}.pdf`);
+        }
 
         // Reconciliation Modal Behavior
         const reconModal = document.getElementById('reconciliation-modal');
@@ -396,14 +928,46 @@
             });
         }
 
+        let uploadedFileObject = null;
+
         function handleFileSelect(file) {
+            uploadedFileObject = file;
             if (fileText) fileText.innerText = `Arquivo: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
             if (submitReconBtn) submitReconBtn.classList.remove('opacity-50', 'pointer-events-none');
         }
 
-        // Process reconciliation simulation
+        function parseCurrency(val) {
+            if (val === undefined || val === null) return 0;
+            if (typeof val === 'number') return val;
+            
+            let s = val.toString().trim();
+            s = s.replace(/R\$\s?/g, ''); // Remove R$
+            
+            // If it has a comma, it is Brazilian format (e.g. "1.250,50" or "75,74")
+            if (s.includes(',')) {
+                s = s.replace(/\./g, '').replace(',', '.');
+            }
+            // If it has no comma but has a dot, determine if it's a thousands separator (e.g. "1.000") or decimal dot (e.g. "75.74")
+            else if (s.includes('.')) {
+                const parts = s.split('.');
+                const lastPart = parts[parts.length - 1];
+                if (lastPart.length === 3) {
+                    s = s.replace(/\./g, ''); // Thousands separator
+                }
+            }
+            
+            const parsed = parseFloat(s);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+
+        // Process reconciliation upload file
         if (submitReconBtn) {
             submitReconBtn.addEventListener('click', () => {
+                if (!uploadedFileObject) {
+                    alert('Por favor, selecione ou arraste um arquivo primeiro.');
+                    return;
+                }
+
                 const originalText = submitReconBtn.innerHTML;
                 submitReconBtn.innerHTML = `
                     <svg class="animate-spin h-5 w-5 text-surface" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -412,33 +976,214 @@
                     </svg>
                     <span class="ml-2 text-surface">Conciliando...</span>
                 `;
+                submitReconBtn.disabled = true;
 
-                setTimeout(() => {
-                    closeReconModal();
-                    
-                    const loader = document.getElementById('global-loader');
-                    if (loader) {
-                        loader.style.display = 'flex';
-                        loader.offsetHeight;
-                        loader.classList.remove('opacity-0', 'pointer-events-none');
-                    }
+                const reader = new FileReader();
+                reader.onerror = () => {
+                    alert('Erro ao ler o arquivo.');
+                    submitReconBtn.innerHTML = originalText;
+                    submitReconBtn.disabled = false;
+                };
 
-                    setTimeout(() => {
-                        if (loader) {
-                            loader.classList.add('opacity-0', 'pointer-events-none');
-                            setTimeout(() => loader.style.display = 'none', 500);
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Convert worksheet cells to nested arrays
+                        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        const records = [];
+
+                        if (rows.length < 2) {
+                            alert('O arquivo selecionado está vazio ou inválido.');
+                            submitReconBtn.innerHTML = originalText;
+                            submitReconBtn.disabled = false;
+                            return;
                         }
-                        submitReconBtn.innerHTML = originalText;
 
-                        // Execute Reconciliation in Supabase / mock LocalStorage DB
-                        dbReconcileReservations().then(reconciledCount => {
-                            loadAndRenderReservations();
-                            alert(`${reconciledCount} reservas pendentes foram conciliadas com sucesso!`);
-                        });
-                    }, 1500);
-                }, 1000);
+                        // Loop through worksheet rows (skipping headers at row 0)
+                        for (let i = 1; i < rows.length; i++) {
+                            const cols = rows[i];
+                            if (!cols || cols.length < 8) continue; // sequence: Placa - Motorista - OS - Reserva - Data - Cliente - Hora - Total
+
+                            const plate = cols[0] ? cols[0].toString().trim() : '';
+                            const driver = cols[1] ? cols[1].toString().trim() : '';
+                            const os = cols[2] ? cols[2].toString().trim() : '';
+                            const reserva = cols[3] ? cols[3].toString().trim() : '';
+                            const date = cols[4] ? cols[4].toString().trim() : '';
+                            const client = cols[5] ? cols[5].toString().trim() : '';
+                            const hour = cols[6] ? cols[6].toString().trim() : '';
+                            
+                            const totalStr = cols[7] ? cols[7].toString().trim() : '0';
+                            const totalVal = parseCurrency(totalStr);
+                            
+                            // Net Value calculation logic: Deduct 30% fee, keep 70% of Total value
+                            const netVal = totalVal * 0.70;
+
+                            records.push({
+                                plate,
+                                driver,
+                                os,
+                                reserva,
+                                date,
+                                client,
+                                hour,
+                                total: totalVal,
+                                netValue: netVal
+                            });
+                        }
+
+                        const loader = document.getElementById('global-loader');
+                        if (loader) {
+                            loader.style.display = 'flex';
+                            loader.offsetHeight;
+                            loader.classList.remove('opacity-0', 'pointer-events-none');
+                        }
+
+                        setTimeout(() => {
+                            // Execute reconciliation query with parsed records
+                            dbReconcileReservations(records).then(result => {
+                                if (loader) {
+                                    loader.classList.add('opacity-0', 'pointer-events-none');
+                                    setTimeout(() => loader.style.display = 'none', 500);
+                                }
+                                
+                                submitReconBtn.innerHTML = originalText;
+                                submitReconBtn.disabled = false;
+                                
+                                if (result && !result.success) {
+                                    if (result.validationError) {
+                                        // Alert user specifying the missing reservation numbers
+                                        alert(`CONCILIAÇÃO ABORTADA!\n\nO motivo é que as seguintes reservas importadas da planilha não constam cadastradas no sistema:\n\n• ${result.missing.join('\n• ')}\n\nNenhuma alteração foi salva no banco de dados.`);
+                                    } else {
+                                        alert(`Erro na conciliação: ${result.error}`);
+                                    }
+                                    return;
+                                }
+                                
+                                closeReconModal();
+                                loadAndRenderReservations(true);
+                                alert(`Conciliação concluída com sucesso! ${result.count} reservas foram localizadas e pagas.`);
+                            });
+                        }, 1000);
+
+                    } catch (xlsxErr) {
+                        console.error('SheetJS parse error:', xlsxErr);
+                        alert('Erro ao processar a planilha. Verifique se o arquivo está corrompido ou em formato inválido.');
+                        submitReconBtn.innerHTML = originalText;
+                        submitReconBtn.disabled = false;
+                    }
+                };
+
+                reader.readAsArrayBuffer(uploadedFileObject);
             });
         }
+
+        // Edit Modal DOM Wires
+        const editModal = document.getElementById('edit-reservation-modal');
+        const closeEditBtn = document.getElementById('close-edit-modal');
+        const editForm = document.getElementById('edit-reservation-form');
+
+        window.openEditModal = function(id) {
+            const item = allReservations.find(r => r.id === id);
+            if (item && editModal) {
+                document.getElementById('edit-reserva-id').value = item.id;
+                document.getElementById('edit-client-name').value = item.client_name;
+                document.getElementById('edit-date-display').value = item.date;
+                document.getElementById('edit-time-display').value = item.time;
+                document.getElementById('edit-os-number').value = item.os_number;
+                document.getElementById('edit-reserva-number').value = item.reserva_number;
+                document.getElementById('edit-notes').value = item.notes || '';
+
+                editModal.style.display = 'flex';
+                editModal.offsetHeight;
+                editModal.classList.remove('opacity-0', 'pointer-events-none');
+                const inner = editModal.querySelector('.glass-card');
+                if (inner) {
+                    inner.classList.remove('scale-95');
+                    inner.classList.add('scale-100');
+                }
+            }
+        };
+
+        window.closeEditModal = function() {
+            if (editModal) {
+                editModal.classList.add('opacity-0', 'pointer-events-none');
+                const inner = editModal.querySelector('.glass-card');
+                if (inner) {
+                    inner.classList.remove('scale-100');
+                    inner.classList.add('scale-95');
+                }
+                setTimeout(() => {
+                    editModal.style.display = 'none';
+                    if (editForm) editForm.reset();
+                }, 300);
+            }
+        };
+
+        if (closeEditBtn) {
+            closeEditBtn.addEventListener('click', window.closeEditModal);
+        }
+
+        if (editModal) {
+            editModal.addEventListener('click', (e) => {
+                if (e.target === editModal) {
+                    window.closeEditModal();
+                }
+            });
+        }
+
+        // Submit Edit Form Handler
+        if (editForm) {
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-reserva-id').value;
+                const client = document.getElementById('edit-client-name').value;
+                const date = document.getElementById('edit-date-display').value;
+                const time = document.getElementById('edit-time-display').value;
+                const os = document.getElementById('edit-os-number').value;
+                const reserva = document.getElementById('edit-reserva-number').value;
+                const notes = document.getElementById('edit-notes').value;
+
+                const submitBtn = document.getElementById('btn-edit-submit');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
+                submitBtn.disabled = true;
+
+                const result = await dbUpdateReservation(id, {
+                    client_name: client,
+                    date: date,
+                    time: time,
+                    os_number: os,
+                    reserva_number: reserva,
+                    notes: notes
+                });
+
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+
+                if (result) {
+                    window.closeEditModal();
+                    loadAndRenderReservations();
+                } else {
+                    alert('Erro ao atualizar a reserva. Tente novamente.');
+                }
+            });
+        }
+
+        // Delete Reservation Handler
+        window.doDeleteReservation = async function(id) {
+            if (confirm('Tem certeza que deseja excluir esta reserva permanentemente?')) {
+                const success = await dbDeleteReservation(id);
+                if (success) {
+                    loadAndRenderReservations();
+                } else {
+                    alert('Erro ao excluir a reserva.');
+                }
+            }
+        };
     </script>
 </body>
 

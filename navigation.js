@@ -25,6 +25,25 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Inject glass-input styles dynamically to guarantee dark premium aesthetics across all pages
+    const styleHTML = `
+        <style>
+            .glass-input {
+                background: rgba(255, 255, 255, 0.06) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                color: #dae2fd !important;
+                transition: all 0.2s ease !important;
+            }
+            .glass-input:focus {
+                outline: none !important;
+                border-color: #adc6ff !important;
+                box-shadow: 0 0 0 2px rgba(173,198,255,0.1) !important;
+                background: rgba(255, 255, 255, 0.08) !important;
+            }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', styleHTML);
+
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
 
@@ -112,15 +131,24 @@ document.addEventListener('DOMContentLoaded', () => {
                             <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
-                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" pattern="[0-9]*" required />
+                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" required />
                             </div>
                         </div>
                         <div class="flex flex-col gap-unit">
                             <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
-                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" pattern="[0-9]*" required />
+                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" required />
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="flex flex-col gap-unit">
+                        <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Observações</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-3 text-on-surface-variant group-focus-within:text-primary transition-colors">notes</span>
+                            <textarea id="modal-notes" class="glass-input w-full pl-12 pr-4 py-2.5 rounded-xl text-on-surface placeholder:text-on-surface-variant/40 h-20 resize-none" placeholder="Observações adicionais..."></textarea>
                         </div>
                     </div>
 
@@ -217,17 +245,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Retrieve user name from localStorage cache
+    const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+    let loggedUserName = 'Usuário';
+    if (loggedUserRaw) {
+        try {
+            const userObj = JSON.parse(loggedUserRaw);
+            loggedUserName = userObj.name || userObj.email.split('@')[0];
+        } catch (e) {
+            console.error('Error parsing logged user details:', e);
+        }
+    }
+
     // TopAppBar Template
     const topAppBarHTML = `
         <header class="fixed top-4 left-4 right-4 rounded-lg bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-xl shadow-black/20 z-50 flex justify-between items-center px-gutter h-16 w-[calc(100%-32px)] md:w-[calc(100%-80px)] mx-auto md:top-10 md:left-10 md:right-10 transition-transform">
-            <div class="flex items-center gap-4">
-                <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-white/20 active:scale-95 transition-all duration-300">
-                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu</span>
-                </button>
+            <div class="flex items-center gap-3">
                 <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-btn">
-                    <img src="img/mapaos-logo-sf.png" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
+                    <img src="img/mapaos-logo-sf.svg" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
                     <div class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim">
-                        Mapa.OS
+                        ${loggedUserName}
                     </div>
                 </div>
             </div>
@@ -238,16 +275,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     Painel
                 </a>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="historico_reserva.html" id="desktop-reservas">
-                    <span class="material-symbols-outlined mb-1">calendar_today</span>
+                    <span class="material-symbols-outlined mb-1">list_alt</span>
                     Reservas
+                </a>
+                <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="financeiro.html" id="desktop-financeiro">
+                    <span class="material-symbols-outlined mb-1">payments</span>
+                    Financeiro
                 </a>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="config.html" id="desktop-ajustes">
                     <span class="material-symbols-outlined mb-1">settings</span>
                     Ajustes
-                </a>
-                <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-error hover:text-red-400" href="login.html">
-                    <span class="material-symbols-outlined mb-1">logout</span>
-                    Sair
                 </a>
             </div>
             <!-- User Profile Avatar & Add button -->
@@ -255,8 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="desktop-add-btn" class="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform">
                     <span class="material-symbols-outlined font-bold">add</span>
                 </button>
-                <button id="nav-avatar-btn" class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden border border-white/20 active:scale-95 transition-all duration-300 flex items-center justify-center">
-                    <img alt="User avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-9OxAyqwJ75TjxlwFMxVaYkT-zVsm8lHTyuCzkqw5WO3sqZeQDGdvJKGaCXIAi-BVqiO7OudxzLmCXgDxJiiJ1-UFG7FCC7LAfEOu6kXJ04DXuzRPXG_JTqmMR22Pz6JwI5ZEFtxUJYhiDamCLYJQilTcso1WUG-pGgfJqJP0cOXJRD6gtOgE7e9GBJY8_bZS-WRDfYeuFYbHaND4SudpgdRSJUNpNr094blQf0leoS07D0pYW4G6">
+                <button id="nav-avatar-btn" class="w-10 h-10 rounded-full bg-white/5 border border-white/20 active:scale-95 transition-all duration-300 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-2xl">account_circle</span>
                 </button>
             </div>
         </header>
@@ -271,19 +308,19 @@ document.addEventListener('DOMContentLoaded', () => {
             </a>
             <!-- Reservas -->
             <a href="historico_reserva.html" id="mobile-reservas" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
-                <span class="material-symbols-outlined">calendar_today</span>
+                <span class="material-symbols-outlined">list_alt</span>
             </a>
             <!-- Botão Adicionar "+" -->
             <button id="mobile-add-btn" class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg shadow-primary/30 active:scale-95 transition-transform -translate-y-4">
                 <span class="material-symbols-outlined text-2xl font-bold">add</span>
             </button>
+            <!-- Financeiro -->
+            <a href="financeiro.html" id="mobile-financeiro" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
+                <span class="material-symbols-outlined">payments</span>
+            </a>
             <!-- Ajustes -->
             <a href="config.html" id="mobile-ajustes" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
                 <span class="material-symbols-outlined">settings</span>
-            </a>
-            <!-- Sair -->
-            <a href="login.html" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full hover:bg-white/10 transition-colors active:scale-90 text-error">
-                <span class="material-symbols-outlined">logout</span>
             </a>
         </nav>
     `;
@@ -358,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
         activeId = 'dashboard';
     } else if (pageName === 'historico_reserva.html') {
         activeId = 'reservas';
+    } else if (pageName === 'financeiro.html') {
+        activeId = 'financeiro';
     } else if (pageName === 'config.html') {
         activeId = 'ajustes';
     }
@@ -542,6 +581,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeVal = timeDisplay.value;
             const osVal = osInput.value;
             const resVal = resInput.value;
+            const notesInput = document.getElementById('modal-notes');
+            const notesVal = notesInput ? notesInput.value : '';
 
             // Save reservation to database
             dbCreateReservation({
@@ -549,7 +590,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 reserva_number: resVal,
                 client_name: clientName,
                 date: dateVal,
-                time: timeVal
+                time: timeVal,
+                notes: notesVal
             }).then(() => {
                 setTimeout(() => {
                     closeModal();
@@ -566,11 +608,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         submitBtn.innerHTML = originalContent;
 
-                        // If the render function exists in the current scope (historico_reserva.html), refresh list
-                        if (typeof loadAndRenderReservations === 'function') {
-                            loadAndRenderReservations();
+                        if (window.location.pathname.includes('historico_reserva.html')) {
+                            if (typeof loadAndRenderReservations === 'function') {
+                                loadAndRenderReservations();
+                            } else {
+                                window.location.reload();
+                            }
                         } else {
-                            alert('Reserva cadastrada com sucesso!');
+                            fadeInLoaderAndRedirect('historico_reserva.html');
                         }
                     }, 1000);
                 }, 800);

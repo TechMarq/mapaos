@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <!-- Favicon & PWA App Features -->
-    <link rel="icon" type="image/png" href="img/mapaos-logo-sf.png?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="img/mapaos-logo-sf.png?v=2">
+    <link rel="icon" type="image/svg+xml" href="img/mapaos-logo-sf.svg?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/mapaos-logo-sf.svg?v=2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
@@ -188,84 +188,72 @@
     </style>
 </head>
 
-<body class="text-on-surface font-body-md text-body-md antialiased pb-32 md:pb-8 pt-24 md:pt-28">
+<body class="text-on-surface font-body-md text-body-md antialiased pb-48 md:pb-12 pt-24 md:pt-28">
     <div class="ambient-glow"></div>
     <!-- TopAppBar -->
     <div id="top-app-bar"></div>
     <!-- Main Content -->
     <main class="max-w-[1200px] mx-auto px-container-padding-mobile md:px-container-padding-desktop">
-        <!-- Header Section -->
-        <div class="mb-stack-gap-md md:mb-stack-gap-lg">
-            <h1
-                class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">
-                Visão Geral</h1>
-            <p class="text-on-surface-variant mt-2">Sua atividade e métricas recentes.</p>
+        <!-- Header Section and Filters -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary-fixed-dim">Visão Geral</h1>
+                <p class="text-xs text-on-surface-variant">Sua atividade e métricas recentes.</p>
+            </div>
+            <!-- Period Filters -->
+            <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
+                <select id="filter-date-range" class="glass-card rounded-full px-4 py-2 text-xs font-semibold text-primary border-white/5 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all">
+                    <option value="Todos" class="bg-[#0b1326] text-on-surface" selected>Todas as Datas</option>
+                    <option value="7D" class="bg-[#0b1326] text-on-surface">Últimos 7 dias</option>
+                    <option value="15D" class="bg-[#0b1326] text-on-surface">Últimos 15 dias</option>
+                    <option value="30D" class="bg-[#0b1326] text-on-surface">Últimos 30 dias</option>
+                    <option value="mes" class="bg-[#0b1326] text-on-surface">Este Mês</option>
+                    <option value="custom" class="bg-[#0b1326] text-on-surface">Personalizado</option>
+                </select>
+                <!-- Custom Range Inputs -->
+                <div id="custom-date-container" class="hidden flex items-center gap-1.5 shrink-0">
+                    <input id="custom-start-date" class="glass-card rounded-full px-3 py-1.5 text-xs text-on-surface border-white/5 focus:ring-0 w-28" type="date">
+                    <span class="text-[10px] text-on-surface-variant">a</span>
+                    <input id="custom-end-date" class="glass-card rounded-full px-3 py-1.5 text-xs text-on-surface border-white/5 focus:ring-0 w-28" type="date">
+                </div>
+            </div>
         </div>
+
         <!-- Bento Grid for Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-gap-md md:mb-stack-gap-lg">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <!-- Total Reservations -->
-            <div
-                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
-                <div class="flex justify-between items-start">
-                    <span
-                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">TOTAL</span>
-                    <span class="material-symbols-outlined text-primary text-xl">book_online</span>
-                </div>
-                <div>
-                    <div id="stat-total" class="font-headline-lg-mobile text-headline-lg-mobile text-primary-fixed-dim">0</div>
-                </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">TOTAL</span>
+                <div id="stat-total" class="text-3xl font-extrabold text-primary-fixed-dim">0</div>
+                <span class="material-symbols-outlined text-primary text-lg absolute top-3.5 right-4 opacity-50">book_online</span>
             </div>
             <!-- Completed -->
-            <div
-                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
-                <div class="flex justify-between items-start">
-                    <span
-                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">CONCLUÍDOS</span>
-                    <span class="material-symbols-outlined text-secondary-fixed text-xl">check_circle</span>
-                </div>
-                <div>
-                    <div id="stat-completed" class="font-headline-lg-mobile text-headline-lg-mobile text-secondary-fixed">0</div>
-                </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">CONCLUÍDOS</span>
+                <div id="stat-completed" class="text-3xl font-extrabold text-secondary-fixed">0</div>
+                <span class="material-symbols-outlined text-secondary-fixed text-lg absolute top-3.5 right-4 opacity-50">check_circle</span>
             </div>
             <!-- Pending -->
-            <div
-                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
-                <div class="flex justify-between items-start">
-                    <span
-                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">PENDENTES</span>
-                    <span class="material-symbols-outlined text-tertiary-fixed text-xl">schedule</span>
-                </div>
-                <div>
-                    <div id="stat-pending" class="font-headline-lg-mobile text-headline-lg-mobile text-tertiary-fixed">0</div>
-                </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">PENDENTES</span>
+                <div id="stat-pending" class="text-3xl font-extrabold text-tertiary-fixed">0</div>
+                <span class="material-symbols-outlined text-tertiary-fixed text-lg absolute top-3.5 right-4 opacity-50">schedule</span>
             </div>
             <!-- Paid -->
-            <div
-                class="glass-card rounded-xl p-stack-gap-md flex flex-col justify-between h-[140px] hover:-translate-y-1 transition-transform duration-300">
-                <div class="flex justify-between items-start">
-                    <span
-                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">PAGOS</span>
-                    <span class="material-symbols-outlined text-secondary-container text-xl">payments</span>
-                </div>
-                <div>
-                    <div id="stat-paid" class="font-headline-lg-mobile text-headline-lg-mobile text-secondary-container">0</div>
-                </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">PAGOS</span>
+                <div id="stat-paid" class="text-3xl font-extrabold text-secondary-container">0</div>
+                <span class="material-symbols-outlined text-secondary-container text-lg absolute top-3.5 right-4 opacity-50">payments</span>
             </div>
         </div>
+
         <!-- Chart Section -->
-        <div class="glass-card rounded-[2rem] p-stack-gap-md md:p-stack-gap-lg w-full">
-            <div class="flex justify-between items-center mb-stack-gap-md">
-                <h2 class="font-body-md text-body-md font-semibold text-on-surface">Reservas por Dia</h2>
-                <div class="flex gap-2">
-                    <button
-                        class="font-label-sm text-label-sm px-3 py-1.5 rounded-full bg-primary/20 text-primary-fixed-dim border border-primary/30">Semana</button>
-                    <button
-                        class="font-label-sm text-label-sm px-3 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10 hover:bg-white/10 transition-colors">Mês</button>
-                </div>
+        <div class="glass-card rounded-[2rem] p-6 w-full mb-10">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xs font-bold text-on-surface uppercase tracking-wider flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-base">show_chart</span> Reservas por Dia da Semana</h2>
             </div>
-            <div class="relative h-[300px] w-full">
-                <canvas id="reservationsChart" width="300" height="300"
-                    style="display: block; box-sizing: border-box; height: 300px; width: 300px;"></canvas>
+            <div class="relative h-[250px] w-full">
+                <canvas id="reservationsChart"></canvas>
             </div>
         </div>
     </main>
@@ -276,121 +264,228 @@
     <script src="supabase.js"></script>
     <script src="navigation.js"></script>
     <script>
+        let allReservations = [];
+        let dateRangeFilter = 'Todos'; // Default: all dates
+        let reservationsChart = null;
+
         document.addEventListener('DOMContentLoaded', async function () {
-            let chartData = [0, 0, 0, 0, 0, 0, 0];
+            try {
+                const selectDate = document.getElementById('filter-date-range');
+                const customDateContainer = document.getElementById('custom-date-container');
+                const customStartDate = document.getElementById('custom-start-date');
+                const customEndDate = document.getElementById('custom-end-date');
 
-            // Update Bento Grid stats and chart data from Database
-            if (typeof dbGetReservations === 'function') {
-                try {
-                    const reservations = await dbGetReservations();
-                    const total = reservations.length;
-                    const paid = reservations.filter(r => r.status === 'Paga').length;
-                    const pending = reservations.filter(r => r.status === 'Pendente').length;
-                    
-                    document.getElementById('stat-total').innerText = total.toLocaleString('pt-BR');
-                    document.getElementById('stat-completed').innerText = paid.toLocaleString('pt-BR');
-                    document.getElementById('stat-pending').innerText = pending.toLocaleString('pt-BR');
-                    document.getElementById('stat-paid').innerText = paid.toLocaleString('pt-BR');
+                // Setup current month dates fallback
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+                
+                if (customStartDate) customStartDate.value = `${year}-${month}-01`;
+                if (customEndDate) customEndDate.value = `${year}-${month}-${lastDay}`;
 
-                    // Calculate Day of Week counts for chart
-                    reservations.forEach(r => {
-                        if (r.date && r.date.includes('/')) {
-                            const parts = r.date.split('/');
-                            if (parts.length === 3) {
-                                const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-                                let dayIndex = dateObj.getDay() - 1; // 0 (Monday) to 6 (Sunday)
-                                if (dayIndex === -1) dayIndex = 6;   // Sunday becomes 6
-                                if (dayIndex >= 0 && dayIndex <= 6) {
-                                    chartData[dayIndex]++;
-                                }
-                            }
+                // Initial load
+                if (typeof dbGetReservations === 'function') {
+                    allReservations = await dbGetReservations();
+                    calculateAndRenderDashboard();
+                }
+
+                // Event Listeners for Filters
+                if (selectDate) {
+                    selectDate.addEventListener('change', (e) => {
+                        dateRangeFilter = e.target.value;
+                        if (dateRangeFilter === 'custom') {
+                            customDateContainer.classList.remove('hidden');
+                        } else {
+                            customDateContainer.classList.add('hidden');
                         }
+                        calculateAndRenderDashboard();
                     });
-                } catch (err) {
-                    console.error('Error loading dashboard stats:', err);
+                }
+
+                if (customStartDate) customStartDate.addEventListener('change', calculateAndRenderDashboard);
+                if (customEndDate) customEndDate.addEventListener('change', calculateAndRenderDashboard);
+            } catch (err) {
+                console.error("Dashboard init error:", err);
+                alert("Erro ao iniciar painel: " + err.message);
+            }
+        });
+
+        // Date Parser helper
+        function parseItemDate(dateStr) {
+            if (dateStr && dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+            }
+            return new Date(0);
+        }
+
+        function calculateAndRenderDashboard() {
+            let filtered = allReservations;
+
+            // Apply Period Filters
+            if (dateRangeFilter !== 'Todos') {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+
+                if (dateRangeFilter === '7D') {
+                    const limitDate = new Date();
+                    limitDate.setDate(today.getDate() - 7);
+                    limitDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= limitDate && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === '15D') {
+                    const limitDate = new Date();
+                    limitDate.setDate(today.getDate() - 15);
+                    limitDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= limitDate && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === '30D') {
+                    const limitDate = new Date();
+                    limitDate.setDate(today.getDate() - 30);
+                    limitDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= limitDate && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === 'mes') {
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+                    filtered = filtered.filter(item => {
+                        const itemDate = parseItemDate(item.date);
+                        return itemDate >= startOfMonth && itemDate <= today;
+                    });
+                } else if (dateRangeFilter === 'custom') {
+                    const startVal = document.getElementById('custom-start-date').value;
+                    const endVal = document.getElementById('custom-end-date').value;
+                    if (startVal && endVal) {
+                        const startDate = new Date(startVal + 'T00:00:00');
+                        const endDate = new Date(endVal + 'T23:59:59');
+                        filtered = filtered.filter(item => {
+                            const itemDate = parseItemDate(item.date);
+                            return itemDate >= startDate && itemDate <= endDate;
+                        });
+                    }
                 }
             }
 
-            const ctx = document.getElementById('reservationsChart').getContext('2d');
+            // Calculations for Bento Grid
+            const total = filtered.length;
+            const paid = filtered.filter(r => r.status === 'Paga').length;
+            const pending = filtered.filter(r => r.status === 'Pendente').length;
+            
+            document.getElementById('stat-total').innerText = total.toLocaleString('pt-BR');
+            document.getElementById('stat-completed').innerText = paid.toLocaleString('pt-BR');
+            document.getElementById('stat-pending').innerText = pending.toLocaleString('pt-BR');
+            document.getElementById('stat-paid').innerText = paid.toLocaleString('pt-BR');
 
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            // Group by Day of Week for line chart
+            let chartData = [0, 0, 0, 0, 0, 0, 0];
+            filtered.forEach(r => {
+                if (r.date && r.date.includes('/')) {
+                    const parts = r.date.split('/');
+                    if (parts.length === 3) {
+                        const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                        let dayIndex = dateObj.getDay() - 1; // 0 (Monday) to 6 (Sunday)
+                        if (dayIndex === -1) dayIndex = 6;
+                        if (dayIndex >= 0 && dayIndex <= 6) {
+                            chartData[dayIndex]++;
+                        }
+                    }
+                }
+            });
+
+            // Update/Render Chart
+            const canvas = document.getElementById('reservationsChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
             gradient.addColorStop(0, 'rgba(75, 142, 255, 0.4)');
             gradient.addColorStop(1, 'rgba(75, 142, 255, 0.0)');
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-                    datasets: [{
-                        label: 'Reservas',
-                        data: chartData,
-                        borderColor: '#adc6ff',
-                        backgroundColor: gradient,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#adc6ff',
-                        pointBorderColor: '#0b1326',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(11, 19, 38, 0.8)',
-                            titleColor: '#dae2fd',
-                            bodyColor: '#c1c6d7',
-                            borderColor: 'rgba(255,255,255,0.1)',
-                            borderWidth: 1,
-                            padding: 12,
-                            displayColors: false,
-                            cornerRadius: 8
-                        }
+            if (reservationsChart) {
+                reservationsChart.data.datasets[0].data = chartData;
+                reservationsChart.update();
+            } else {
+                reservationsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                        datasets: [{
+                            label: 'Reservas',
+                            data: chartData,
+                            borderColor: '#adc6ff',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#adc6ff',
+                            pointBorderColor: '#0b1326',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4
+                        }]
                     },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
                             },
-                            ticks: {
-                                color: '#8b90a0',
-                                font: {
-                                    family: "'Inter', sans-serif",
-                                    size: 12
+                            tooltip: {
+                                backgroundColor: 'rgba(11, 19, 38, 0.8)',
+                                titleColor: '#dae2fd',
+                                bodyColor: '#c1c6d7',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false,
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#8b90a0',
+                                    font: {
+                                        family: "'Inter', sans-serif",
+                                        size: 11
+                                    }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)',
+                                    drawBorder: false,
+                                    borderDash: [5, 5]
+                                },
+                                ticks: {
+                                    color: '#8b90a0',
+                                    font: {
+                                        family: "'Inter', sans-serif",
+                                        size: 11
+                                    },
+                                    padding: 10
                                 }
                             }
                         },
-                        y: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.05)',
-                                drawBorder: false,
-                                borderDash: [5, 5]
-                            },
-                            ticks: {
-                                color: '#8b90a0',
-                                font: {
-                                    family: "'Inter', sans-serif",
-                                    size: 12
-                                },
-                                padding: 10
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    },
-                }
-            });
-        });
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                    }
+                });
+            }
+        }
     </script>
 
 

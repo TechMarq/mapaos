@@ -46,7 +46,8 @@ async function dbCreateReservation(reserva) {
                 date: reserva.date,
                 time: reserva.time,
                 status: 'Pendente',
-                value: '—'
+                value: '—',
+                notes: reserva.notes || null
             }])
             .select();
         if (error) throw error;
@@ -57,29 +58,135 @@ async function dbCreateReservation(reserva) {
     }
 }
 
-// Reconcile/liquidate all pending reservations
-async function dbReconcileReservations() {
-    if (!supabaseClientInstance) return 0;
+// Delete a reservation by ID
+async function dbDeleteReservation(reservaId) {
+    if (!supabaseClientInstance) return false;
     try {
-        const { data: pendings, error: getErr } = await supabaseClientInstance
+        const { error } = await supabaseClientInstance
             .from('reservations')
-            .select('id, os_number')
-            .eq('status', 'Pendente');
+            .delete()
+            .eq('id', reservaId);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase delete reservation error:', err);
+        return false;
+    }
+}
+
+// Update an existing reservation details
+async function dbUpdateReservation(reservaId, updates) {
+    if (!supabaseClientInstance) return null;
+    try {
+        const { data, error } = await supabaseClientInstance
+            .from('reservations')
+            .update({
+                client_name: updates.client_name,
+                date: updates.date,
+                time: updates.time,
+                os_number: updates.os_number,
+                reserva_number: updates.reserva_number,
+                notes: updates.notes || null
+            })
+            .eq('id', reservaId)
+            .select();
+        if (error) throw error;
+        return data[0];
+    } catch (err) {
+        console.error('Supabase update reservation error:', err);
+        return null;
+    }
+}
+
+// Reconcile pending reservations with uploaded spreadsheet data
+async function dbReconcileReservations(records) {
+    if (!supabaseClientInstance || !records || records.length === 0) {
+        return { success: false, error: 'Nenhum registro para conciliação.' };
+    }
+    
+    try {
+        // Fetch all existing reservations to cross-reference
+        const { data: dbReservations, error: getErr } = await supabaseClientInstance
+            .from('reservations')
+            .select('reserva_number, id, status');
         if (getErr) throw getErr;
 
-        let updatedCount = 0;
-        for (let item of pendings) {
-            const simulatedVal = (Math.floor(Math.random() * 1200) + 300).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const { error: updErr } = await supabaseClientInstance
-                .from('reservations')
-                .update({ status: 'Paga', value: simulatedVal })
-                .eq('id', item.id);
-            if (!updErr) updatedCount++;
+        // Map existing reservation numbers (normalized)
+        const dbResMap = new Map();
+        dbReservations.forEach(item => {
+            if (item.reserva_number) {
+                const cleanedNum = item.reserva_number.toString().replace(/\D/g, '').trim();
+                if (cleanedNum) {
+                    dbResMap.set(cleanedNum, item);
+                }
+            }
+        });
+
+        // Pre-validate all spreadsheet rows: check if Reserva exists in database
+        const missingReservations = [];
+        for (const record of records) {
+            const rawRes = record.reserva ? record.reserva.toString().trim() : '';
+            if (!rawRes) continue; // Skip empty cells
+
+            const cleanedRes = rawRes.replace(/\D/g, '').trim();
+            // Skip actual header row or other text fields containing no digits
+            if (!cleanedRes || rawRes.toLowerCase() === 'reserva') continue;
+
+            if (!dbResMap.has(cleanedRes)) {
+                missingReservations.push(rawRes);
+            }
         }
-        return updatedCount;
+
+        // If there are any missing reservations, ABORT the transaction and report them
+        if (missingReservations.length > 0) {
+            return {
+                success: false,
+                validationError: true,
+                missing: missingReservations,
+                error: `Importação Abortada: Algumas reservas na planilha não constam registradas no sistema.`
+            };
+        }
+
+        // All matched! Now execute the update operations
+        let reconciledCount = 0;
+        for (const record of records) {
+            const rawRes = record.reserva ? record.reserva.toString().trim() : '';
+            if (!rawRes) continue;
+
+            const cleanedRes = rawRes.replace(/\D/g, '').trim();
+            if (!cleanedRes || rawRes.toLowerCase() === 'reserva') continue;
+
+            const dbMatch = dbResMap.get(cleanedRes);
+            if (dbMatch) {
+                const totalVal = record.total || 0;
+                const netVal = record.netValue || 0;
+                const plateVal = record.plate ? record.plate.toString().trim() : '';
+                const driverVal = record.driver ? record.driver.toString().trim() : '';
+
+                const { error: updateErr } = await supabaseClientInstance
+                    .from('reservations')
+                    .update({
+                        status: 'Paga',
+                        value: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        net_value: netVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        plate: plateVal,
+                        driver: driverVal
+                    })
+                    .eq('id', dbMatch.id);
+                
+                if (updateErr) {
+                    console.error('Reconciliation update failed for reservation:', dbMatch.id, updateErr);
+                    throw updateErr;
+                }
+                reconciledCount++;
+            }
+        }
+
+        return { success: true, count: reconciledCount };
     } catch (err) {
         console.error('Supabase reconciliation error:', err);
-        return 0;
+        const errMsg = err.message || (typeof err === 'string' ? err : JSON.stringify(err));
+        return { success: false, error: `Erro de banco de dados: ${errMsg}` };
     }
 }
 
