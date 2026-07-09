@@ -259,6 +259,44 @@
         </div>
     </div>
 
+    <!-- Confirm Delete Code Modal -->
+    <div id="delete-confirm-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#060e20]/90 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+        <div class="glass-card w-[90%] max-w-[400px] p-6 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border border-red-500/30 bg-[#160b0e]/95">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-error flex items-center gap-2">
+                        <span class="material-symbols-outlined text-red-500">warning</span>
+                        Confirmar Exclusão
+                    </h3>
+                    <p class="text-on-surface-variant text-sm mt-1">Esta reserva já foi paga/consolidada. Para excluí-la, digite o código de segurança exibido abaixo.</p>
+                </div>
+                <button id="close-delete-confirm-btn" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="flex flex-col gap-4 items-center">
+                <div class="text-center py-3 px-6 bg-white/5 border border-white/10 rounded-xl w-full">
+                    <span class="text-on-surface-variant text-xs block mb-1">CÓDIGO DE CONFIRMAÇÃO</span>
+                    <span id="delete-confirm-code-display" class="text-3xl font-bold tracking-widest text-primary selection:bg-transparent">000000</span>
+                </div>
+                
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="delete-confirm-code-input" class="text-label-sm font-label-sm text-on-surface-variant text-center">Digite o código acima para prosseguir</label>
+                    <input id="delete-confirm-code-input" class="glass-input w-full h-12 text-center rounded-xl text-on-surface text-xl font-bold tracking-wider placeholder:text-on-surface-variant/40" placeholder="000000" type="text" maxlength="6" autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btn-delete-confirm-cancel" class="flex-1 h-12 rounded-xl border border-white/10 text-on-surface font-medium hover:bg-white/5 active:scale-[0.98] transition-all">Cancelar</button>
+                <button id="btn-delete-confirm-submit" class="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-1">
+                    <span>Excluir</span>
+                    <span class="material-symbols-outlined text-lg">delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Reservation Modal -->
     <div id="edit-reservation-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
         <div class="glass-card w-[90%] max-w-[500px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
@@ -305,7 +343,7 @@
                         <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
                         <div class="relative group">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
-                            <input id="edit-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" required />
+                            <input id="edit-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" />
                         </div>
                     </div>
                     <div class="flex flex-col gap-unit">
@@ -362,19 +400,37 @@
         let viewMode = localStorage.getItem('MAPAOS_VIEW_MODE') || 'list'; // 'cards' or 'list'
 
         function parseItemDate(dateStr) {
-            if (dateStr && dateStr.includes('/')) {
+            if (!dateStr) return new Date(0);
+            if (dateStr.includes('/')) {
                 const parts = dateStr.split('/');
                 return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+            } else if (dateStr.includes('-')) {
+                return new Date(`${dateStr}T00:00:00`);
             }
             return new Date(0);
         }
 
         function parseItemDateTime(dateStr, timeStr) {
             if (!dateStr) return new Date(0);
-            const dateParts = dateStr.includes('/') ? dateStr.split('/') : [];
-            if (dateParts.length === 3) {
+            let year, month, day;
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    day = Number(parts[0]);
+                    month = Number(parts[1]) - 1;
+                    year = Number(parts[2]);
+                }
+            } else if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    year = Number(parts[0]);
+                    month = Number(parts[1]) - 1;
+                    day = Number(parts[2]);
+                }
+            }
+            if (year !== undefined && month !== undefined && day !== undefined) {
                 const timeParts = (timeStr && timeStr.includes(':')) ? timeStr.split(':') : ['00', '00'];
-                return new Date(Number(dateParts[2]), Number(dateParts[1]) - 1, Number(dateParts[0]), Number(timeParts[0]), Number(timeParts[1]));
+                return new Date(year, month, day, Number(timeParts[0]), Number(timeParts[1]));
             }
             return new Date(0);
         }
@@ -447,12 +503,12 @@
                 }
             }
 
-            // 3. Search Filter
+            // 3. Search Filter (Safe checks for null/undefined strings)
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
                 filtered = filtered.filter(item => 
-                    item.client_name.toLowerCase().includes(query) || 
-                    item.os_number.toLowerCase().includes(query) ||
+                    (item.client_name && item.client_name.toLowerCase().includes(query)) || 
+                    (item.os_number && item.os_number.toLowerCase().includes(query)) ||
                     (item.reserva_number && item.reserva_number.toLowerCase().includes(query))
                 );
             }
@@ -492,12 +548,19 @@
                 const valueColor = isPaid ? 'text-secondary font-bold text-xl' : 'text-on-surface font-semibold text-xl opacity-80';
                 const subtext = isPaid ? 'Via Extrato • Conciliado' : 'Aguardando Confirmação';
                 
-                // Format date string from DD/MM/AAAA or similar
+                // Format date string from DD/MM/AAAA or YYYY-MM-DD
                 let formattedDate = item.date;
-                if (item.date && item.date.includes('/')) {
-                    const parts = item.date.split('/');
-                    if (parts.length === 3) {
-                        const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                if (item.date) {
+                    let dateObj = null;
+                    if (item.date.includes('/')) {
+                        const parts = item.date.split('/');
+                        if (parts.length === 3) {
+                            dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                        }
+                    } else if (item.date.includes('-')) {
+                        dateObj = new Date(`${item.date}T00:00:00`);
+                    }
+                    if (dateObj && !isNaN(dateObj.getTime())) {
                         const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
                         formattedDate = `${dateObj.getDate()} de ${months[dateObj.getMonth()]} de ${dateObj.getFullYear()}`;
                     }
@@ -1173,14 +1236,92 @@
             });
         }
 
-        // Delete Reservation Handler
-        window.doDeleteReservation = async function(id) {
-            if (confirm('Tem certeza que deseja excluir esta reserva permanentemente?')) {
-                const success = await dbDeleteReservation(id);
+        // Confirm Delete Code Modal DOM Elements and Logic
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const deleteConfirmCodeDisplay = document.getElementById('delete-confirm-code-display');
+        const deleteConfirmCodeInput = document.getElementById('delete-confirm-code-input');
+        const closeDeleteConfirmBtn = document.getElementById('close-delete-confirm-btn');
+        const btnDeleteConfirmCancel = document.getElementById('btn-delete-confirm-cancel');
+        const btnDeleteConfirmSubmit = document.getElementById('btn-delete-confirm-submit');
+
+        let pendingDeleteId = null;
+        let generatedDeleteCode = '';
+
+        window.closeDeleteConfirmModal = function() {
+            if (deleteConfirmModal) {
+                deleteConfirmModal.classList.add('opacity-0', 'pointer-events-none');
+                const inner = deleteConfirmModal.querySelector('.glass-card');
+                if (inner) {
+                    inner.classList.remove('scale-100');
+                    inner.classList.add('scale-95');
+                }
+                setTimeout(() => {
+                    deleteConfirmModal.style.display = 'none';
+                    if (deleteConfirmCodeInput) deleteConfirmCodeInput.value = '';
+                    pendingDeleteId = null;
+                    generatedDeleteCode = '';
+                }, 300);
+            }
+        };
+
+        if (closeDeleteConfirmBtn) closeDeleteConfirmBtn.addEventListener('click', window.closeDeleteConfirmModal);
+        if (btnDeleteConfirmCancel) btnDeleteConfirmCancel.addEventListener('click', window.closeDeleteConfirmModal);
+
+        if (btnDeleteConfirmSubmit) {
+            btnDeleteConfirmSubmit.addEventListener('click', async () => {
+                const typedCode = deleteConfirmCodeInput.value.trim();
+                if (typedCode !== generatedDeleteCode) {
+                    alert('Código incorreto! Digite o código de 6 dígitos exibido na tela.');
+                    return;
+                }
+
+                btnDeleteConfirmSubmit.disabled = true;
+                const success = await dbDeleteReservation(pendingDeleteId);
+                btnDeleteConfirmSubmit.disabled = false;
+
                 if (success) {
+                    window.closeDeleteConfirmModal();
                     loadAndRenderReservations();
                 } else {
                     alert('Erro ao excluir a reserva.');
+                }
+            });
+        }
+
+        // Delete Reservation Handler
+        window.doDeleteReservation = async function(id) {
+            const item = allReservations.find(r => r.id === id);
+            if (!item) return;
+
+            // If reservation is already paid/consolidated ("Paga"), require the 6-digit confirmation code
+            if (item.status === 'Paga') {
+                pendingDeleteId = id;
+                // Generate random 6-digit code
+                generatedDeleteCode = Math.floor(100000 + Math.random() * 900000).toString();
+                deleteConfirmCodeDisplay.textContent = generatedDeleteCode;
+
+                if (deleteConfirmModal) {
+                    deleteConfirmModal.style.display = 'flex';
+                    deleteConfirmModal.offsetHeight;
+                    deleteConfirmModal.classList.remove('opacity-0', 'pointer-events-none');
+                    const inner = deleteConfirmModal.querySelector('.glass-card');
+                    if (inner) {
+                        inner.classList.remove('scale-95');
+                        inner.classList.add('scale-100');
+                    }
+                    setTimeout(() => {
+                        deleteConfirmCodeInput.focus();
+                    }, 100);
+                }
+            } else {
+                // For pending/unpaid reservations, do the standard browser confirmation
+                if (confirm('Tem certeza que deseja excluir esta reserva permanentemente?')) {
+                    const success = await dbDeleteReservation(id);
+                    if (success) {
+                        loadAndRenderReservations();
+                    } else {
+                        alert('Erro ao excluir a reserva.');
+                    }
                 }
             }
         };

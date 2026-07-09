@@ -40,6 +40,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 box-shadow: 0 0 0 2px rgba(173,198,255,0.1) !important;
                 background: rgba(255, 255, 255, 0.08) !important;
             }
+
+            .lens-bubble {
+                background: rgba(255, 255, 255, 0.05) !important;
+                backdrop-filter: blur(12px) saturate(1.8) !important;
+                -webkit-backdrop-filter: blur(12px) saturate(1.8) !important;
+                border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+                box-shadow: 
+                    inset 0 4px 6px rgba(255, 255, 255, 0.25),
+                    inset -3px -3px 8px rgba(167, 139, 250, 0.5), /* Roxo pastel claro */
+                    inset 3px 3px 8px rgba(110, 231, 183, 0.5),   /* Verde pastel claro */
+                    inset 0 0 10px rgba(173, 198, 255, 0.3),      /* Azul pastel claro */
+                    0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            }
+
+            .nav-desktop-item {
+                position: relative;
+                z-index: 10;
+                padding: 6px 16px;
+                border-radius: 12px;
+                transition: color 0.3s, transform 0.3s !important;
+                transform: scale(1);
+            }
+            .nav-desktop-item.scale-110 {
+                transform: scale(1.1) !important;
+                color: #ffffff !important;
+                text-shadow: 0 0 8px rgba(173, 198, 255, 0.4);
+            }
+
+            .nav-mobile-item {
+                position: relative;
+                z-index: 10;
+                transition: color 0.3s, transform 0.3s, background-color 0.3s !important;
+                transform: scale(1);
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+            .nav-mobile-item.scale-110 {
+                transform: scale(1.12) !important;
+                color: #ffffff !important;
+            }
         </style>
     `;
     document.head.insertAdjacentHTML('beforeend', styleHTML);
@@ -47,34 +87,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
 
-    // List of clients in alphabetical order
-    const clientsList = [
-        "ARCELOMITTAL",
-        "BENTELER",
-        "FORVIA",
-        "JAGUAR",
-        "JSL",
-        "MAG",
-        "MULTITERMINAIS",
-        "NISSAN",
-        "NISSAN NEWS",
-        "PERNORD",
-        "SESE",
-        "STELLANTS",
-        "TECNOPOLO"
-    ];
+    // Dynamic clients list loaded from Supabase database
+    let clientsList = [];
+    async function fetchClients() {
+        if (typeof dbGetClients === 'function') {
+            try {
+                const list = await dbGetClients();
+                clientsList = list.map(c => c.name.toUpperCase());
+            } catch (e) {
+                console.error("Erro ao carregar clientes do banco:", e);
+            }
+        }
+    }
+    fetchClients();
 
-    // Inject premium loading overlay
+    // Inject premium loading overlay (Disabled to avoid blocking page loads)
     const loaderHTML = `
-        <div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#060e20] transition-opacity duration-500 ease-out">
-            <div class="relative flex flex-col items-center">
-                <img src="img/mapaos-logo-loading.gif" alt="Carregando..." class="w-40 h-40 object-contain rounded-full shadow-2xl border border-primary/20">
-                <div class="mt-6 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-                    <span class="w-2.5 h-2.5 bg-secondary-fixed rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-                    <span class="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
-                </div>
-            </div>
+        <div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#060e20] transition-opacity duration-500 ease-out opacity-0 pointer-events-none animate-pulse" style="display: none;">
         </div>
     `;
 
@@ -131,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
-                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" required />
+                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" />
                             </div>
                         </div>
                         <div class="flex flex-col gap-unit">
@@ -186,16 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function fadeInLoaderAndRedirect(targetUrl) {
-        if (loader) {
-            loader.style.display = 'flex';
-            loader.offsetHeight;
-            loader.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                window.location.href = targetUrl;
-            }, 400);
-        } else {
-            window.location.href = targetUrl;
-        }
+        window.location.href = targetUrl;
     }
 
     // Pre-fill Date display with current date in DD/MM/AAAA
@@ -214,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Modal Control Functions
     function openModal() {
+        fetchClients(); // Refresh clients list from database on open
         if (modal) {
             modal.style.display = 'flex';
             modal.offsetHeight;
@@ -245,13 +266,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Retrieve user name from localStorage cache
+    // Retrieve user name and calculate remaining active days from localStorage cache
     const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
     let loggedUserName = 'Usuário';
+    let expiryBadgeHTML = '';
+    
     if (loggedUserRaw) {
         try {
             const userObj = JSON.parse(loggedUserRaw);
             loggedUserName = userObj.name || userObj.email.split('@')[0];
+            
+            // Calculate days remaining (only for regular users, excluding Master role)
+            if (userObj.role !== 'Master' && userObj.expires_at) {
+                const expiryDate = new Date(userObj.expires_at);
+                const today = new Date();
+                const diffTime = expiryDate - today;
+                const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                
+                if (daysRemaining <= 0) {
+                    expiryBadgeHTML = `<span class="text-[9px] text-red-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">error</span> Acesso Expirado</span>`;
+                } else if (daysRemaining <= 5) {
+                    expiryBadgeHTML = `<span class="text-[9px] text-yellow-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">warning</span> Expira em ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}</span>`;
+                } else {
+                    expiryBadgeHTML = `<span class="text-[9px] text-emerald-400 font-medium flex items-center gap-0.5 leading-none mt-0.5"><span class="material-symbols-outlined text-[11px]">event_available</span> ${daysRemaining} dias de acesso</span>`;
+                }
+            }
         } catch (e) {
             console.error('Error parsing logged user details:', e);
         }
@@ -263,13 +302,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-btn">
                     <img src="img/mapaos-logo-sf.svg" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
-                    <div class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim">
-                        ${loggedUserName}
+                    <div class="flex flex-col justify-center">
+                        <div class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim leading-none">
+                            ${loggedUserName}
+                        </div>
+                        ${expiryBadgeHTML}
                     </div>
                 </div>
             </div>
             <!-- Desktop Menu -->
-            <div class="hidden md:flex gap-6 items-center">
+            <div class="hidden md:flex gap-6 items-center relative" id="desktop-menu-container">
+                <div id="desktop-nav-indicator" class="absolute lens-bubble rounded-xl transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="index.html" id="desktop-dashboard">
                     <span class="material-symbols-outlined mb-1">dashboard</span>
                     Painel
@@ -301,7 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // BottomNavBar Template (Mobile Only)
     const bottomNavBarHTML = `
-        <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(90%,400px)] h-20 px-6 flex justify-between items-center z-50 bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-full">
+        <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(90%,400px)] h-20 px-6 flex justify-between items-center z-50 bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-full" id="mobile-nav-container">
+            <div id="mobile-nav-indicator" class="absolute lens-bubble rounded-full transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
             <!-- Dashboard -->
             <a href="index.html" id="mobile-dashboard" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
                 <span class="material-symbols-outlined">dashboard</span>
@@ -311,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="material-symbols-outlined">list_alt</span>
             </a>
             <!-- Botão Adicionar "+" -->
-            <button id="mobile-add-btn" class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg shadow-primary/30 active:scale-95 transition-transform -translate-y-4">
+            <button id="mobile-add-btn" class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg shadow-primary/30 active:scale-95 transition-transform -translate-y-4 z-20">
                 <span class="material-symbols-outlined text-2xl font-bold">add</span>
             </button>
             <!-- Financeiro -->
@@ -367,8 +411,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('MAPAOS_LOGGED_USER');
             }
             if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-                e.preventDefault();
-                fadeInLoaderAndRedirect(href);
+                const isNavDesktop = link.classList.contains('nav-desktop-item');
+                const isNavMobile = link.classList.contains('nav-mobile-item');
+
+                if (isNavDesktop || isNavMobile) {
+                    e.preventDefault();
+                    
+                    document.querySelectorAll('.nav-desktop-item, .nav-mobile-item').forEach(el => {
+                        el.classList.remove('scale-110', 'text-primary');
+                        el.classList.add('text-on-surface-variant');
+                    });
+                    
+                    link.classList.remove('text-on-surface-variant');
+                    link.classList.add('scale-110', 'text-primary');
+                    
+                    if (isNavDesktop) {
+                        updateDesktopNavIndicator(link);
+                    } else {
+                        updateMobileNavIndicator(link);
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 280);
+                } else {
+                    e.preventDefault();
+                    window.location.href = href;
+                }
             }
         });
     });
@@ -405,7 +474,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Desktop Active
         const activeDesktop = document.getElementById(`desktop-${activeId}`);
         if (activeDesktop) {
-            activeDesktop.classList.add('text-primary', 'dark:text-primary-fixed-dim');
+            activeDesktop.classList.remove('text-on-surface-variant');
+            activeDesktop.classList.add('text-primary', 'scale-110');
             const icon = activeDesktop.querySelector('.material-symbols-outlined');
             if (icon) {
                 icon.style.fontVariationSettings = "'FILL' 1";
@@ -414,14 +484,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Desktop Inactive styles for others
         document.querySelectorAll('.nav-desktop-item').forEach(item => {
             if (item.id !== `desktop-${activeId}` && item.getAttribute('href') !== 'login.html') {
-                item.classList.add('text-on-surface-variant', 'dark:text-on-surface-variant', 'hover:text-primary');
+                item.classList.add('text-on-surface-variant');
             }
         });
 
         // Mobile Active
         const activeMobile = document.getElementById(`mobile-${activeId}`);
         if (activeMobile) {
-            activeMobile.classList.add('bg-primary', 'dark:bg-primary-container', 'text-on-primary', 'dark:text-on-primary-container', 'shadow-lg', 'shadow-primary/30', 'active:scale-90');
+            activeMobile.classList.remove('text-on-surface-variant');
+            activeMobile.classList.add('text-primary', 'scale-110');
             const icon = activeMobile.querySelector('.material-symbols-outlined');
             if (icon) {
                 icon.style.fontVariationSettings = "'FILL' 1";
@@ -430,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mobile Inactive styles for others
         document.querySelectorAll('.nav-mobile-item').forEach(item => {
             if (item.id !== `mobile-${activeId}` && item.getAttribute('href') !== 'login.html') {
-                item.classList.add('text-on-surface-variant/70', 'dark:text-on-surface-variant/70', 'hover:bg-white/10', 'active:scale-90');
+                item.classList.add('text-on-surface-variant');
             }
         });
     }
@@ -608,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         submitBtn.innerHTML = originalContent;
 
-                        if (window.location.pathname.includes('historico_reserva.html')) {
+                         if (window.location.pathname.includes('historico_reserva.html')) {
                             if (typeof loadAndRenderReservations === 'function') {
                                 loadAndRenderReservations();
                             } else {
@@ -621,5 +692,79 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 800);
             });
         });
+    }
+
+    // Initialize Navigation Indicator Positions
+    setTimeout(() => {
+        if (activeId) {
+            const activeDesktop = document.getElementById(`desktop-${activeId}`);
+            if (activeDesktop) updateDesktopNavIndicator(activeDesktop);
+            const activeMobile = document.getElementById(`mobile-${activeId}`);
+            if (activeMobile) updateMobileNavIndicator(activeMobile);
+        }
+    }, 100);
+
+    window.addEventListener('resize', () => {
+        if (activeId) {
+            const activeDesktop = document.getElementById(`desktop-${activeId}`);
+            if (activeDesktop) updateDesktopNavIndicator(activeDesktop);
+            const activeMobile = document.getElementById(`mobile-${activeId}`);
+            if (activeMobile) updateMobileNavIndicator(activeMobile);
+        }
+    });
+
+    // ─── Sliding Bubbles Helpers ──────────────────────────────────────────
+    function updateDesktopNavIndicator(activeBtn) {
+        const indicator = document.getElementById('desktop-nav-indicator');
+        if (!indicator) return;
+        const rect = activeBtn.getBoundingClientRect();
+        const containerRect = activeBtn.parentElement.getBoundingClientRect();
+        
+        const currentLeft = parseFloat(indicator.dataset.lastLeft) || 0;
+        const targetLeft = rect.left - containerRect.left;
+        const dist = Math.abs(targetLeft - currentLeft);
+        
+        if (dist > 5) {
+            indicator.style.transform = `scaleX(1.15) scaleY(0.85)`;
+            indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
+        }
+
+        indicator.style.left = `${targetLeft}px`;
+        indicator.style.width = `${rect.width}px`;
+        indicator.style.height = `${rect.height}px`;
+        indicator.style.top = `${rect.top - containerRect.top}px`;
+        indicator.dataset.lastLeft = targetLeft;
+        
+        clearTimeout(indicator.timeoutId);
+        indicator.timeoutId = setTimeout(() => {
+            indicator.style.transform = 'scaleX(1) scaleY(1)';
+        }, 250);
+    }
+
+    function updateMobileNavIndicator(activeBtn) {
+        const indicator = document.getElementById('mobile-nav-indicator');
+        if (!indicator) return;
+        const rect = activeBtn.getBoundingClientRect();
+        const containerRect = activeBtn.parentElement.getBoundingClientRect();
+        
+        const currentLeft = parseFloat(indicator.dataset.lastLeft) || 0;
+        const targetLeft = rect.left - containerRect.left;
+        const dist = Math.abs(targetLeft - currentLeft);
+        
+        if (dist > 5) {
+            indicator.style.transform = `scaleX(1.15) scaleY(0.85)`;
+            indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
+        }
+
+        indicator.style.left = `${targetLeft}px`;
+        indicator.style.width = `${rect.width}px`;
+        indicator.style.height = `${rect.height}px`;
+        indicator.style.top = `${rect.top - containerRect.top}px`;
+        indicator.dataset.lastLeft = targetLeft;
+        
+        clearTimeout(indicator.timeoutId);
+        indicator.timeoutId = setTimeout(() => {
+            indicator.style.transform = 'scaleX(1) scaleY(1)';
+        }, 250);
     }
 });

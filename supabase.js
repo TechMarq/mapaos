@@ -45,6 +45,27 @@ function isLoggedUserMaster() {
     return false;
 }
 
+// Helper to check if the current user's access has expired
+function isUserAccessExpired() {
+    try {
+        const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (loggedUserRaw) {
+            const user = JSON.parse(loggedUserRaw);
+            if (user && user.role === 'Master') return false; // Master accounts never expire
+            if (user && user.status === 'Expirado') return true;
+            if (user && user.expires_at) {
+                const expiryDate = new Date(user.expires_at);
+                if (expiryDate < new Date()) {
+                    return true;
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error checking expiration status:", e);
+    }
+    return false;
+}
+
 // Fetch all reservations (isolated by user unless role is Master)
 async function dbGetReservations() {
     if (!supabaseClientInstance) return [];
@@ -72,14 +93,38 @@ async function dbGetReservations() {
 // Create new reservation linked to the logged-in user
 async function dbCreateReservation(reserva) {
     if (!supabaseClientInstance) return null;
+    if (isUserAccessExpired()) {
+        alert('Acesso Expirado! Seu período de acesso gratuito expirou. Por favor, regularize sua assinatura com o Administrador Master para registrar novas reservas.');
+        return null;
+    }
     try {
         const userId = getLoggedUserId();
+        const resNum = reserva.reserva_number ? reserva.reserva_number.toString().trim() : '';
+        
+        if (!resNum) {
+            alert('Erro: O número da reserva é obrigatório.');
+            return null;
+        }
+
+        // Check if reserva_number already exists globally
+        const { data: existing, error: checkError } = await supabaseClientInstance
+            .from('reservations')
+            .select('id')
+            .eq('reserva_number', resNum)
+            .limit(1);
+
+        if (checkError) throw checkError;
+        if (existing && existing.length > 0) {
+            alert(`Erro: Já existe uma reserva cadastrada com o número "${resNum}".`);
+            return null;
+        }
+
         const { data, error } = await supabaseClientInstance
             .from('reservations')
             .insert([{
                 user_id: userId,
                 os_number: reserva.os_number,
-                reserva_number: reserva.reserva_number,
+                reserva_number: resNum,
                 client_name: reserva.client_name,
                 date: reserva.date,
                 time: reserva.time,
@@ -92,6 +137,7 @@ async function dbCreateReservation(reserva) {
         return data[0];
     } catch (err) {
         console.error('Supabase insert error:', err);
+        alert('Erro ao salvar a reserva: ' + err.message);
         return null;
     }
 }
@@ -99,6 +145,10 @@ async function dbCreateReservation(reserva) {
 // Delete a reservation by ID (ensures ownership unless Master)
 async function dbDeleteReservation(reservaId) {
     if (!supabaseClientInstance) return false;
+    if (isUserAccessExpired()) {
+        alert('Acesso Expirado! Por favor, regularize sua assinatura com o Administrador Master.');
+        return false;
+    }
     try {
         const userId = getLoggedUserId();
         const isMaster = isLoggedUserMaster();
@@ -124,9 +174,33 @@ async function dbDeleteReservation(reservaId) {
 // Update an existing reservation details (ensures ownership unless Master)
 async function dbUpdateReservation(reservaId, updates) {
     if (!supabaseClientInstance) return null;
+    if (isUserAccessExpired()) {
+        alert('Acesso Expirado! Seu período de acesso gratuito expirou. Por favor, regularize sua assinatura com o Administrador Master para editar reservas.');
+        return null;
+    }
     try {
         const userId = getLoggedUserId();
         const isMaster = isLoggedUserMaster();
+        const resNum = updates.reserva_number ? updates.reserva_number.toString().trim() : '';
+
+        if (!resNum) {
+            alert('Erro: O número da reserva é obrigatório.');
+            return null;
+        }
+
+        // Check if another reservation has the same reserva_number
+        const { data: existing, error: checkError } = await supabaseClientInstance
+            .from('reservations')
+            .select('id')
+            .eq('reserva_number', resNum)
+            .neq('id', reservaId)
+            .limit(1);
+
+        if (checkError) throw checkError;
+        if (existing && existing.length > 0) {
+            alert(`Erro: Já existe outra reserva cadastrada com o número "${resNum}".`);
+            return null;
+        }
         
         let query = supabaseClientInstance
             .from('reservations')
@@ -135,7 +209,7 @@ async function dbUpdateReservation(reservaId, updates) {
                 date: updates.date,
                 time: updates.time,
                 os_number: updates.os_number,
-                reserva_number: updates.reserva_number,
+                reserva_number: resNum,
                 notes: updates.notes || null
             })
             .eq('id', reservaId);
@@ -149,6 +223,7 @@ async function dbUpdateReservation(reservaId, updates) {
         return data[0];
     } catch (err) {
         console.error('Supabase update reservation error:', err);
+        alert('Erro ao atualizar a reserva: ' + err.message);
         return null;
     }
 }
@@ -158,7 +233,9 @@ async function dbReconcileReservations(records) {
     if (!supabaseClientInstance || !records || records.length === 0) {
         return { success: false, error: 'Nenhum registro para conciliação.' };
     }
-    
+    if (isUserAccessExpired()) {
+        return { success: false, error: 'Acesso Expirado! Por favor, regularize sua assinatura com o Administrador Master para conciliar reservas.' };
+    }
     try {
         const userId = getLoggedUserId();
         const isMaster = isLoggedUserMaster();
@@ -323,9 +400,10 @@ async function dbLoginUser(email, password) {
             }
         }
 
-        // If not approved, sign out natively immediately
-        if (profile.status !== 'Aprovado' && profile.role !== 'Master') {
+        // If not approved and not expired (e.g. Pendente or Rejeitado), sign out natively immediately
+        if (profile.status !== 'Aprovado' && profile.status !== 'Expirado' && profile.role !== 'Master') {
             await supabaseClientInstance.auth.signOut();
+            return { success: false, error: 'Seu cadastro está pendente de aprovação.' };
         }
 
         localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(profile));
@@ -485,6 +563,56 @@ async function dbUpdateProfile(userId, updates) {
         return true;
     } catch (err) {
         console.error('Supabase update profile error:', err);
+        return false;
+    }
+}
+
+// Fetch all clients sorted alphabetically
+async function dbGetClients() {
+    if (!supabaseClientInstance) return [];
+    try {
+        const { data, error } = await supabaseClientInstance
+            .from('clients')
+            .select('*')
+            .order('name', { ascending: true });
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.error('Supabase get clients error:', err);
+        return [];
+    }
+}
+
+// Create a new client (Master only)
+async function dbCreateClient(name) {
+    if (!supabaseClientInstance) return null;
+    try {
+        const { data, error } = await supabaseClientInstance
+            .from('clients')
+            .insert([{ name: name.trim().toUpperCase() }])
+            .select();
+        if (error) throw error;
+        return data[0];
+    } catch (err) {
+        console.error('Supabase create client error:', err);
+        alert('Erro ao cadastrar cliente: ' + (err.message || 'Já existe um cliente com este nome.'));
+        return null;
+    }
+}
+
+// Delete a client (Master only)
+async function dbDeleteClient(id) {
+    if (!supabaseClientInstance) return false;
+    try {
+        const { error } = await supabaseClientInstance
+            .from('clients')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase delete client error:', err);
+        alert('Erro ao excluir cliente: ' + err.message);
         return false;
     }
 }

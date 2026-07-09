@@ -206,7 +206,7 @@
             <div class="md:col-span-5 glass-card p-5 rounded-2xl flex flex-col justify-between gap-4">
                 <div class="border-b border-white/5 pb-3">
                     <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-secondary text-base">pie_chart</span> Status de Recebimentos
+                        <span class="material-symbols-outlined text-secondary text-base">pie_chart</span> Atendimentos por Cliente (%)
                     </h3>
                 </div>
 
@@ -214,19 +214,12 @@
                 <div class="relative flex items-center justify-center h-48">
                     <canvas id="financial-status-chart"></canvas>
                     <div id="chart-empty-message" class="hidden absolute inset-0 flex items-center justify-center text-xs text-on-surface-variant text-center">
-                        Nenhum faturamento registrado no período.
+                        Nenhuma reserva registrada no período.
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center text-[10px] text-on-surface-variant pt-2 border-t border-white/5">
-                    <div class="flex items-center gap-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
-                        <span>Recebido (Paga)</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
-                        <span>Pendente</span>
-                    </div>
+                <div id="chart-legend-container" class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] text-on-surface-variant pt-2 border-t border-white/5">
+                    <!-- Dynamic legend items injected here -->
                 </div>
             </div>
         </div>
@@ -434,15 +427,19 @@
             }
 
             // Render/Update Chart
-            renderChart(totalReceived, totalPending);
+            renderChart(sortedClients);
         }
 
-        function renderChart(received, pending) {
+        function renderChart(sortedClients) {
             const ctx = document.getElementById('financial-status-chart').getContext('2d');
             const emptyMsg = document.getElementById('chart-empty-message');
+            const legendContainer = document.getElementById('chart-legend-container');
 
-            if (received === 0 && pending === 0) {
+            const activeClients = sortedClients.filter(c => c.count > 0);
+
+            if (activeClients.length === 0) {
                 emptyMsg.classList.remove('hidden');
+                if (legendContainer) legendContainer.innerHTML = '';
                 if (financialChart) {
                     financialChart.destroy();
                     financialChart = null;
@@ -452,17 +449,46 @@
 
             emptyMsg.classList.add('hidden');
 
+            // Sort by count (appointments) descending
+            activeClients.sort((a, b) => b.count - a.count);
+
+            const labels = [];
+            const data = [];
+            const maxClients = 5;
+
+            if (activeClients.length > maxClients) {
+                for (let i = 0; i < maxClients - 1; i++) {
+                    labels.push(activeClients[i].name);
+                    data.push(activeClients[i].count);
+                }
+                let otherCount = 0;
+                for (let i = maxClients - 1; i < activeClients.length; i++) {
+                    otherCount += activeClients[i].count;
+                }
+                labels.push('Outros');
+                data.push(otherCount);
+            } else {
+                activeClients.forEach(c => {
+                    labels.push(c.name);
+                    data.push(c.count);
+                });
+            }
+
+            const colors = ['#00f5be', '#4b8eff', '#fb923c', '#adc6ff', '#e9d5ff', '#6b7280'];
+
             if (financialChart) {
-                financialChart.data.datasets[0].data = [received, pending];
+                financialChart.data.labels = labels;
+                financialChart.data.datasets[0].data = data;
+                financialChart.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
                 financialChart.update();
             } else {
                 financialChart = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Recebido', 'Pendente'],
+                        labels: labels,
                         datasets: [{
-                            data: [received, pending],
-                            backgroundColor: ['#00f5be', '#fb923c'],
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length),
                             borderWidth: 0,
                             hoverOffset: 4
                         }]
@@ -478,13 +504,31 @@
                                 callbacks: {
                                     label: function (context) {
                                         const value = context.raw || 0;
-                                        return ' ' + context.label + ': ' + value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                        const dataset = context.dataset.data;
+                                        const totalVal = dataset.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / totalVal) * 100).toFixed(1);
+                                        const suffix = value === 1 ? ' reserva' : ' reservas';
+                                        return ' ' + context.label + ': ' + value + suffix + ' (' + percentage + '%)';
                                     }
                                 }
                             }
                         },
                         cutout: '75%'
                     }
+                });
+            }
+
+            // Render Dynamic Legend
+            if (legendContainer) {
+                legendContainer.innerHTML = '';
+                labels.forEach((label, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center gap-1';
+                    item.innerHTML = `
+                        <span class="w-2 h-2 rounded-full" style="background-color: ${colors[idx]}"></span>
+                        <span>${label}</span>
+                    `;
+                    legendContainer.appendChild(item);
                 });
             }
         }

@@ -4,8 +4,8 @@
 create table if not exists reservations (
     id uuid default gen_random_uuid() primary key,
     user_id uuid references public.profiles(id) on delete set null, -- Associated user profile
-    os_number text not null,
-    reserva_number text not null,
+    os_number text default null, -- OS/Voucher (optional)
+    reserva_number text not null unique, -- Reserva (unique identifier)
     client_name text not null,
     date text not null,
     time text not null,
@@ -18,15 +18,26 @@ create table if not exists reservations (
     created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Safe addition of columns if table already exists:
+-- Safe addition of columns and constraints if table already exists:
 alter table reservations add column if not exists user_id uuid references public.profiles(id) on delete set null;
 alter table reservations add column if not exists net_value text default null;
 alter table reservations add column if not exists plate text default null;
 alter table reservations add column if not exists driver text default null;
 alter table reservations add column if not exists notes text default null;
+alter table reservations add constraint unique_reserva_number unique (reserva_number);
 
 -- Enable Row Level Security (RLS)
 alter table reservations enable row level security;
+
+-- Drop existing policies to prevent "already exists" errors when running the script again
+drop policy if exists "Allow select reservations" on reservations;
+drop policy if exists "Allow insert reservations" on reservations;
+drop policy if exists "Allow update reservations" on reservations;
+drop policy if exists "Allow delete reservations" on reservations;
+drop policy if exists "Allow public read reservations" on reservations;
+drop policy if exists "Allow public insert reservations" on reservations;
+drop policy if exists "Allow public update reservations" on reservations;
+drop policy if exists "Allow public delete reservations" on reservations;
 
 -- Create Policies to enforce user-level data isolation
 -- Standard users can only view/manage their own records. Master users can view/manage all records.
