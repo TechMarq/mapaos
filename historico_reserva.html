@@ -327,12 +327,16 @@
                         <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Data</label>
                         <div class="relative">
                             <input id="edit-date-display" class="glass-input w-full h-12 px-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="DD/MM/AAAA" type="text" maxlength="10" required />
+                            <input id="edit-date-picker" type="date" class="absolute inset-0 opacity-0 cursor-pointer z-20">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none z-10">calendar_month</span>
                         </div>
                     </div>
                     <div class="flex flex-col gap-unit">
                         <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Horário</label>
                         <div class="relative">
                             <input id="edit-time-display" class="glass-input w-full h-12 px-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="HH:MM" type="text" maxlength="5" required />
+                            <input id="edit-time-picker" type="time" class="absolute inset-0 opacity-0 cursor-pointer z-20">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none z-10">schedule</span>
                         </div>
                     </div>
                 </div>
@@ -392,6 +396,7 @@
         });
 
         let allReservations = [];
+        let allClients = [];
         let statusFilter = 'Todos'; // 'Todos', 'Pendente', 'Paga'
         let dateRangeFilter = 'Todos'; // 'Todos', '7D', '15D', '30D', 'anterior', 'custom'
         let sortOrder = 'desc'; // 'desc' (most recent first) or 'asc' (oldest first)
@@ -442,6 +447,9 @@
 
             if (forceReload || allReservations.length === 0) {
                 allReservations = await dbGetReservations();
+            }
+            if (allClients.length === 0 && typeof dbGetClients === 'function') {
+                allClients = await dbGetClients();
             }
             container.innerHTML = '';
 
@@ -538,6 +546,11 @@
             filtered.forEach((item, index) => {
                 const isPaid = item.status === 'Paga';
                 const borderBg = isPaid ? 'bg-secondary' : 'bg-orange-400';
+                
+                // Lookup client photo
+                const clientNameUpper = item.client_name ? item.client_name.trim().toUpperCase() : '';
+                const clientObj = allClients.find(c => c.name.toUpperCase() === clientNameUpper);
+                const clientPhotoUrl = clientObj ? clientObj.photo_url : '';
                 const iconWrapperColor = isPaid 
                     ? 'bg-secondary/10 text-secondary border-secondary/20' 
                     : 'bg-orange-400/10 text-orange-400 border-orange-400/20';
@@ -594,11 +607,11 @@
                                     ${isPaid && item.net_value ? `<span class="text-[10px] text-secondary font-medium">Liq: R$ ${item.net_value}</span>` : ''}
                                 </div>
                                 <div class="flex gap-1 shrink-0">
-                                    <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-1 rounded bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all flex items-center justify-center" title="Editar">
-                                        <span class="material-symbols-outlined text-[10px]">edit</span>
+                                    <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all flex items-center justify-center" title="Editar">
+                                        <span class="material-symbols-outlined text-[14px]">edit</span>
                                     </button>
-                                    <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="p-1 rounded bg-white/5 border border-white/10 hover:bg-red-500/10 text-error transition-all flex items-center justify-center" title="Excluir">
-                                        <span class="material-symbols-outlined text-[10px]">delete</span>
+                                    <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error transition-all flex items-center justify-center" title="Excluir">
+                                        <span class="material-symbols-outlined text-[14px]">delete</span>
                                     </button>
                                 </div>
                             </div>
@@ -624,8 +637,11 @@
                             <div class="absolute top-0 left-0 w-1 h-full ${borderBg}"></div>
                             <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                 <div class="flex gap-4 items-center">
-                                    <div class="w-12 h-12 rounded-xl ${iconWrapperColor} flex items-center justify-center border">
-                                        <span class="material-symbols-outlined" data-icon="${iconName}">${iconName}</span>
+                                    <div class="w-12 h-12 rounded-xl ${iconWrapperColor} flex items-center justify-center border overflow-hidden shrink-0">
+                                        ${clientPhotoUrl 
+                                            ? `<img src="${clientPhotoUrl}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentNode.innerHTML='<span class=&quot;material-symbols-outlined&quot; data-icon=&quot;${iconName}&quot;>${iconName}</span>';">`
+                                            : `<span class="material-symbols-outlined" data-icon="${iconName}">${iconName}</span>`
+                                        }
                                     </div>
                                     <div>
                                         <div class="flex items-center gap-2">
@@ -1154,8 +1170,22 @@
             if (item && editModal) {
                 document.getElementById('edit-reserva-id').value = item.id;
                 document.getElementById('edit-client-name').value = item.client_name;
-                document.getElementById('edit-date-display').value = item.date;
-                document.getElementById('edit-time-display').value = item.time;
+                
+                const dateDisplay = document.getElementById('edit-date-display');
+                const datePicker = document.getElementById('edit-date-picker');
+                dateDisplay.value = item.date;
+                if (item.date && item.date.includes('/')) {
+                    const parts = item.date.split('/');
+                    datePicker.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+                
+                const timeDisplay = document.getElementById('edit-time-display');
+                const timePicker = document.getElementById('edit-time-picker');
+                timeDisplay.value = item.time;
+                if (item.time) {
+                    timePicker.value = item.time;
+                }
+
                 document.getElementById('edit-os-number').value = item.os_number;
                 document.getElementById('edit-reserva-number').value = item.reserva_number;
                 document.getElementById('edit-notes').value = item.notes || '';
@@ -1188,6 +1218,60 @@
 
         if (closeEditBtn) {
             closeEditBtn.addEventListener('click', window.closeEditModal);
+        }
+
+        // Edit Modal Date and Time Input Masking and Sync
+        const editDateDisplay = document.getElementById('edit-date-display');
+        const editDatePicker = document.getElementById('edit-date-picker');
+        if (editDateDisplay) {
+            editDateDisplay.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 8) v = v.slice(0, 8);
+                if (v.length > 4) {
+                    v = v.slice(0, 2) + '/' + v.slice(2, 4) + '/' + v.slice(4);
+                } else if (v.length > 2) {
+                    v = v.slice(0, 2) + '/' + v.slice(2);
+                }
+                e.target.value = v;
+
+                // Sync with picker if complete
+                if (v.length === 10 && editDatePicker) {
+                    const parts = v.split('/');
+                    editDatePicker.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+            });
+        }
+        if (editDatePicker && editDateDisplay) {
+            editDatePicker.addEventListener('change', (e) => {
+                const v = e.target.value;
+                if (v) {
+                    const parts = v.split('-');
+                    editDateDisplay.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            });
+        }
+
+        const editTimeDisplay = document.getElementById('edit-time-display');
+        const editTimePicker = document.getElementById('edit-time-picker');
+        if (editTimeDisplay) {
+            editTimeDisplay.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 4) v = v.slice(0, 4);
+                if (v.length > 2) {
+                    v = v.slice(0, 2) + ':' + v.slice(2);
+                }
+                e.target.value = v;
+
+                // Sync with picker
+                if (v.length === 5 && editTimePicker) {
+                    editTimePicker.value = v;
+                }
+            });
+        }
+        if (editTimePicker && editTimeDisplay) {
+            editTimePicker.addEventListener('change', (e) => {
+                editTimeDisplay.value = e.target.value;
+            });
         }
 
         if (editModal) {

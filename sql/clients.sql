@@ -4,6 +4,7 @@
 create table if not exists clients (
     id uuid default gen_random_uuid() primary key,
     name text not null unique,
+    photo_url text,
     created_at timestamp with time zone default timezone('utc'::text, now())
 );
 

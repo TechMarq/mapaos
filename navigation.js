@@ -101,9 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     fetchClients();
 
-    // Inject premium loading overlay (Disabled to avoid blocking page loads)
+    // Inject premium loading overlay (Hidden by default, shown during specific actions like creating a reservation)
     const loaderHTML = `
-        <div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#060e20] transition-opacity duration-500 ease-out opacity-0 pointer-events-none animate-pulse" style="display: none;">
+        <div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#060e20] transition-opacity duration-500 ease-out opacity-0 pointer-events-none" style="display: none;">
+            <div class="relative flex flex-col items-center">
+                <img src="img/mapaos-logo-loading.gif" alt="Carregando..." class="w-40 h-40 object-contain rounded-full shadow-2xl border border-primary/20">
+                <div class="mt-6 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                    <span class="w-2.5 h-2.5 bg-secondary-fixed rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                    <span class="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+                </div>
+            </div>
         </div>
     `;
 
@@ -679,9 +687,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         submitBtn.innerHTML = originalContent;
 
-                         if (window.location.pathname.includes('historico_reserva.html')) {
+                        if (window.location.pathname.includes('historico_reserva.html')) {
                             if (typeof loadAndRenderReservations === 'function') {
                                 loadAndRenderReservations();
+                                setTimeout(() => {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }, 150);
                             } else {
                                 window.location.reload();
                             }

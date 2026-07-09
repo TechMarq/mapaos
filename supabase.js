@@ -584,18 +584,54 @@ async function dbGetClients() {
 }
 
 // Create a new client (Master only)
-async function dbCreateClient(name) {
+async function dbCreateClient(name, photoUrl = '') {
     if (!supabaseClientInstance) return null;
     try {
         const { data, error } = await supabaseClientInstance
             .from('clients')
-            .insert([{ name: name.trim().toUpperCase() }])
+            .insert([{ name: name.trim().toUpperCase(), photo_url: photoUrl.trim() }])
             .select();
         if (error) throw error;
         return data[0];
     } catch (err) {
         console.error('Supabase create client error:', err);
         alert('Erro ao cadastrar cliente: ' + (err.message || 'Já existe um cliente com este nome.'));
+        return null;
+    }
+}
+
+// Update a client (Master only)
+async function dbUpdateClient(id, name, photoUrl = '') {
+    if (!supabaseClientInstance) return null;
+    try {
+        const newName = name.trim().toUpperCase();
+        
+        // 1. Fetch old name to update associated reservations
+        const { data: oldClient } = await supabaseClientInstance
+            .from('clients')
+            .select('name')
+            .eq('id', id)
+            .single();
+
+        if (oldClient && oldClient.name !== newName) {
+            // Update all reservations that reference the old client name
+            await supabaseClientInstance
+                .from('reservations')
+                .update({ client_name: newName })
+                .eq('client_name', oldClient.name);
+        }
+
+        // 2. Perform the update on client record
+        const { data, error } = await supabaseClientInstance
+            .from('clients')
+            .update({ name: newName, photo_url: photoUrl.trim() })
+            .eq('id', id)
+            .select();
+        if (error) throw error;
+        return data[0];
+    } catch (err) {
+        console.error('Supabase update client error:', err);
+        alert('Erro ao atualizar cliente: ' + err.message);
         return null;
     }
 }

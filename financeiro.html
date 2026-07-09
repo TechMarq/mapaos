@@ -14,6 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -484,6 +485,7 @@
             } else {
                 financialChart = new Chart(ctx, {
                     type: 'doughnut',
+                    plugins: [ChartDataLabels],
                     data: {
                         labels: labels,
                         datasets: [{
@@ -496,6 +498,9 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: 24
+                        },
                         plugins: {
                             legend: {
                                 display: false
@@ -511,9 +516,26 @@
                                         return ' ' + context.label + ': ' + value + suffix + ' (' + percentage + '%)';
                                     }
                                 }
+                            },
+                            datalabels: {
+                                color: '#dae2fd',
+                                anchor: 'end',
+                                align: 'end',
+                                offset: 6,
+                                font: {
+                                    size: 11,
+                                    weight: 'bold',
+                                    family: 'Inter, sans-serif'
+                                },
+                                formatter: (value, context) => {
+                                    const dataset = context.chart.data.datasets[0].data;
+                                    const totalVal = dataset.reduce((a, b) => a + b, 0);
+                                    const percentage = totalVal > 0 ? ((value / totalVal) * 100).toFixed(0) : 0;
+                                    return percentage + '%';
+                                }
                             }
                         },
-                        cutout: '75%'
+                        cutout: '70%'
                     }
                 });
             }

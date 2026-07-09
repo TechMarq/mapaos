@@ -244,14 +244,15 @@
         <!-- Client Management Section -->
         <div id="section-clients" class="hidden space-y-6 animate-fade-in">
             <!-- Add Client Card -->
-            <div class="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-between">
+            <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-4 justify-between">
                 <div class="flex-1">
                     <h2 class="text-sm font-semibold text-on-surface">Cadastrar Novo Cliente</h2>
                     <p class="text-xs text-on-surface-variant mt-0.5">Adicione novos clientes para estarem disponíveis no formulário de reservas.</p>
                 </div>
-                <div class="flex items-center gap-2 max-w-sm w-full">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl w-full">
                     <input type="text" id="new-client-name" class="glass-input h-10 px-4 rounded-xl text-xs flex-1 uppercase" placeholder="Nome do Cliente (ex: HONDA)" />
-                    <button onclick="handleCreateClient()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all">
+                    <input type="text" id="new-client-photo" class="glass-input h-10 px-4 rounded-xl text-xs flex-1" placeholder="Link da Foto (URL)" />
+                    <button onclick="handleCreateClient()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all shrink-0">
                         <span class="material-symbols-outlined text-sm">add</span> Cadastrar
                     </button>
                 </div>
@@ -276,6 +277,38 @@
             </div>
         </div>
     </main>
+
+    <!-- Edit Client Modal -->
+    <div id="edit-client-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+        <div class="glass-card w-[90%] max-w-[450px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">Editar Cliente</h3>
+                    <p class="text-on-surface-variant text-sm mt-1">Altere o nome e o link da foto do cliente.</p>
+                </div>
+                <button id="close-edit-client-modal" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <form id="edit-client-form" class="flex flex-col gap-4" onsubmit="event.preventDefault(); handleUpdateClient();">
+                <input type="hidden" id="edit-client-id" />
+                <div class="flex flex-col gap-unit">
+                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nome do Cliente</label>
+                    <input type="text" id="edit-client-name" class="glass-input h-12 px-4 rounded-xl text-on-surface uppercase" required />
+                </div>
+                <div class="flex flex-col gap-unit">
+                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Link da Foto (URL)</label>
+                    <input type="text" id="edit-client-photo" class="glass-input h-12 px-4 rounded-xl text-on-surface" placeholder="https://exemplo.com/foto.jpg" />
+                </div>
+                
+                <button type="submit" id="btn-edit-client-submit" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-12 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2">
+                    <span>Salvar Alterações</span>
+                    <span class="material-symbols-outlined text-lg">check</span>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- Toast notification -->
     <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-surface-container border border-white/10 rounded-2xl px-6 py-3 flex items-center gap-3 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-[999] min-w-[260px]">
@@ -547,36 +580,48 @@
             }
             empty.classList.add('hidden');
 
-            body.innerHTML = filteredClients.map(c => `
-                <div class="glass-card p-3 px-5 rounded-xl flex items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
-                    style="border-left: 2.5px solid #adc6ff" id="client-row-${c.id}">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
-                            <span class="material-symbols-outlined text-sm">domain</span>
+            body.innerHTML = filteredClients.map(c => {
+                const imgHTML = c.photo_url 
+                    ? `<img src="${c.photo_url}" class="w-8 h-8 rounded-lg object-cover shrink-0 border border-white/10" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;32&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;%23adc6ff&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;20&quot; height=&quot;20&quot; rx=&quot;2.18&quot; ry=&quot;2.18&quot;></rect><line x1=&quot;6&quot; y1=&quot;2&quot; x2=&quot;6&quot; y2=&quot;22&quot;></line><line x1=&quot;18&quot; y1=&quot;2&quot; x2=&quot;18&quot; y2=&quot;22&quot;></line><line x1=&quot;2&quot; y1=&quot;12&quot; x2=&quot;22&quot; y2=&quot;12&quot;></line></svg>';'">`
+                    : `<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0"><span class="material-symbols-outlined text-sm">domain</span></div>`;
+
+                return `
+                    <div class="glass-card p-3 px-5 rounded-xl flex items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
+                        style="border-left: 2.5px solid #adc6ff" id="client-row-${c.id}">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            ${imgHTML}
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <span class="font-bold text-on-surface text-sm truncate">${c.name}</span>
+                                <span class="text-[10px] text-on-surface-variant/60">Cadastrado em: ${formatDate(c.created_at)}</span>
+                            </div>
                         </div>
-                        <div class="flex flex-col gap-0.5 min-w-0">
-                            <span class="font-bold text-on-surface text-sm truncate">${c.name}</span>
-                            <span class="text-[10px] text-on-surface-variant/60">Cadastrado em: ${formatDate(c.created_at)}</span>
+                        <div class="flex gap-2 shrink-0">
+                            <button onclick="openEditClientModal('${c.id}', \`${c.name.replace(/'/g, "\\'")}\`, '${c.photo_url || ''}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all flex items-center justify-center" title="Editar">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </button>
+                            <button onclick="handleDeleteClient('${c.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center" title="Excluir">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
                         </div>
                     </div>
-                    <button onclick="handleDeleteClient('${c.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center" title="Excluir">
-                        <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         async function handleCreateClient() {
-            const input = document.getElementById('new-client-name');
-            const name = input.value.trim();
+            const inputName = document.getElementById('new-client-name');
+            const inputPhoto = document.getElementById('new-client-photo');
+            const name = inputName.value.trim();
+            const photoUrl = inputPhoto.value.trim();
             if (!name) {
                 showToast('Por favor, informe o nome do cliente.', true);
                 return;
             }
 
-            const client = await dbCreateClient(name);
+            const client = await dbCreateClient(name, photoUrl);
             if (client) {
-                input.value = '';
+                inputName.value = '';
+                inputPhoto.value = '';
                 showToast('Cliente cadastrado com sucesso!');
                 loadAndRenderClients();
             } else {
@@ -594,6 +639,83 @@
                 showToast('Erro ao excluir cliente.', true);
             }
         }
+
+        // Edit Client Modal controls
+        const editClientModal = document.getElementById('edit-client-modal');
+        const closeEditClientBtn = document.getElementById('close-edit-client-modal');
+        const editClientForm = document.getElementById('edit-client-form');
+
+        window.openEditClientModal = function(id, name, photoUrl) {
+            if (editClientModal) {
+                document.getElementById('edit-client-id').value = id;
+                document.getElementById('edit-client-name').value = name;
+                document.getElementById('edit-client-photo').value = photoUrl || '';
+
+                editClientModal.style.display = 'flex';
+                editClientModal.offsetHeight;
+                editClientModal.classList.remove('opacity-0', 'pointer-events-none');
+                const inner = editClientModal.querySelector('.glass-card');
+                if (inner) {
+                    inner.classList.remove('scale-95');
+                    inner.classList.add('scale-100');
+                }
+            }
+        };
+
+        window.closeEditClientModal = function() {
+            if (editClientModal) {
+                editClientModal.classList.add('opacity-0', 'pointer-events-none');
+                const inner = editClientModal.querySelector('.glass-card');
+                if (inner) {
+                    inner.classList.remove('scale-100');
+                    inner.classList.add('scale-95');
+                }
+                setTimeout(() => {
+                    editClientModal.style.display = 'none';
+                    if (editClientForm) editClientForm.reset();
+                }, 300);
+            }
+        };
+
+        if (closeEditClientBtn) {
+            closeEditClientBtn.addEventListener('click', window.closeEditClientModal);
+        }
+
+        if (editClientModal) {
+            editClientModal.addEventListener('click', (e) => {
+                if (e.target === editClientModal) {
+                    window.closeEditClientModal();
+                }
+            });
+        }
+
+        window.handleUpdateClient = async function() {
+            const id = document.getElementById('edit-client-id').value;
+            const name = document.getElementById('edit-client-name').value.trim();
+            const photoUrl = document.getElementById('edit-client-photo').value.trim();
+            if (!name) {
+                showToast('Por favor, informe o nome do cliente.', true);
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-edit-client-submit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
+            submitBtn.disabled = true;
+
+            const client = await dbUpdateClient(id, name, photoUrl);
+            
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+
+            if (client) {
+                showToast('Cliente atualizado com sucesso!');
+                window.closeEditClientModal();
+                loadAndRenderClients();
+            } else {
+                showToast('Erro ao atualizar cliente.', true);
+            }
+        };
 
         // ─── Init ─────────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
