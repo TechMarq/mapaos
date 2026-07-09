@@ -17,14 +17,50 @@ if (SUPABASE_URL && SUPABASE_KEY && typeof supabase !== 'undefined') {
     console.warn('Supabase URL/Key missing. Please configure them in Settings/Ajustes.');
 }
 
-// Fetch all reservations
+// Helper to retrieve the current logged-in user ID
+function getLoggedUserId() {
+    try {
+        const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (loggedUserRaw) {
+            const user = JSON.parse(loggedUserRaw);
+            return user ? user.id : null;
+        }
+    } catch (e) {
+        console.error("Error reading logged user:", e);
+    }
+    return null;
+}
+
+// Helper to check if the current user is a Master administrator
+function isLoggedUserMaster() {
+    try {
+        const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (loggedUserRaw) {
+            const user = JSON.parse(loggedUserRaw);
+            return user && user.role === 'Master';
+        }
+    } catch (e) {
+        console.error("Error reading logged user role:", e);
+    }
+    return false;
+}
+
+// Fetch all reservations (isolated by user unless role is Master)
 async function dbGetReservations() {
     if (!supabaseClientInstance) return [];
     try {
-        const { data, error } = await supabaseClientInstance
+        const userId = getLoggedUserId();
+        const isMaster = isLoggedUserMaster();
+        
+        let query = supabaseClientInstance
             .from('reservations')
-            .select('*')
-            .order('created_at', { ascending: false });
+            .select('*');
+            
+        if (userId && !isMaster) {
+            query = query.eq('user_id', userId);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
         return data;
     } catch (err) {
@@ -33,13 +69,15 @@ async function dbGetReservations() {
     }
 }
 
-// Create new reservation
+// Create new reservation linked to the logged-in user
 async function dbCreateReservation(reserva) {
     if (!supabaseClientInstance) return null;
     try {
+        const userId = getLoggedUserId();
         const { data, error } = await supabaseClientInstance
             .from('reservations')
             .insert([{
+                user_id: userId,
                 os_number: reserva.os_number,
                 reserva_number: reserva.reserva_number,
                 client_name: reserva.client_name,
@@ -58,14 +96,23 @@ async function dbCreateReservation(reserva) {
     }
 }
 
-// Delete a reservation by ID
+// Delete a reservation by ID (ensures ownership unless Master)
 async function dbDeleteReservation(reservaId) {
     if (!supabaseClientInstance) return false;
     try {
-        const { error } = await supabaseClientInstance
+        const userId = getLoggedUserId();
+        const isMaster = isLoggedUserMaster();
+        
+        let query = supabaseClientInstance
             .from('reservations')
             .delete()
             .eq('id', reservaId);
+            
+        if (userId && !isMaster) {
+            query = query.eq('user_id', userId);
+        }
+        
+        const { error } = await query;
         if (error) throw error;
         return true;
     } catch (err) {
@@ -74,11 +121,14 @@ async function dbDeleteReservation(reservaId) {
     }
 }
 
-// Update an existing reservation details
+// Update an existing reservation details (ensures ownership unless Master)
 async function dbUpdateReservation(reservaId, updates) {
     if (!supabaseClientInstance) return null;
     try {
-        const { data, error } = await supabaseClientInstance
+        const userId = getLoggedUserId();
+        const isMaster = isLoggedUserMaster();
+        
+        let query = supabaseClientInstance
             .from('reservations')
             .update({
                 client_name: updates.client_name,
@@ -88,8 +138,13 @@ async function dbUpdateReservation(reservaId, updates) {
                 reserva_number: updates.reserva_number,
                 notes: updates.notes || null
             })
-            .eq('id', reservaId)
-            .select();
+            .eq('id', reservaId);
+            
+        if (userId && !isMaster) {
+            query = query.eq('user_id', userId);
+        }
+        
+        const { data, error } = await query.select();
         if (error) throw error;
         return data[0];
     } catch (err) {
@@ -105,10 +160,19 @@ async function dbReconcileReservations(records) {
     }
     
     try {
-        // Fetch all existing reservations to cross-reference
-        const { data: dbReservations, error: getErr } = await supabaseClientInstance
+        const userId = getLoggedUserId();
+        const isMaster = isLoggedUserMaster();
+        
+        let query = supabaseClientInstance
             .from('reservations')
             .select('reserva_number, id, status');
+            
+        if (userId && !isMaster) {
+            query = query.eq('user_id', userId);
+        }
+        
+        // Fetch all existing reservations to cross-reference
+        const { data: dbReservations, error: getErr } = await query;
         if (getErr) throw getErr;
 
         // Map existing reservation numbers (normalized)
