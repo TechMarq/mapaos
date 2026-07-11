@@ -851,12 +851,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Register Service Worker
+    // Register Service Worker (robust registration checking if window has already loaded)
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
+        const registerSW = () => {
             navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker registrado com sucesso:', reg))
                 .catch(err => console.error('Falha ao registrar Service Worker:', err));
-        });
+        };
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            registerSW();
+        } else {
+            window.addEventListener('load', registerSW);
+        }
     }
 });
