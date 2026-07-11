@@ -946,11 +946,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Configure Web Push Notifications
+    function configurePushNotifications(reg) {
+        if (!('PushManager' in window)) {
+            console.log('Push notifications não são suportadas por este navegador.');
+            return;
+        }
+
+        const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (!loggedUserRaw) return; // Only subscribe logged-in users
+
+        const vapidPublicKey = (window.MAPAOS_ENV && window.MAPAOS_ENV.VAPID_PUBLIC_KEY) || '';
+        if (!vapidPublicKey) {
+            console.warn('VAPID_PUBLIC_KEY ausente em config.env.js. Notificações Push desativadas.');
+            return;
+        }
+
+        if (Notification.permission === 'default') {
+            // Request permission directly
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    subscribeUserToPush(reg, vapidPublicKey);
+                }
+            });
+        } else if (Notification.permission === 'granted') {
+            subscribeUserToPush(reg, vapidPublicKey);
+        }
+    }
+
+    async function subscribeUserToPush(reg, vapidPublicKey) {
+        try {
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+                const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+                sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: convertedVapidKey
+                });
+            }
+
+            if (sub && typeof dbSaveSubscription === 'function') {
+                const success = await dbSaveSubscription(sub.toJSON());
+                if (success) {
+                    console.log('Token de notificação Push salvo no Supabase com sucesso.');
+                }
+            }
+        } catch (err) {
+            console.error('Falha ao registrar inscrição de Push no dispositivo:', err);
+        }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
     // Register Service Worker (robust registration checking if window has already loaded)
     if ('serviceWorker' in navigator) {
         const registerSW = () => {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registrado com sucesso:', reg))
+                .then(reg => {
+                    console.log('Service Worker registrado com sucesso:', reg);
+                    configurePushNotifications(reg);
+                })
                 .catch(err => console.error('Falha ao registrar Service Worker:', err));
         };
 

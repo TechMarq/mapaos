@@ -669,3 +669,27 @@ async function dbDeleteClient(id) {
         return false;
     }
 }
+
+// Save PWA push subscription in Supabase
+async function dbSaveSubscription(subscriptionJson) {
+    if (!supabaseClientInstance) return false;
+    try {
+        const userId = getLoggedUserId();
+        if (!userId) return false;
+
+        const { error } = await supabaseClientInstance
+            .from('push_subscriptions')
+            .upsert([
+                {
+                    user_id: userId,
+                    subscription_json: subscriptionJson
+                }
+            ], { onConflict: 'user_id, subscription_json' });
+
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase save subscription error:', err);
+        return false;
+    }
+}
