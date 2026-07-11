@@ -203,8 +203,8 @@
             <!-- Period Filters -->
             <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
                 <select id="filter-date-range" class="glass-card rounded-full px-4 py-2 text-xs font-semibold text-primary border-white/5 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all">
-                    <option value="Todos" class="bg-[#0b1326] text-on-surface" selected>Todas as Datas</option>
-                    <option value="7D" class="bg-[#0b1326] text-on-surface">Últimos 7 dias</option>
+                    <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
+                    <option value="7D" class="bg-[#0b1326] text-on-surface" selected>Últimos 7 dias</option>
                     <option value="15D" class="bg-[#0b1326] text-on-surface">Últimos 15 dias</option>
                     <option value="30D" class="bg-[#0b1326] text-on-surface">Últimos 30 dias</option>
                     <option value="mes" class="bg-[#0b1326] text-on-surface">Este Mês</option>
@@ -227,17 +227,17 @@
                 <div id="stat-total" class="text-3xl font-extrabold text-primary-fixed-dim">0</div>
                 <span class="material-symbols-outlined text-primary text-lg absolute top-3.5 right-4 opacity-50">book_online</span>
             </div>
-            <!-- Completed -->
+            <!-- Average -->
             <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">CONCLUÍDOS</span>
-                <div id="stat-completed" class="text-3xl font-extrabold text-secondary-fixed">0</div>
-                <span class="material-symbols-outlined text-secondary-fixed text-lg absolute top-3.5 right-4 opacity-50">check_circle</span>
+                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">MÉDIA DIÁRIA</span>
+                <div id="stat-average" class="text-3xl font-extrabold text-violet-400">0</div>
+                <span class="material-symbols-outlined text-violet-400 text-lg absolute top-3.5 right-4 opacity-50">analytics</span>
             </div>
             <!-- Pending -->
             <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
                 <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">PENDENTES</span>
-                <div id="stat-pending" class="text-3xl font-extrabold text-tertiary-fixed">0</div>
-                <span class="material-symbols-outlined text-tertiary-fixed text-lg absolute top-3.5 right-4 opacity-50">schedule</span>
+                <div id="stat-pending" class="text-3xl font-extrabold text-amber-400">0</div>
+                <span class="material-symbols-outlined text-amber-400 text-lg absolute top-3.5 right-4 opacity-50">schedule</span>
             </div>
             <!-- Paid -->
             <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
@@ -265,7 +265,7 @@
     <script src="navigation.js"></script>
     <script>
         let allReservations = [];
-        let dateRangeFilter = 'Todos'; // Default: all dates
+        let dateRangeFilter = '7D'; // Default: 7 days
         let reservationsChart = null;
 
         document.addEventListener('DOMContentLoaded', async function () {
@@ -322,13 +322,14 @@
 
         function calculateAndRenderDashboard() {
             let filtered = allReservations;
+            let days = 1;
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
 
             // Apply Period Filters
             if (dateRangeFilter !== 'Todos') {
-                const today = new Date();
-                today.setHours(23, 59, 59, 999);
-
                 if (dateRangeFilter === '7D') {
+                    days = 7;
                     const limitDate = new Date();
                     limitDate.setDate(today.getDate() - 7);
                     limitDate.setHours(0, 0, 0, 0);
@@ -337,6 +338,7 @@
                         return itemDate >= limitDate && itemDate <= today;
                     });
                 } else if (dateRangeFilter === '15D') {
+                    days = 15;
                     const limitDate = new Date();
                     limitDate.setDate(today.getDate() - 15);
                     limitDate.setHours(0, 0, 0, 0);
@@ -345,6 +347,7 @@
                         return itemDate >= limitDate && itemDate <= today;
                     });
                 } else if (dateRangeFilter === '30D') {
+                    days = 30;
                     const limitDate = new Date();
                     limitDate.setDate(today.getDate() - 30);
                     limitDate.setHours(0, 0, 0, 0);
@@ -354,6 +357,7 @@
                     });
                 } else if (dateRangeFilter === 'mes') {
                     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+                    days = today.getDate(); // days elapsed in month
                     filtered = filtered.filter(item => {
                         const itemDate = parseItemDate(item.date);
                         return itemDate >= startOfMonth && itemDate <= today;
@@ -364,21 +368,33 @@
                     if (startVal && endVal) {
                         const startDate = new Date(startVal + 'T00:00:00');
                         const endDate = new Date(endVal + 'T23:59:59');
+                        const diffTime = Math.abs(endDate - startDate);
+                        days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
                         filtered = filtered.filter(item => {
                             const itemDate = parseItemDate(item.date);
                             return itemDate >= startDate && itemDate <= endDate;
                         });
                     }
                 }
+            } else {
+                if (allReservations.length > 0) {
+                    const dates = allReservations.map(r => parseItemDate(r.date)).filter(d => d.getTime() > 0);
+                    if (dates.length > 0) {
+                        const minDate = new Date(Math.min(...dates));
+                        const diffTime = Math.abs(today - minDate);
+                        days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+                    }
+                }
             }
 
             // Calculations for Bento Grid
             const total = filtered.length;
+            const average = days > 0 ? (total / days) : 0;
             const paid = filtered.filter(r => r.status === 'Paga').length;
             const pending = filtered.filter(r => r.status === 'Pendente').length;
             
             document.getElementById('stat-total').innerText = total.toLocaleString('pt-BR');
-            document.getElementById('stat-completed').innerText = paid.toLocaleString('pt-BR');
+            document.getElementById('stat-average').innerText = average.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             document.getElementById('stat-pending').innerText = pending.toLocaleString('pt-BR');
             document.getElementById('stat-paid').innerText = paid.toLocaleString('pt-BR');
 

@@ -190,13 +190,12 @@
                                 <th class="pb-2 font-medium">Cliente</th>
                                 <th class="pb-2 font-medium text-center">Corridas</th>
                                 <th class="pb-2 font-medium text-right">Líquido Recebido</th>
-                                <th class="pb-2 font-medium text-right">A Receber</th>
                             </tr>
                         </thead>
                         <tbody id="clients-table-body" class="divide-y divide-white/5">
                             <!-- Injected dynamically -->
                             <tr>
-                                <td colspan="4" class="py-6 text-center text-on-surface-variant">Carregando faturamento...</td>
+                                <td colspan="3" class="py-6 text-center text-on-surface-variant">Carregando faturamento...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -410,7 +409,7 @@
             if (sortedClients.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="py-6 text-center text-on-surface-variant">Nenhum faturamento registrado neste período.</td>
+                        <td colspan="3" class="py-6 text-center text-on-surface-variant">Nenhum faturamento registrado neste período.</td>
                     </tr>
                 `;
             } else {
@@ -420,7 +419,6 @@
                             <td class="py-2.5 font-semibold text-on-surface">${c.name}</td>
                             <td class="py-2.5 text-center text-on-surface-variant/80">${c.count}</td>
                             <td class="py-2.5 text-right text-secondary font-medium">${c.received.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                            <td class="py-2.5 text-right text-orange-400/80">${c.pending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', row);
