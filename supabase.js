@@ -406,6 +406,23 @@ async function dbLoginUser(email, password) {
             return { success: false, error: 'Seu cadastro está pendente de aprovação.' };
         }
 
+        // Update last login timestamp in the database (awaited to prevent browser cancellation during redirect)
+        const nowIso = new Date().toISOString();
+        try {
+            const { error: updateErr } = await supabaseClientInstance
+                .from('profiles')
+                .update({ last_login: nowIso })
+                .eq('id', userId);
+            if (updateErr) {
+                console.error('Erro ao atualizar last_login:', updateErr);
+                alert('Erro do Supabase ao salvar login: ' + updateErr.message);
+            }
+        } catch (e) {
+            console.error('Erro ao atualizar last_login:', e);
+            alert('Falha crítica ao salvar login: ' + e.message);
+        }
+
+        profile.last_login = nowIso;
         localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(profile));
         return { success: true, user: profile };
 

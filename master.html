@@ -343,6 +343,12 @@
             return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
+        function formatDateTime(isoStr) {
+            if (!isoStr) return 'Nunca logou';
+            const d = new Date(isoStr);
+            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
         function daysUntil(isoStr) {
             if (!isoStr) return null;
             const diff = new Date(isoStr) - new Date();
@@ -435,6 +441,10 @@
                                     ${badgeFor(user.status)}
                                 </div>
                                 <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email} • Tel: ${user.phone || '—'}</span>
+                                <span class="text-[10px] text-secondary/80 flex items-center gap-1 mt-0.5 font-medium">
+                                    <span class="material-symbols-outlined text-[12px]">login</span>
+                                    Último login: ${formatDateTime(user.last_login)}
+                                </span>
                             </div>
                         </div>
                         <div class="flex flex-row md:flex-col items-start md:items-end justify-between md:justify-center gap-2 border-t border-white/5 pt-2.5 md:pt-0 md:border-none shrink-0">
@@ -752,9 +762,9 @@
                 });
             }
 
-            // Load all users
+            // Load all users (excluding Master role)
             dbGetAllUsers().then(users => {
-                allUsers = users || [];
+                allUsers = (users || []).filter(u => u.role !== 'Master');
                 renderUsers();
             });
 

@@ -87,6 +87,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
 
+    // Update last_login in background if user is logged in (session-throttled to avoid redundant writes)
+    try {
+        const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (loggedUserRaw) {
+            const loggedUser = JSON.parse(loggedUserRaw);
+            if (loggedUser && loggedUser.id && !sessionStorage.getItem('MAPAOS_LOGIN_RECORDED')) {
+                const checkInterval = setInterval(() => {
+                    if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+                        clearInterval(checkInterval);
+                        const nowIso = new Date().toISOString();
+                        supabaseClientInstance
+                            .from('profiles')
+                            .update({ last_login: nowIso })
+                            .eq('id', loggedUser.id)
+                            .then(({ error }) => {
+                                if (!error) {
+                                    sessionStorage.setItem('MAPAOS_LOGIN_RECORDED', 'true');
+                                    loggedUser.last_login = nowIso;
+                                    localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(loggedUser));
+                                    console.log('Last login registrado com sucesso.');
+                                } else {
+                                    console.error('Erro ao salvar last_login em background:', error);
+                                }
+                            });
+                    }
+                }, 100);
+                setTimeout(() => clearInterval(checkInterval), 5000);
+            }
+        }
+    } catch (e) {
+        console.error('Erro ao processar last_login em background:', e);
+    }
+
     // Dynamic clients list loaded from Supabase database
     let clientsList = [];
     async function fetchClients() {
@@ -340,6 +373,9 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <!-- User Profile Avatar & Add button -->
             <div class="flex items-center gap-3">
+                <button id="pwa-install-btn" class="hidden flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-400 active:scale-95 transition-all duration-300" title="Instalar Aplicativo">
+                    <span class="material-symbols-outlined text-xl">download</span>
+                </button>
                 <button id="desktop-add-btn" class="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform">
                     <span class="material-symbols-outlined font-bold">add</span>
                 </button>
@@ -777,5 +813,50 @@ document.addEventListener('DOMContentLoaded', () => {
         indicator.timeoutId = setTimeout(() => {
             indicator.style.transform = 'scaleX(1) scaleY(1)';
         }, 250);
+    }
+
+    // ─── PWA Installation Logic ──────────────────────────────────────────
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.classList.remove('hidden');
+            installBtn.style.display = 'flex';
+        }
+    });
+
+    window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA foi instalado com sucesso');
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.classList.add('hidden');
+            installBtn.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('#pwa-install-btn')) {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            deferredPrompt = null;
+            const installBtn = document.getElementById('pwa-install-btn');
+            if (installBtn) {
+                installBtn.classList.add('hidden');
+                installBtn.style.display = 'none';
+            }
+        }
+    });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registrado com sucesso:', reg))
+                .catch(err => console.error('Falha ao registrar Service Worker:', err));
+        });
     }
 });

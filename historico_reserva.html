@@ -528,6 +528,8 @@
                 return sortOrder === 'desc' ? dateTimeB - dateTimeA : dateTimeA - dateTimeB;
             });
 
+            currentFilteredReservations = filtered;
+
             // Update Toggle View Button icon and text dynamically
             const btnToggleView = document.getElementById('btn-toggle-view');
             const viewModeIcon = document.getElementById('view-mode-icon');
