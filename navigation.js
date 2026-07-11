@@ -232,8 +232,62 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
 
+    // Inject iOS PWA Installation Guide Modal
+    const iosInstallModalHTML = `
+        <div id="ios-install-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+            <div class="glass-card w-[90%] max-w-[400px] p-6 rounded-2xl flex flex-col gap-5 transform scale-95 transition-all duration-300 border-t-white/20">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-headline-lg-mobile text-lg text-primary font-bold">Instalar no iPhone</h3>
+                        <p class="text-on-surface-variant text-xs mt-1">Siga os passos simples abaixo para adicionar o Mapa.OS à sua tela inicial:</p>
+                    </div>
+                    <button id="close-ios-install-modal" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                
+                <div class="flex flex-col gap-4 text-xs">
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                            <span class="material-symbols-outlined text-base">ios_share</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Passo 1</span>
+                            <span class="text-on-surface-variant">Toque no botão de <strong>Compartilhar</strong> na barra do seu navegador.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                            <span class="material-symbols-outlined text-base">add_to_home_screen</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Passo 2</span>
+                            <span class="text-on-surface-variant">Role a lista de opções e toque em <strong>Adicionar à Tela de Início</strong>.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                            <span class="material-symbols-outlined text-base">done</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Passo 3</span>
+                            <span class="text-on-surface-variant">Toque em <strong>Adicionar</strong> no canto superior direito para confirmar.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-close-ios-guide" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-11 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit">
+                    <span>Entendi</span>
+                </button>
+            </div>
+        </div>
+    `;
+
     document.body.insertAdjacentHTML('beforeend', loaderHTML);
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.body.insertAdjacentHTML('beforeend', iosInstallModalHTML);
 
     const loader = document.getElementById('global-loader');
     const modal = document.getElementById('reservation-modal');
@@ -817,11 +871,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ─── PWA Installation Logic ──────────────────────────────────────────
     let deferredPrompt;
+    
+    // Check if the device is iOS and not already running in standalone mode
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (isIOS && !isStandalone && installBtn) {
+        // Show download button for iOS users so they can see the manual install guide
+        installBtn.classList.remove('hidden');
+        installBtn.style.display = 'flex';
+    }
+
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        const installBtn = document.getElementById('pwa-install-btn');
-        if (installBtn) {
+        if (installBtn && !isIOS) {
             installBtn.classList.remove('hidden');
             installBtn.style.display = 'flex';
         }
@@ -829,7 +894,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('appinstalled', (evt) => {
         console.log('PWA foi instalado com sucesso');
-        const installBtn = document.getElementById('pwa-install-btn');
         if (installBtn) {
             installBtn.classList.add('hidden');
             installBtn.style.display = 'none';
@@ -837,16 +901,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', async (e) => {
+        const iosModal = document.getElementById('ios-install-modal');
+
         if (e.target.closest('#pwa-install-btn')) {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User response to the install prompt: ${outcome}`);
-            deferredPrompt = null;
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) {
-                installBtn.classList.add('hidden');
-                installBtn.style.display = 'none';
+            if (isIOS) {
+                // Show iOS guide modal
+                if (iosModal) {
+                    iosModal.style.display = 'flex';
+                    iosModal.offsetHeight; // force repaint
+                    iosModal.classList.remove('opacity-0', 'pointer-events-none');
+                    const innerCard = iosModal.querySelector('.glass-card');
+                    if (innerCard) {
+                        innerCard.classList.remove('scale-95');
+                        innerCard.classList.add('scale-100');
+                    }
+                }
+            } else {
+                // Standard PWA prompt on Android/PC
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                if (installBtn) {
+                    installBtn.classList.add('hidden');
+                    installBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // Close iOS guide modal triggers
+        if (e.target.closest('#close-ios-install-modal') || e.target.closest('#btn-close-ios-guide') || e.target === iosModal) {
+            if (iosModal) {
+                iosModal.classList.add('opacity-0', 'pointer-events-none');
+                const innerCard = iosModal.querySelector('.glass-card');
+                if (innerCard) {
+                    innerCard.classList.remove('scale-100');
+                    innerCard.classList.add('scale-95');
+                }
+                setTimeout(() => {
+                    iosModal.style.display = 'none';
+                }, 300);
             }
         }
     });
