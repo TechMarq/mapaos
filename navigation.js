@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-btn">
                     <img src="img/mapaos-logo-sf.svg" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
                     <div class="flex flex-col justify-center">
-                        <div class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim leading-none">
+                        <div class="whitespace-nowrap text-sm sm:text-base md:text-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim leading-none truncate max-w-[100px] min-[375px]:max-w-[140px] min-[425px]:max-w-[180px] sm:max-w-none">
                             ${loggedUserName}
                         </div>
                         ${expiryBadgeHTML}
