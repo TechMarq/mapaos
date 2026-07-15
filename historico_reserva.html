@@ -256,6 +256,17 @@
                 <span>Processar Conciliação</span>
                 <span class="material-symbols-outlined text-lg">sync</span>
             </button>
+
+            <!-- Historico de Importações -->
+            <div class="border-t border-white/10 pt-4 flex flex-col gap-3">
+                <h4 class="text-sm font-semibold text-secondary flex items-center justify-between">
+                    <span>Histórico de Importações</span>
+                    <span class="text-[10px] text-on-surface-variant font-normal">Excluir reverte status para Pendente</span>
+                </h4>
+                <div id="imports-history-list" class="max-h-48 overflow-y-auto space-y-2 pr-1 scrollbar-hide text-xs">
+                    <p class="text-xs text-on-surface-variant/60 text-center py-2">Carregando histórico...</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -943,6 +954,67 @@
         const fileText = document.getElementById('file-info-text');
         const submitReconBtn = document.getElementById('btn-reconciliation-submit');
 
+        async function loadAndRenderReconciliationImports() {
+            const container = document.getElementById('imports-history-list');
+            if (!container) return;
+
+            try {
+                const imports = await dbGetReconciliationImports();
+                if (!imports || imports.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-on-surface-variant/60 text-center py-2">Nenhuma importação encontrada.</p>`;
+                    return;
+                }
+
+                let html = '';
+                imports.forEach(imp => {
+                    const date = new Date(imp.created_at).toLocaleString('pt-BR');
+                    html += `
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:border-white/10 transition-all gap-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-on-surface truncate" title="${imp.filename}">${imp.filename}</p>
+                                <p class="text-[10px] text-on-surface-variant/70 mt-0.5">${date} • ${imp.row_count} itens</p>
+                            </div>
+                            <button class="btn-delete-import text-error hover:bg-error/10 p-1.5 rounded-lg transition-colors flex items-center justify-center shrink-0" data-id="${imp.id}" title="Excluir importação">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+                // Add delete event listeners
+                container.querySelectorAll('.btn-delete-import').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const importId = btn.getAttribute('data-id');
+                        if (confirm('Tem certeza que deseja excluir esta importação? Todas as reservas associadas voltarão a ter o status "Pendente" (o registro das reservas NÃO será excluído).')) {
+                            const btnInner = btn.innerHTML;
+                            btn.innerHTML = `
+                                <svg class="animate-spin h-4 w-4 text-error" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            `;
+                            btn.disabled = true;
+
+                            const res = await dbDeleteReconciliationImport(importId);
+                            if (res && res.success) {
+                                alert('Importação excluída com sucesso!');
+                                loadAndRenderReconciliationImports();
+                                loadAndRenderReservations(true); // reload reservation list
+                            } else {
+                                alert('Erro ao excluir importação: ' + (res ? res.error : 'Erro desconhecido'));
+                                btn.innerHTML = btnInner;
+                                btn.disabled = false;
+                            }
+                        }
+                    });
+                });
+            } catch (err) {
+                console.error('Error rendering imports:', err);
+                container.innerHTML = `<p class="text-xs text-error/80 text-center py-2">Erro ao carregar histórico.</p>`;
+            }
+        }
+
         function openReconModal() {
             if (reconModal) {
                 reconModal.style.display = 'flex';
@@ -953,6 +1025,7 @@
                     inner.classList.remove('scale-95');
                     inner.classList.add('scale-100');
                 }
+                loadAndRenderReconciliationImports();
             }
         }
 
@@ -1125,7 +1198,8 @@
 
                         setTimeout(() => {
                             // Execute reconciliation query with parsed records
-                            dbReconcileReservations(records).then(result => {
+                            const filename = uploadedFileObject ? uploadedFileObject.name : 'Importação Sem Nome';
+                            dbReconcileReservations(records, filename).then(result => {
                                 if (loader) {
                                     loader.classList.add('opacity-0', 'pointer-events-none');
                                     setTimeout(() => loader.style.display = 'none', 500);

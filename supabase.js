@@ -229,7 +229,7 @@ async function dbUpdateReservation(reservaId, updates) {
 }
 
 // Reconcile pending reservations with uploaded spreadsheet data
-async function dbReconcileReservations(records) {
+async function dbReconcileReservations(records, filename = 'Importação Sem Nome') {
     if (!supabaseClientInstance || !records || records.length === 0) {
         return { success: false, error: 'Nenhum registro para conciliação.' };
     }
@@ -288,6 +288,20 @@ async function dbReconcileReservations(records) {
             };
         }
 
+        // First, create the reconciliation import record
+        const { data: importData, error: importErr } = await supabaseClientInstance
+            .from('reconciliation_imports')
+            .insert({
+                user_id: userId,
+                filename: filename,
+                row_count: records.length
+            })
+            .select('id')
+            .single();
+
+        if (importErr) throw importErr;
+        const importId = importData.id;
+
         // All matched! Now execute the update operations
         let reconciledCount = 0;
         for (const record of records) {
@@ -311,7 +325,8 @@ async function dbReconcileReservations(records) {
                         value: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         net_value: netVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         plate: plateVal,
-                        driver: driverVal
+                        driver: driverVal,
+                        import_id: importId
                     })
                     .eq('id', dbMatch.id);
                 
@@ -677,19 +692,75 @@ async function dbSaveSubscription(subscriptionJson) {
         const userId = getLoggedUserId();
         if (!userId) return false;
 
+        const endpoint = subscriptionJson.endpoint;
+        if (!endpoint) return false;
+
         const { error } = await supabaseClientInstance
             .from('push_subscriptions')
             .upsert([
                 {
                     user_id: userId,
+                    endpoint: endpoint,
                     subscription_json: subscriptionJson
                 }
-            ], { onConflict: 'user_id, subscription_json' });
+            ], { onConflict: 'endpoint' });
 
         if (error) throw error;
         return true;
     } catch (err) {
         console.error('Supabase save subscription error:', err);
         return false;
+    }
+}
+
+// Fetch list of reconciliation imports
+async function dbGetReconciliationImports() {
+    if (!supabaseClientInstance) return [];
+    try {
+        const userId = getLoggedUserId();
+        const isMaster = isLoggedUserMaster();
+        let query = supabaseClientInstance
+            .from('reconciliation_imports')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (userId && !isMaster) {
+            query = query.eq('user_id', userId);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.error('Error fetching reconciliation imports:', err);
+        return [];
+    }
+}
+
+// Delete/Rollback a batch reconciliation import
+async function dbDeleteReconciliationImport(importId) {
+    if (!supabaseClientInstance || !importId) return { success: false, error: 'Parâmetros inválidos.' };
+    try {
+        // Update reservations associated with this import back to 'Pendente' and clear import_id
+        const { error: updateErr } = await supabaseClientInstance
+            .from('reservations')
+            .update({
+                status: 'Pendente',
+                import_id: null
+            })
+            .eq('import_id', importId);
+
+        if (updateErr) throw updateErr;
+
+        // Delete the import registry row
+        const { error: deleteErr } = await supabaseClientInstance
+            .from('reconciliation_imports')
+            .delete()
+            .eq('id', importId);
+
+        if (deleteErr) throw deleteErr;
+
+        return { success: true };
+    } catch (err) {
+        console.error('Error deleting reconciliation import:', err);
+        return { success: false, error: err.message };
     }
 }
