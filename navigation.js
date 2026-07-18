@@ -365,25 +365,95 @@ document.addEventListener('DOMContentLoaded', () => {
     const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
     let loggedUserName = 'Usuário';
     let expiryBadgeHTML = '';
+    let userObj = null;
     
     if (loggedUserRaw) {
         try {
-            const userObj = JSON.parse(loggedUserRaw);
+            userObj = JSON.parse(loggedUserRaw);
             loggedUserName = userObj.name || userObj.email.split('@')[0];
             
             // Calculate days remaining (only for regular users, excluding Master role)
-            if (userObj.role !== 'Master' && userObj.expires_at) {
-                const expiryDate = new Date(userObj.expires_at);
-                const today = new Date();
-                const diffTime = expiryDate - today;
-                const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-                
-                if (daysRemaining <= 0) {
-                    expiryBadgeHTML = `<span class="text-[9px] text-red-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">error</span> Acesso Expirado</span>`;
-                } else if (daysRemaining <= 5) {
-                    expiryBadgeHTML = `<span class="text-[9px] text-yellow-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">warning</span> Expira em ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}</span>`;
-                } else {
-                    expiryBadgeHTML = `<span class="text-[9px] text-emerald-400 font-medium flex items-center gap-0.5 leading-none mt-0.5"><span class="material-symbols-outlined text-[11px]">event_available</span> ${daysRemaining} dias de acesso</span>`;
+            if (userObj.role !== 'Master') {
+                const status = userObj.status;
+                if (status === 'Congelado') {
+                    expiryBadgeHTML = `<span class="text-[9px] text-yellow-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">pause_circle</span> Acesso Congelado</span>`;
+                } else if (status === 'Rejeitado') {
+                    expiryBadgeHTML = `<span class="text-[9px] text-red-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">block</span> Acesso Revogado</span>`;
+                } else if (userObj.expires_at) {
+                    const expiryDate = new Date(userObj.expires_at);
+                    const today = new Date();
+                    const diffTime = expiryDate - today;
+                    const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                    
+                    if (daysRemaining <= 0) {
+                        expiryBadgeHTML = `<span class="text-[9px] text-red-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">error</span> Acesso Expirado</span>`;
+                    } else if (daysRemaining <= 5) {
+                        expiryBadgeHTML = `<span class="text-[9px] text-yellow-400 font-bold flex items-center gap-1 leading-none mt-0.5"><span class="material-symbols-outlined text-[12px] font-bold">warning</span> Expira em ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}</span>`;
+                    } else {
+                        expiryBadgeHTML = `<span class="text-[9px] text-emerald-400 font-medium flex items-center gap-0.5 leading-none mt-0.5"><span class="material-symbols-outlined text-[11px]">event_available</span> ${daysRemaining} dias de acesso</span>`;
+                    }
+                }
+
+                // Inject Status Warning Modal if status is not Approved
+                if (status === 'Congelado' || status === 'Expirado' || status === 'Rejeitado') {
+                    let title = "Aviso de Acesso";
+                    let message = "Seu acesso está restrito no momento.";
+                    let icon = "warning";
+                    let iconColor = "text-yellow-400";
+                    let borderClass = "border-yellow-500/30";
+
+                    if (status === 'Congelado') {
+                        title = "Acesso Congelado";
+                        message = "Sua conta foi congelada temporariamente pelo Administrador. Os seus dias restantes de acesso foram salvos e voltarão a contar assim que a conta for descongelada.";
+                        icon = "pause_circle";
+                        iconColor = "text-yellow-400";
+                        borderClass = "border-yellow-500/30";
+                    } else if (status === 'Expirado') {
+                        title = "Acesso Expirado";
+                        message = "Seu período de acesso de 30 dias expirou. Regularize sua assinatura com o Administrador Master para restabelecer o acesso completo e poder realizar novas reservas.";
+                        icon = "error";
+                        iconColor = "text-red-400";
+                        borderClass = "border-red-500/30";
+                    } else if (status === 'Rejeitado') {
+                        title = "Acesso Revogado";
+                        message = "Seu acesso a esta conta foi revogado ou recusado pelo Administrador Master. Entre em contato para maiores esclarecimentos.";
+                        icon = "block";
+                        iconColor = "text-red-400";
+                        borderClass = "border-red-500/30";
+                    }
+
+                    const warningModalHTML = `
+                        <div id="status-warning-modal" class="fixed inset-0 z-[10000] flex items-center justify-center bg-[#060e20]/85 backdrop-blur-md transition-all duration-300">
+                            <div class="glass-card w-[90%] max-w-[400px] p-6 rounded-2xl flex flex-col gap-5 transform scale-100 transition-all border ${borderClass} shadow-2xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined ${iconColor} text-2xl">${icon}</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-headline-lg-mobile text-lg font-bold text-on-surface">${title}</h3>
+                                        <span class="text-[10px] text-on-surface-variant uppercase tracking-wider">Aviso do Sistema</span>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-xs text-on-surface-variant leading-relaxed">
+                                    ${message}
+                                </p>
+
+                                <div class="flex flex-col gap-2 mt-2">
+                                    <button onclick="document.getElementById('status-warning-modal').remove()" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-11 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center">
+                                        <span>Visualizar Painel (Leitura)</span>
+                                    </button>
+                                    <a href="login.html" onclick="localStorage.removeItem('MAPAOS_LOGGED_USER')" class="h-11 rounded-xl bg-white/5 hover:bg-white/10 text-on-surface text-xs font-bold flex items-center justify-center border border-white/10 active:scale-[0.98] transition-all">
+                                        Sair da Conta
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    // Insert modal HTML safely
+                    setTimeout(() => {
+                        document.body.insertAdjacentHTML('beforeend', warningModalHTML);
+                    }, 500);
                 }
             }
         } catch (e) {
@@ -491,14 +561,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const mAddBtn = document.getElementById('mobile-add-btn');
-    if (mAddBtn) {
-        mAddBtn.addEventListener('click', openModal);
-    }
+    // Check user block status to disable the add button (excluding Master)
+    const isBlocked = userObj && userObj.role !== 'Master' && userObj.status !== 'Aprovado';
 
+    const mAddBtn = document.getElementById('mobile-add-btn');
     const dAddBtn = document.getElementById('desktop-add-btn');
-    if (dAddBtn) {
-        dAddBtn.addEventListener('click', openModal);
+
+    if (isBlocked) {
+        if (mAddBtn) {
+            mAddBtn.className = "flex items-center justify-center w-14 h-14 rounded-full bg-white/5 border border-white/10 text-on-surface-variant/40 cursor-not-allowed opacity-50 shadow-none -translate-y-4 z-20";
+            mAddBtn.innerHTML = '<span class="material-symbols-outlined text-2xl font-bold">lock</span>';
+            mAddBtn.title = "Acesso restrito/congelado";
+            mAddBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert("Acesso restrito! Sua conta está inativa, congelada ou expirada. Regularize seu acesso para criar reservas.");
+            });
+        }
+        if (dAddBtn) {
+            dAddBtn.className = "hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 text-on-surface-variant/40 cursor-not-allowed opacity-50 shadow-none";
+            dAddBtn.innerHTML = '<span class="material-symbols-outlined font-bold">lock</span>';
+            dAddBtn.title = "Acesso restrito/congelado";
+            dAddBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert("Acesso restrito! Sua conta está inativa, congelada ou expirada. Regularize seu acesso para criar reservas.");
+            });
+        }
+    } else {
+        if (mAddBtn) {
+            mAddBtn.addEventListener('click', openModal);
+        }
+        if (dAddBtn) {
+            dAddBtn.addEventListener('click', openModal);
+        }
     }
 
     // Intercept clicks on links for smooth fade transition

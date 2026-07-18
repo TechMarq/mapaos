@@ -52,7 +52,7 @@ function isUserAccessExpired() {
         if (loggedUserRaw) {
             const user = JSON.parse(loggedUserRaw);
             if (user && user.role === 'Master') return false; // Master accounts never expire
-            if (user && user.status === 'Expirado') return true;
+            if (user && user.status !== 'Aprovado') return true; // Block Congelado, Expirado, Rejeitado, etc.
             if (user && user.expires_at) {
                 const expiryDate = new Date(user.expires_at);
                 if (expiryDate < new Date()) {
@@ -415,8 +415,8 @@ async function dbLoginUser(email, password) {
             }
         }
 
-        // If not approved and not expired (e.g. Pendente or Rejeitado), sign out natively immediately
-        if (profile.status !== 'Aprovado' && profile.status !== 'Expirado' && profile.role !== 'Master') {
+        // If the user's account is pending approval, do not let them log in
+        if (profile.status === 'Pendente' && profile.role !== 'Master') {
             await supabaseClientInstance.auth.signOut();
             return { success: false, error: 'Seu cadastro está pendente de aprovação.' };
         }
@@ -538,12 +538,78 @@ async function dbRenewUser(userId) {
         expiresAt.setDate(expiresAt.getDate() + 30);
         const { error } = await supabaseClientInstance
             .from('profiles')
-            .update({ status: 'Aprovado', expires_at: expiresAt.toISOString() })
+            .update({ status: 'Aprovado', expires_at: expiresAt.toISOString(), frozen_days_remaining: null })
             .eq('id', userId);
         if (error) throw error;
         return true;
     } catch (err) {
         console.error('Supabase renew profile error:', err);
+        return false;
+    }
+}
+
+// Freeze user access (saves remaining days and sets status to Congelado)
+async function dbFreezeUser(userId) {
+    if (!supabaseClientInstance) return false;
+    try {
+        // Fetch current user details to calculate remaining days
+        const { data: user, error: fetchErr } = await supabaseClientInstance
+            .from('profiles')
+            .select('expires_at')
+            .eq('id', userId)
+            .single();
+        if (fetchErr || !user) throw fetchErr || new Error("User not found");
+
+        let remainingDays = 0;
+        if (user.expires_at) {
+            const diff = new Date(user.expires_at) - new Date();
+            remainingDays = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        const { error } = await supabaseClientInstance
+            .from('profiles')
+            .update({ 
+                status: 'Congelado', 
+                expires_at: null, 
+                frozen_days_remaining: remainingDays 
+            })
+            .eq('id', userId);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase freeze user error:', err);
+        return false;
+    }
+}
+
+// Unfreeze user access (restores remaining days starting from now)
+async function dbUnfreezeUser(userId) {
+    if (!supabaseClientInstance) return false;
+    try {
+        // Fetch user details to get remaining days
+        const { data: user, error: fetchErr } = await supabaseClientInstance
+            .from('profiles')
+            .select('frozen_days_remaining')
+            .eq('id', userId)
+            .single();
+        if (fetchErr || !user) throw fetchErr || new Error("User not found");
+
+        const remainingDays = typeof user.frozen_days_remaining === 'number' ? user.frozen_days_remaining : 30;
+        const newExpiresAt = new Date();
+        newExpiresAt.setDate(newExpiresAt.getDate() + remainingDays);
+
+        const { error } = await supabaseClientInstance
+            .from('profiles')
+            .update({ 
+                status: 'Aprovado', 
+                expires_at: newExpiresAt.toISOString(), 
+                frozen_days_remaining: null 
+            })
+            .eq('id', userId);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase unfreeze user error:', err);
         return false;
     }
 }

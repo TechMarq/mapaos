@@ -16,6 +16,7 @@ create table if not exists profiles (
 -- If the table already exists, add the columns (safe):
 alter table profiles add column if not exists expires_at timestamp with time zone default null;
 alter table profiles add column if not exists password text default '123456';
+alter table profiles add column if not exists frozen_days_remaining integer default null;
 
 -- Enable Row Level Security (RLS)
 alter table profiles enable row level security;

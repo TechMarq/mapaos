@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <title>Mapa.OS - Login</title>
+    <script src="alerts.js"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
         rel="stylesheet" />
@@ -353,6 +354,58 @@
         </div>
     </div>
 
+    <!-- PWA Install Widget -->
+    <div id="pwa-install-container" class="fixed top-4 right-4 z-[999]">
+        <!-- Install Floating Action Button -->
+        <button id="pwa-install-btn" class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-400 active:scale-95 transition-all duration-300 shadow-lg" title="Instalar Aplicativo">
+            <span class="material-symbols-outlined text-xl">download</span>
+        </button>
+    </div>
+
+    <!-- PWA Install Push Banner -->
+    <div id="pwa-install-banner" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[9999] glass-card p-4 rounded-2xl border border-primary/20 shadow-2xl transition-all duration-500 transform translate-y-[150%] opacity-0 pointer-events-none flex flex-col gap-3">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                <span class="material-symbols-outlined text-xl">tips_and_updates</span>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-bold text-xs text-primary">Instalar Mapa.OS</h4>
+                <p class="text-on-surface-variant text-[11px] mt-0.5 leading-relaxed">Instale o aplicativo na sua tela inicial para obter o melhor desempenho e facilidade de acesso.</p>
+            </div>
+            <button id="close-pwa-banner" class="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-white/5 transition-colors flex items-center justify-center">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+        <div class="flex gap-2">
+            <button id="btn-pwa-banner-install" class="flex-1 h-9 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-sm">download</span> Instalar
+            </button>
+        </div>
+    </div>
+
+    <!-- Unified Install Guide Modal -->
+    <div id="pwa-install-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+        <div class="glass-card w-[90%] max-w-[400px] p-6 rounded-2xl flex flex-col gap-5 transform scale-95 transition-all duration-300 border-t-white/20">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 id="pwa-modal-title" class="font-headline-lg-mobile text-lg text-primary font-bold">Instalar Mapa.OS</h3>
+                    <p id="pwa-modal-subtitle" class="text-on-surface-variant text-xs mt-1">Siga os passos simples abaixo para adicionar à sua tela inicial:</p>
+                </div>
+                <button id="close-pwa-modal" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div id="pwa-modal-steps" class="flex flex-col gap-4 text-xs">
+                <!-- Filled dynamically via JS -->
+            </div>
+
+            <button id="btn-close-pwa-guide" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-11 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit">
+                <span>Entendi</span>
+            </button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
@@ -434,10 +487,6 @@
                             alert(result ? result.error : 'Erro ao conectar com o banco de dados. Verifique sua conexão.');
                         } else if (result.user.status === 'Pendente') {
                             alert('Sua conta está em análise por um administrador master. Aguarde a aprovação do acesso.');
-                        } else if (result.user.status === 'Rejeitado') {
-                            alert('Seu acesso foi negado pelo administrador master.');
-                        } else if (result.user.status === 'Expirado') {
-                            alert('Seu acesso de 30 dias expirou. Entre em contato com o administrador master para renovação.');
                         } else if (result.user.role === 'Master') {
                             // Redirect Master to control panel
                             if (loader) loader.classList.remove('opacity-0', 'pointer-events-none');
@@ -560,6 +609,190 @@
                 }
             }
         }
+
+        // ─── PWA Installation Logic ───
+        (function() {
+            let deferredPrompt;
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+            const installContainer = document.getElementById('pwa-install-container');
+            const installBtn = document.getElementById('pwa-install-btn');
+            const banner = document.getElementById('pwa-install-banner');
+            const bannerInstallBtn = document.getElementById('btn-pwa-banner-install');
+            const closeBannerBtn = document.getElementById('close-pwa-banner');
+            const pwaModal = document.getElementById('pwa-install-modal');
+            const closePwaModalBtn = document.getElementById('close-pwa-modal');
+            const closePwaGuideBtn = document.getElementById('btn-close-pwa-guide');
+
+            // Hide everything if already running standalone
+            if (isStandalone) {
+                if (installContainer) installContainer.style.display = 'none';
+                if (banner) banner.style.display = 'none';
+                return;
+            }
+
+            // Always show install button and push banner if not standalone
+            if (installBtn) {
+                installBtn.classList.remove('hidden');
+                installBtn.style.display = 'flex';
+            }
+
+            // Show push banner automatically with a delay on load
+            setTimeout(() => {
+                if (banner) {
+                    banner.classList.remove('opacity-0', 'translate-y-[150%]', 'pointer-events-none');
+                    banner.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                }
+            }, 1200);
+
+            if (closeBannerBtn && banner) {
+                closeBannerBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    banner.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                    banner.classList.add('opacity-0', 'translate-y-[150%]', 'pointer-events-none');
+                });
+            }
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+            });
+
+            window.addEventListener('appinstalled', (evt) => {
+                console.log('PWA instalado');
+                if (installContainer) installContainer.style.display = 'none';
+                if (banner) {
+                    banner.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                    banner.classList.add('opacity-0', 'translate-y-[150%]', 'pointer-events-none');
+                }
+                closeModal();
+            });
+
+            const triggerInstallFlow = async () => {
+                // Try to trigger native prompt first if available (and not iOS)
+                if (!isIOS && deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User choice: ${outcome}`);
+                    deferredPrompt = null;
+                    if (banner) {
+                        banner.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                        banner.classList.add('opacity-0', 'translate-y-[150%]', 'pointer-events-none');
+                    }
+                    return;
+                }
+                showInstructionModal();
+            };
+
+            if (installBtn) installBtn.addEventListener('click', triggerInstallFlow);
+            if (bannerInstallBtn) bannerInstallBtn.addEventListener('click', triggerInstallFlow);
+
+            function showInstructionModal() {
+                if (!pwaModal) return;
+
+                const titleEl = document.getElementById('pwa-modal-title');
+                const subtitleEl = document.getElementById('pwa-modal-subtitle');
+                const stepsEl = document.getElementById('pwa-modal-steps');
+
+                if (isIOS) {
+                    titleEl.textContent = "Instalar no iPhone / iPad";
+                    subtitleEl.textContent = "Siga estes passos rápidos para instalar o app:";
+                    stepsEl.innerHTML = `
+                        <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">ios_share</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-on-surface">Passo 1</span>
+                                <span class="text-on-surface-variant">Toque no botão de <strong>Compartilhar</strong> na barra do navegador Safari.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">add_to_home_screen</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-on-surface">Passo 2</span>
+                                <span class="text-on-surface-variant">Selecione a opção <strong>Adicionar à Tela de Início</strong>.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">done</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-on-surface">Passo 3</span>
+                                <span class="text-on-surface-variant">Toque em <strong>Adicionar</strong> no canto superior direito para confirmar.</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    titleEl.textContent = "Instalar Aplicativo";
+                    subtitleEl.textContent = "Como instalar o app no seu dispositivo Android ou PC:";
+                    stepsEl.innerHTML = `
+                        <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">more_vert</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-on-surface">Passo 1</span>
+                                <span class="text-on-surface-variant">Toque no menu (três pontinhos) do navegador no canto superior direito ou barra.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">add_to_home_screen</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-on-surface">Passo 2</span>
+                                <span class="text-on-surface-variant">Selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">check_circle</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-on-surface">Passo 3</span>
+                                <span class="text-on-surface-variant">Confirme clicando em <strong>Instalar</strong> no aviso na tela.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                pwaModal.style.display = 'flex';
+                pwaModal.offsetHeight;
+                pwaModal.classList.remove('opacity-0', 'pointer-events-none');
+                const inner = pwaModal.querySelector('.glass-card');
+                if (inner) {
+                    inner.classList.remove('scale-95');
+                    inner.classList.add('scale-100');
+                }
+            }
+
+            function closeModal() {
+                if (pwaModal) {
+                    pwaModal.classList.add('opacity-0', 'pointer-events-none');
+                    const inner = pwaModal.querySelector('.glass-card');
+                    if (inner) {
+                        inner.classList.remove('scale-100');
+                        inner.classList.add('scale-95');
+                    }
+                    setTimeout(() => {
+                        pwaModal.style.display = 'none';
+                    }, 300);
+                }
+            }
+
+            if (closePwaModalBtn) closePwaModalBtn.addEventListener('click', closeModal);
+            if (closePwaGuideBtn) closePwaGuideBtn.addEventListener('click', closeModal);
+            if (pwaModal) {
+                pwaModal.addEventListener('click', (e) => {
+                    if (e.target === pwaModal) closeModal();
+                });
+            }
+        })();
     </script>
 </body>
 </html>
