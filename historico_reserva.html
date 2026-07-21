@@ -1186,6 +1186,24 @@
                             return;
                         }
 
+                        // Get logged user commission rate and type
+                        let commissionRate = 30; // default 30%
+                        let commissionType = 'descontado'; // default: discount
+                        if (loggedUserRaw) {
+                            try {
+                                const userObj = JSON.parse(loggedUserRaw);
+                                if (userObj && userObj.commission_rate !== undefined && userObj.commission_rate !== null) {
+                                    commissionRate = parseFloat(userObj.commission_rate);
+                                }
+                                if (userObj && userObj.commission_type) {
+                                    commissionType = userObj.commission_type;
+                                }
+                            } catch (e) {
+                                console.error("Error parsing logged user commission rate/type:", e);
+                            }
+                        }
+                        const netMultiplier = commissionType === 'ganho' ? (commissionRate / 100) : (1 - (commissionRate / 100));
+
                         // Loop through worksheet rows (skipping headers at row 0)
                         for (let i = 1; i < rows.length; i++) {
                             const cols = rows[i];
@@ -1202,8 +1220,8 @@
                             const totalStr = cols[7] ? cols[7].toString().trim() : '0';
                             const totalVal = parseCurrency(totalStr);
                             
-                            // Net Value calculation logic: Deduct 30% fee, keep 70% of Total value
-                            const netVal = totalVal * 0.70;
+                            // Net Value calculation logic: Deduct user commission fee
+                            const netVal = totalVal * netMultiplier;
 
                             records.push({
                                 plate,

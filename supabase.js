@@ -646,7 +646,7 @@ async function dbRejectUser(userId) {
     }
 }
 
-// Update a user profile name and phone
+// Update a user profile name, phone, commission_rate, and commission_type
 async function dbUpdateProfile(userId, updates) {
     if (!supabaseClientInstance) return false;
     try {
@@ -654,7 +654,9 @@ async function dbUpdateProfile(userId, updates) {
             .from('profiles')
             .update({
                 name: updates.name,
-                phone: updates.phone
+                phone: updates.phone,
+                commission_rate: updates.commission_rate,
+                commission_type: updates.commission_type
             })
             .eq('id', userId);
         if (error) throw error;

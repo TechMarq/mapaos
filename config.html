@@ -346,6 +346,36 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Commission Settings Section -->
+                <section class="glass-card rounded-xl overflow-hidden mt-4">
+                    <div class="p-4 flex justify-between items-center cursor-pointer select-none hover:bg-white/5 transition-colors border-b border-white/5" onclick="toggleAccordion('commission-content', 'commission-arrow')">
+                        <h3 class="text-sm font-semibold text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary-fixed-dim text-base">payments</span> Configuração de Comissão
+                        </h3>
+                        <span id="commission-arrow" class="material-symbols-outlined text-on-surface-variant transition-transform duration-300 transform">expand_more</span>
+                    </div>
+                    <div id="commission-content" class="accordion-content collapsed p-4 md:p-5">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-on-surface-variant mb-1">Comissão Padrão (%)</label>
+                                <input id="profile-commission-input" class="glass-input w-full rounded-lg px-3 py-2 text-xs text-on-surface" type="number" min="0" max="100" step="0.01" placeholder="30">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-on-surface-variant mb-1">Tipo de Comissão</label>
+                                <select id="profile-commission-type-input" class="glass-input w-full rounded-lg px-3 py-2 text-xs text-on-surface">
+                                    <option value="descontado" class="bg-[#0b1326] text-on-surface">Descontada (Valor líquido é o Total menos esta %)</option>
+                                    <option value="ganho" class="bg-[#0b1326] text-on-surface">Recebida (Valor líquido é exatamente esta % do Total)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-end border-t border-white/10 pt-3 mt-4">
+                            <button id="btn-save-commission" class="btn-primary text-xs text-on-primary px-5 py-2 rounded-full transition-transform active:scale-95 flex items-center gap-2 font-medium">
+                                <span class="material-symbols-outlined text-xs">save</span> Salvar Comissão
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
             
             <!-- Right Column: Preferences & Master panel -->
@@ -423,10 +453,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             const nameInput = document.getElementById('profile-name-input');
             const phoneInput = document.getElementById('profile-phone-input');
+            const commissionInput = document.getElementById('profile-commission-input');
+            const commissionTypeInput = document.getElementById('profile-commission-type-input');
             const emailInput = document.getElementById('profile-email-input');
             const roleInput = document.getElementById('profile-role-input');
             const statusInput = document.getElementById('profile-status-input');
             const saveProfileBtn = document.getElementById('btn-save-profile');
+            const saveCommissionBtn = document.getElementById('btn-save-commission');
             const masterPanelCard = document.getElementById('master-panel-card');
 
             // Load currently logged-in user profile
@@ -436,6 +469,8 @@
                 
                 if (nameInput) nameInput.value = user.name || '';
                 if (phoneInput) phoneInput.value = user.phone || '';
+                if (commissionInput) commissionInput.value = user.commission_rate !== undefined && user.commission_rate !== null ? user.commission_rate : 30;
+                if (commissionTypeInput) commissionTypeInput.value = user.commission_type || 'descontado';
                 if (emailInput) emailInput.value = user.email || '';
                 if (roleInput) roleInput.value = user.role || 'User';
                 if (statusInput) statusInput.value = user.status || 'Pendente';
@@ -459,7 +494,12 @@
                         saveProfileBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
                         saveProfileBtn.disabled = true;
 
-                        const success = await dbUpdateProfile(user.id, { name: newName, phone: newPhone });
+                        const success = await dbUpdateProfile(user.id, { 
+                            name: newName, 
+                            phone: newPhone,
+                            commission_rate: user.commission_rate !== undefined ? user.commission_rate : 30,
+                            commission_type: user.commission_type || 'descontado'
+                        });
                         
                         saveProfileBtn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> Salvar Alterações';
                         saveProfileBtn.disabled = false;
@@ -472,6 +512,42 @@
                             alert('Perfil atualizado com sucesso!');
                         } else {
                             alert('Erro ao atualizar o perfil. Tente novamente.');
+                        }
+                    });
+                }
+
+                // Set click action to update the commission configuration
+                if (saveCommissionBtn) {
+                    saveCommissionBtn.addEventListener('click', async () => {
+                        const newCommission = parseFloat(commissionInput.value);
+                        const newCommissionType = commissionTypeInput.value;
+
+                        if (isNaN(newCommission) || newCommission < 0 || newCommission > 100) {
+                            alert('A comissão deve ser um valor válido entre 0% e 100%.');
+                            return;
+                        }
+
+                        saveCommissionBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
+                        saveCommissionBtn.disabled = true;
+
+                        const success = await dbUpdateProfile(user.id, { 
+                            name: user.name, 
+                            phone: user.phone,
+                            commission_rate: newCommission,
+                            commission_type: newCommissionType
+                        });
+                        
+                        saveCommissionBtn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> Salvar Comissão';
+                        saveCommissionBtn.disabled = false;
+
+                        if (success) {
+                            // Update localstorage cache
+                            user.commission_rate = newCommission;
+                            user.commission_type = newCommissionType;
+                            localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(user));
+                            alert('Configurações de comissão atualizadas com sucesso!');
+                        } else {
+                            alert('Erro ao atualizar a comissão. Tente novamente.');
                         }
                     });
                 }

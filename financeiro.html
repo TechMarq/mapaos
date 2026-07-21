@@ -181,7 +181,7 @@
                     <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-primary text-base">leaderboard</span> Faturamento por Cliente
                     </h3>
-                    <span class="text-[10px] text-on-surface-variant font-medium">Líquido Recebido (70%)</span>
+                    <span id="liquid-received-label" class="text-[10px] text-on-surface-variant font-medium">Líquido Recebido (70%)</span>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -352,6 +352,32 @@
                 }
             }
 
+            // Get logged user commission rate and type
+            const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+            let commissionRate = 30; // default 30%
+            let commissionType = 'descontado'; // default: discount
+            if (loggedUserRaw) {
+                try {
+                    const userObj = JSON.parse(loggedUserRaw);
+                    if (userObj && userObj.commission_rate !== undefined && userObj.commission_rate !== null) {
+                        commissionRate = parseFloat(userObj.commission_rate);
+                    }
+                    if (userObj && userObj.commission_type) {
+                        commissionType = userObj.commission_type;
+                    }
+                } catch (e) {
+                    console.error("Error parsing logged user commission rate/type:", e);
+                }
+            }
+            const netMultiplier = commissionType === 'ganho' ? (commissionRate / 100) : (1 - (commissionRate / 100));
+
+            // Update the header label with the calculated percentage
+            const labelPercent = Math.round(netMultiplier * 100);
+            const labelEl = document.getElementById('liquid-received-label');
+            if (labelEl) {
+                labelEl.textContent = `Líquido Recebido (${labelPercent}%)`;
+            }
+
             // Calculations
             let totalReceived = 0;
             let totalPending = 0;
@@ -365,15 +391,15 @@
                 const totalValue = parseCurrency(item.value);
                 
                 // Net value logic:
-                // If Paid, use net_value column. If empty, calculate 70% of total
-                // If Pending, estimate 70% of total
+                // If Paid, use net_value column. If empty, calculate net value using user commission
+                // If Pending, estimate net value using user commission
                 let netValue = 0;
                 if (isPaid) {
-                    netValue = item.net_value ? parseCurrency(item.net_value) : (totalValue * 0.70);
+                    netValue = item.net_value ? parseCurrency(item.net_value) : (totalValue * netMultiplier);
                     totalReceived += netValue;
                     countReceived++;
                 } else {
-                    netValue = totalValue * 0.70;
+                    netValue = totalValue * netMultiplier;
                     totalPending += netValue;
                     countPending++;
                 }
