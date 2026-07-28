@@ -1424,11 +1424,19 @@
 
                 const submitBtn = document.getElementById('btn-edit-submit');
                 const originalText = submitBtn.innerHTML;
+
+                // Check if client is registered
+                const registeredClientsList = typeof dbGetClients === 'function' ? (await dbGetClients()).map(c => c.name.toUpperCase()) : [];
+                if (registeredClientsList.length > 0 && !registeredClientsList.includes(client.trim().toUpperCase())) {
+                    showToast('Cliente não cadastrado no sistema. Cadastre-o antes de alterar a reserva.', true);
+                    return;
+                }
+
                 submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
                 submitBtn.disabled = true;
 
                 const result = await dbUpdateReservation(id, {
-                    client_name: client,
+                    client_name: client.trim(),
                     date: date,
                     time: time,
                     os_number: os,

@@ -975,13 +975,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="ml-2">Processando...</span>
             `;
 
-            const clientName = clientSearch.value;
+            const clientName = clientSearch.value.trim();
             const dateVal = dateDisplay.value;
             const timeVal = timeDisplay.value;
             const osVal = osInput.value;
             const resVal = resInput.value;
             const notesInput = document.getElementById('modal-notes');
             const notesVal = notesInput ? notesInput.value : '';
+
+            // Verificar se o cliente informado está cadastrado no sistema
+            const formattedClientInput = clientName.toUpperCase();
+            const isRegistered = clientsList.some(c => c === formattedClientInput);
+
+            if (!isRegistered) {
+                submitBtn.innerHTML = originalContent;
+                if (typeof showToast === 'function') {
+                    showToast('Cliente não cadastrado no sistema. Cadastre-o antes de lançar a reserva.', true);
+                } else {
+                    alert('Cliente não cadastrado no sistema. Por favor, cadastre o cliente antes de efetuar o lançamento da reserva.');
+                }
+                return;
+            }
 
             // Save reservation to database
             dbCreateReservation({
