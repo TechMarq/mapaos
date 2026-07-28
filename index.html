@@ -204,12 +204,10 @@
             <!-- Period Filters -->
             <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
                 <select id="filter-date-range" class="glass-card rounded-full px-4 py-2 text-xs font-semibold text-primary border-white/5 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all">
-                    <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
-                    <option value="semana" class="bg-[#0b1326] text-on-surface" selected>Semana Atual</option>
-                    <option value="7D" class="bg-[#0b1326] text-on-surface">Últimos 7 dias</option>
-                    <option value="15D" class="bg-[#0b1326] text-on-surface">Últimos 15 dias</option>
-                    <option value="30D" class="bg-[#0b1326] text-on-surface">Últimos 30 dias</option>
-                    <option value="mes" class="bg-[#0b1326] text-on-surface">Este Mês</option>
+                    <option value="semana_atual" class="bg-[#0b1326] text-on-surface" selected>Semana Atual</option>
+                    <option value="semana_passada" class="bg-[#0b1326] text-on-surface">Semana Passada</option>
+                    <option value="mes_atual" class="bg-[#0b1326] text-on-surface">Mês Atual</option>
+                    <option value="mes_passado" class="bg-[#0b1326] text-on-surface">Mês Passado</option>
                     <option value="custom" class="bg-[#0b1326] text-on-surface">Personalizado</option>
                 </select>
                 <!-- Custom Range Inputs -->
@@ -250,12 +248,36 @@
         </div>
 
         <!-- Chart Section -->
-        <div class="glass-card rounded-[2rem] p-6 w-full mb-10">
+        <div class="glass-card rounded-[2rem] p-6 w-full mb-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xs font-bold text-on-surface uppercase tracking-wider flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-base">show_chart</span> Reservas por Dia da Semana</h2>
             </div>
             <div class="relative h-[250px] w-full">
                 <canvas id="reservationsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- AI Smart Insights Section (Locked / Coming Soon) -->
+        <div class="glass-card rounded-2xl p-5 w-full mb-10 border border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-primary/5 to-transparent relative overflow-hidden opacity-85">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-amber-400 text-xl">lock</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                            Análise Inteligente
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold uppercase tracking-wider flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[12px]">schedule</span> EM BREVE
+                            </span>
+                        </h3>
+                        <p class="text-xs text-on-surface-variant">Diagnósticos automáticos do período via IA estarão disponíveis em breve.</p>
+                    </div>
+                </div>
+                <button disabled class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-on-surface-variant/60 font-semibold text-xs border border-white/10 cursor-not-allowed opacity-75">
+                    <span class="material-symbols-outlined text-base">lock</span>
+                    Recurso Em Breve
+                </button>
             </div>
         </div>
     </main>
@@ -267,7 +289,7 @@
     <script src="navigation.js"></script>
     <script>
         let allReservations = [];
-        let dateRangeFilter = 'semana'; // Default: current week
+        let dateRangeFilter = 'semana_atual'; // Default: current week
         let reservationsChart = null;
 
         document.addEventListener('DOMContentLoaded', async function () {
@@ -329,68 +351,62 @@
             today.setHours(23, 59, 59, 999);
 
             // Apply Period Filters
-            if (dateRangeFilter !== 'Todos') {
-                if (dateRangeFilter === 'semana') {
-                    days = 7;
-                    const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
-                    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-                    const limitDate = new Date(today);
-                    limitDate.setDate(today.getDate() + diffToMonday);
-                    limitDate.setHours(0, 0, 0, 0);
-                    const endOfWeek = new Date(limitDate);
-                    endOfWeek.setDate(limitDate.getDate() + 6);
-                    endOfWeek.setHours(23, 59, 59, 999);
+            if (dateRangeFilter === 'semana_atual' || dateRangeFilter === 'semana') {
+                days = 7;
+                const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
+                const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                const limitDate = new Date(today);
+                limitDate.setDate(today.getDate() + diffToMonday);
+                limitDate.setHours(0, 0, 0, 0);
+                const endOfWeek = new Date(limitDate);
+                endOfWeek.setDate(limitDate.getDate() + 6);
+                endOfWeek.setHours(23, 59, 59, 999);
+                filtered = filtered.filter(item => {
+                    const itemDate = parseItemDate(item.date);
+                    return itemDate >= limitDate && itemDate <= endOfWeek;
+                });
+            } else if (dateRangeFilter === 'semana_passada') {
+                days = 7;
+                const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
+                const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                const limitDate = new Date(today);
+                limitDate.setDate(today.getDate() + diffToMonday - 7);
+                limitDate.setHours(0, 0, 0, 0);
+                const endOfWeek = new Date(limitDate);
+                endOfWeek.setDate(limitDate.getDate() + 6);
+                endOfWeek.setHours(23, 59, 59, 999);
+                filtered = filtered.filter(item => {
+                    const itemDate = parseItemDate(item.date);
+                    return itemDate >= limitDate && itemDate <= endOfWeek;
+                });
+            } else if (dateRangeFilter === 'mes_atual' || dateRangeFilter === 'mes') {
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+                days = endOfMonth.getDate();
+                filtered = filtered.filter(item => {
+                    const itemDate = parseItemDate(item.date);
+                    return itemDate >= startOfMonth && itemDate <= endOfMonth;
+                });
+            } else if (dateRangeFilter === 'mes_passado') {
+                const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0, 0);
+                const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+                days = endOfLastMonth.getDate();
+                filtered = filtered.filter(item => {
+                    const itemDate = parseItemDate(item.date);
+                    return itemDate >= startOfLastMonth && itemDate <= endOfLastMonth;
+                });
+            } else if (dateRangeFilter === 'custom') {
+                const startVal = document.getElementById('custom-start-date').value;
+                const endVal = document.getElementById('custom-end-date').value;
+                if (startVal && endVal) {
+                    const startDate = new Date(startVal + 'T00:00:00');
+                    const endDate = new Date(endVal + 'T23:59:59');
+                    const diffTime = Math.abs(endDate - startDate);
+                    days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
                     filtered = filtered.filter(item => {
                         const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= endOfWeek;
+                        return itemDate >= startDate && itemDate <= endDate;
                     });
-                } else if (dateRangeFilter === '7D') {
-                    days = 7;
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 7);
-                    limitDate.setHours(0, 0, 0, 0);
-                    filtered = filtered.filter(item => {
-                        const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
-                    });
-                } else if (dateRangeFilter === '15D') {
-                    days = 15;
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 15);
-                    limitDate.setHours(0, 0, 0, 0);
-                    filtered = filtered.filter(item => {
-                        const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
-                    });
-                } else if (dateRangeFilter === '30D') {
-                    days = 30;
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 30);
-                    limitDate.setHours(0, 0, 0, 0);
-                    filtered = filtered.filter(item => {
-                        const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
-                    });
-                } else if (dateRangeFilter === 'mes') {
-                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
-                    days = today.getDate(); // days elapsed in month
-                    filtered = filtered.filter(item => {
-                        const itemDate = parseItemDate(item.date);
-                        return itemDate >= startOfMonth && itemDate <= today;
-                    });
-                } else if (dateRangeFilter === 'custom') {
-                    const startVal = document.getElementById('custom-start-date').value;
-                    const endVal = document.getElementById('custom-end-date').value;
-                    if (startVal && endVal) {
-                        const startDate = new Date(startVal + 'T00:00:00');
-                        const endDate = new Date(endVal + 'T23:59:59');
-                        const diffTime = Math.abs(endDate - startDate);
-                        days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-                        filtered = filtered.filter(item => {
-                            const itemDate = parseItemDate(item.date);
-                            return itemDate >= startDate && itemDate <= endDate;
-                        });
-                    }
                 }
             } else {
                 if (allReservations.length > 0) {
@@ -414,69 +430,134 @@
             document.getElementById('stat-pending').innerText = pending.toLocaleString('pt-BR');
             document.getElementById('stat-paid').innerText = paid.toLocaleString('pt-BR');
 
-            // Group by Day of Week for line chart
-            let chartData = [0, 0, 0, 0, 0, 0, 0];
-            filtered.forEach(r => {
-                if (r.date && r.date.includes('/')) {
-                    const parts = r.date.split('/');
-                    if (parts.length === 3) {
-                        const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-                        let dayIndex = dateObj.getDay() - 1; // 0 (Monday) to 6 (Sunday)
-                        if (dayIndex === -1) dayIndex = 6;
-                        if (dayIndex >= 0 && dayIndex <= 6) {
-                            chartData[dayIndex]++;
-                        }
+            // Group items into weekly datasets
+            // Store mapping: key -> { label: 'Semana X (DD/MM - DD/MM)', data: [Seg, Ter, Qua, Qui, Sex, Sáb, Dom] }
+            const weekGroups = {};
+            const palette = ['#adc6ff', '#44f5be', '#fb584e', '#ffb4ab', '#a78bfa', '#fbbf24', '#38bdf8'];
+
+            filtered.forEach(item => {
+                const itemDate = parseItemDate(item.date);
+                if (itemDate.getTime() > 0) {
+                    const dayOfWeek = itemDate.getDay(); // 0 (Sun) - 6 (Sat)
+                    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                    const monday = new Date(itemDate);
+                    monday.setDate(itemDate.getDate() + diffToMonday);
+                    monday.setHours(0, 0, 0, 0);
+
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+                    sunday.setHours(23, 59, 59, 999);
+
+                    const key = monday.toISOString().split('T')[0];
+                    if (!weekGroups[key]) {
+                        const mStr = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}`;
+                        const sStr = `${String(sunday.getDate()).padStart(2, '0')}/${String(sunday.getMonth() + 1).padStart(2, '0')}`;
+                        weekGroups[key] = {
+                            mondayDate: monday,
+                            label: `Semana (${mStr} a ${sStr})`,
+                            data: [0, 0, 0, 0, 0, 0, 0]
+                        };
+                    }
+
+                    let dayIndex = dayOfWeek - 1; // 0 (Mon) to 6 (Sun)
+                    if (dayIndex === -1) dayIndex = 6;
+                    if (dayIndex >= 0 && dayIndex <= 6) {
+                        weekGroups[key].data[dayIndex]++;
                     }
                 }
             });
+
+            // Sort weeks chronologically
+            const sortedWeekKeys = Object.keys(weekGroups).sort((a, b) => new Date(a) - new Date(b));
+            
+            let datasets = [];
+            if (sortedWeekKeys.length <= 1) {
+                // Single week or single dataset view
+                const weekKey = sortedWeekKeys[0];
+                const chartData = weekKey ? weekGroups[weekKey].data : [0, 0, 0, 0, 0, 0, 0];
+                const labelName = weekKey ? weekGroups[weekKey].label : 'Reservas';
+
+                datasets.push({
+                    label: labelName,
+                    data: chartData,
+                    borderColor: '#adc6ff',
+                    backgroundColor: 'rgba(75, 142, 255, 0.15)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#adc6ff',
+                    pointBorderColor: '#0b1326',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                });
+            } else {
+                // Multiple weeks: render each week as an independent line with its own color
+                sortedWeekKeys.forEach((key, idx) => {
+                    const color = palette[idx % palette.length];
+                    datasets.push({
+                        label: weekGroups[key].label,
+                        data: weekGroups[key].data,
+                        borderColor: color,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: color,
+                        pointBorderColor: '#0b1326',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false,
+                        tension: 0.4
+                    });
+                });
+            }
 
             // Update/Render Chart
             const canvas = document.getElementById('reservationsChart');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
-            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-            gradient.addColorStop(0, 'rgba(75, 142, 255, 0.4)');
-            gradient.addColorStop(1, 'rgba(75, 142, 255, 0.0)');
-
             if (reservationsChart) {
-                reservationsChart.data.datasets[0].data = chartData;
+                reservationsChart.data.datasets = datasets;
+                reservationsChart.options.plugins.legend.display = datasets.length > 1;
                 reservationsChart.update();
             } else {
                 reservationsChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-                        datasets: [{
-                            label: 'Reservas',
-                            data: chartData,
-                            borderColor: '#adc6ff',
-                            backgroundColor: gradient,
-                            borderWidth: 3,
-                            pointBackgroundColor: '#adc6ff',
-                            pointBorderColor: '#0b1326',
-                            pointBorderWidth: 2,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: true,
-                            tension: 0.4
-                        }]
+                        datasets: datasets
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                display: false
+                                display: datasets.length > 1,
+                                position: 'top',
+                                align: 'end',
+                                labels: {
+                                    color: '#c1c6d7',
+                                    font: {
+                                        family: "'Inter', sans-serif",
+                                        size: 10,
+                                        weight: '500'
+                                    },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 6,
+                                    boxHeight: 6,
+                                    padding: 10
+                                }
                             },
                             tooltip: {
-                                backgroundColor: 'rgba(11, 19, 38, 0.8)',
+                                backgroundColor: 'rgba(11, 19, 38, 0.9)',
                                 titleColor: '#dae2fd',
                                 bodyColor: '#c1c6d7',
                                 borderColor: 'rgba(255,255,255,0.1)',
                                 borderWidth: 1,
                                 padding: 12,
-                                displayColors: false,
+                                displayColors: true,
                                 cornerRadius: 8
                             }
                         },
@@ -517,6 +598,219 @@
                     }
                 });
             }
+
+            // Hide previous insight on filter change
+            const insightBox = document.getElementById('ai-insight-result');
+            if (insightBox) insightBox.classList.add('hidden');
+        }
+
+        function generateAiInsight() {
+            const btn = document.getElementById('btn-generate-ai-insight');
+            const resultBox = document.getElementById('ai-insight-result');
+            if (!resultBox) return;
+
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Analisando dados...`;
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = `
+                <div class="flex items-center gap-2 text-primary py-2">
+                    <span class="material-symbols-outlined text-base animate-spin">sync</span>
+                    <span>Cruzando dados do período selecionado e gerando diagnóstico...</span>
+                </div>
+            `;
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-outlined text-base">psychology</span> Recalcular Análise`;
+
+                // Calculate insights based on current reservations state
+                let currentFiltered = allReservations;
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+
+                // Apply current period filter rules
+                if (dateRangeFilter === 'semana_atual' || dateRangeFilter === 'semana') {
+                    const currentDay = today.getDay();
+                    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                    const limitDate = new Date(today);
+                    limitDate.setDate(today.getDate() + diffToMonday);
+                    limitDate.setHours(0, 0, 0, 0);
+                    const endOfWeek = new Date(limitDate);
+                    endOfWeek.setDate(limitDate.getDate() + 6);
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    currentFiltered = currentFiltered.filter(item => {
+                        const d = parseItemDate(item.date);
+                        return d >= limitDate && d <= endOfWeek;
+                    });
+                } else if (dateRangeFilter === 'semana_passada') {
+                    const currentDay = today.getDay();
+                    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                    const limitDate = new Date(today);
+                    limitDate.setDate(today.getDate() + diffToMonday - 7);
+                    limitDate.setHours(0, 0, 0, 0);
+                    const endOfWeek = new Date(limitDate);
+                    endOfWeek.setDate(limitDate.getDate() + 6);
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    currentFiltered = currentFiltered.filter(item => {
+                        const d = parseItemDate(item.date);
+                        return d >= limitDate && d <= endOfWeek;
+                    });
+                } else if (dateRangeFilter === 'mes_atual' || dateRangeFilter === 'mes') {
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+                    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+                    currentFiltered = currentFiltered.filter(item => {
+                        const d = parseItemDate(item.date);
+                        return d >= startOfMonth && d <= endOfMonth;
+                    });
+                } else if (dateRangeFilter === 'mes_passado') {
+                    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0, 0);
+                    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+                    currentFiltered = currentFiltered.filter(item => {
+                        const d = parseItemDate(item.date);
+                        return d >= startOfLastMonth && d <= endOfLastMonth;
+                    });
+                } else if (dateRangeFilter === 'custom') {
+                    const startVal = document.getElementById('custom-start-date').value;
+                    const endVal = document.getElementById('custom-end-date').value;
+                    if (startVal && endVal) {
+                        const startDate = new Date(startVal + 'T00:00:00');
+                        const endDate = new Date(endVal + 'T23:59:59');
+                        currentFiltered = currentFiltered.filter(item => {
+                            const d = parseItemDate(item.date);
+                            return d >= startDate && d <= endDate;
+                        });
+                    }
+                }
+
+                if (currentFiltered.length === 0) {
+                    resultBox.innerHTML = `
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface-variant">
+                            ⚠️ <strong>Sem dados suficientes:</strong> Não encontramos registros no período selecionado para realizar o diagnóstico.
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Analyze by Day of Week
+                const dayNames = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+                const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+                
+                // Analyze by Weeks
+                const weekGroups = {};
+
+                currentFiltered.forEach(item => {
+                    const itemDate = parseItemDate(item.date);
+                    if (itemDate.getTime() > 0) {
+                        const dayOfWeek = itemDate.getDay();
+                        let dayIdx = dayOfWeek - 1;
+                        if (dayIdx === -1) dayIdx = 6;
+                        if (dayIdx >= 0 && dayIdx <= 6) dayCounts[dayIdx]++;
+
+                        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                        const monday = new Date(itemDate);
+                        monday.setDate(itemDate.getDate() + diffToMonday);
+                        monday.setHours(0, 0, 0, 0);
+
+                        const sunday = new Date(monday);
+                        sunday.setDate(monday.getDate() + 6);
+
+                        const key = monday.toISOString().split('T')[0];
+                        if (!weekGroups[key]) {
+                            const mStr = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}`;
+                            const sStr = `${String(sunday.getDate()).padStart(2, '0')}/${String(sunday.getMonth() + 1).padStart(2, '0')}`;
+                            weekGroups[key] = { label: `Semana de ${mStr} a ${sStr}`, count: 0 };
+                        }
+                        weekGroups[key].count++;
+                    }
+                });
+
+                // Find best day of week
+                let maxDayVal = -1;
+                let bestDayName = '';
+                dayCounts.forEach((cnt, idx) => {
+                    if (cnt > maxDayVal) {
+                        maxDayVal = cnt;
+                        bestDayName = dayNames[idx];
+                    }
+                });
+
+                // Find best week
+                const weekKeys = Object.keys(weekGroups);
+                let bestWeekLabel = '';
+                let maxWeekVal = -1;
+                weekKeys.forEach(k => {
+                    if (weekGroups[k].count > maxWeekVal) {
+                        maxWeekVal = weekGroups[k].count;
+                        bestWeekLabel = weekGroups[k].label;
+                    }
+                });
+
+                const totalReservas = currentFiltered.length;
+                const paidCount = currentFiltered.filter(r => r.status === 'Paga').length;
+                const conversionRate = Math.round((paidCount / totalReservas) * 100) || 0;
+
+                // Build Smart Output Text
+                let htmlOutput = `
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/5">
+                        <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Diagnóstico IA</span>
+                        <button onclick="closeAiInsight()" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-1 rounded-full transition-all cursor-pointer flex items-center justify-center" title="Fechar análise">
+                            <span class="material-symbols-outlined text-base">close</span>
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                `;
+
+                if (weekKeys.length > 1) {
+                    // Multi-week analysis
+                    const avgPerWeek = (totalReservas / weekKeys.length).toFixed(1);
+                    htmlOutput += `
+                        <div class="p-3 rounded-xl bg-white/5 border border-primary/20 space-y-1.5">
+                            <div class="flex items-center gap-2 text-primary font-bold">
+                                <span class="material-symbols-outlined text-sm">trophy</span>
+                                <span>Melhor Semana do Período: ${bestWeekLabel}</span>
+                            </div>
+                            <p class="text-on-surface-variant">
+                                A <strong>${bestWeekLabel}</strong> foi a campeã do período com <strong>${maxWeekVal} reservas</strong> (${Math.round((maxWeekVal/totalReservas)*100)}% do volume total). A média semanal do período ficou em <strong>${avgPerWeek} reservas</strong>.
+                            </p>
+                        </div>
+                    `;
+                }
+
+                // Best Day Analysis
+                htmlOutput += `
+                    <div class="p-3 rounded-xl bg-white/5 border border-secondary-fixed-dim/20 space-y-1.5">
+                        <div class="flex items-center gap-2 text-secondary-fixed-dim font-bold">
+                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            <span>Dia com Maior Movimento: ${bestDayName}</span>
+                        </div>
+                        <p class="text-on-surface-variant">
+                            <strong>${bestDayName}</strong> se destacou como o dia de maior pico, registrando <strong>${maxDayVal} solicitações</strong>. Isso representa uma excelente oportunidade para otimizar horários e recursos nesse dia especificamente.
+                        </p>
+                    </div>
+                `;
+
+                // General Performance Insight
+                htmlOutput += `
+                    <div class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                        <div class="flex items-center gap-2 text-on-surface font-bold">
+                            <span class="material-symbols-outlined text-sm text-amber-400">insights</span>
+                            <span>Resumo de Performance & Conversão</span>
+                        </div>
+                        <p class="text-on-surface-variant">
+                            Total de <strong>${totalReservas} reservas</strong> analisadas, sendo <strong>${paidCount} pagas (${conversionRate}% de conversão)</strong>. ${conversionRate >= 50 ? 'Sua taxa de pagamento está acima da média de acompanhamento!' : 'Recomendamos verificar os pendentes para elevar a conversão.'}
+                        </p>
+                    </div>
+                `;
+
+                htmlOutput += `</div>`;
+                resultBox.innerHTML = htmlOutput;
+            }, 600);
+        }
+
+        function closeAiInsight() {
+            const resultBox = document.getElementById('ai-insight-result');
+            if (resultBox) resultBox.classList.add('hidden');
         }
     </script>
 

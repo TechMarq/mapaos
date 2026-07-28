@@ -285,9 +285,119 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
 
+    // Inject Vehicle Coming Soon Modal
+    const vehicleComingSoonModalHTML = `
+        <div id="vehicle-coming-soon-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+            <div class="glass-card w-[92%] max-w-[460px] p-6 md:p-7 rounded-2xl flex flex-col gap-5 transform scale-95 transition-all duration-300 border border-amber-500/20 bg-gradient-to-b from-[#131b2e] to-[#0b1326]">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                            <span class="material-symbols-outlined text-2xl">directions_car</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-base text-on-surface">Controle do Veículo</h3>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold uppercase tracking-wider">Em Breve</span>
+                            </div>
+                            <p class="text-xs text-on-surface-variant/80 mt-0.5">Gestão completa e inteligente da sua frota em um só lugar.</p>
+                        </div>
+                    </div>
+                    <button onclick="closeVehicleComingSoonModal()" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">close</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <!-- Feature 1: Abastecimento -->
+                    <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                        <div class="flex items-center gap-2 text-secondary-fixed font-bold">
+                            <span class="material-symbols-outlined text-base">local_gas_station</span>
+                            <span>Registro de Abastecimento</span>
+                        </div>
+                        <p class="text-on-surface-variant leading-relaxed">
+                            Controle total de consumos, <strong>médias de KM por litro</strong> e análise detalhada dos seus <strong>custos diários e mensais</strong> de combustível.
+                        </p>
+                    </div>
+
+                    <!-- Feature 2: Manutenção & Garantias -->
+                    <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                        <div class="flex items-center gap-2 text-primary font-bold">
+                            <span class="material-symbols-outlined text-base">build</span>
+                            <span>Manutenção & Alertas</span>
+                        </div>
+                        <p class="text-on-surface-variant leading-relaxed">
+                            Acompanhamento de revisões com <strong>alertas de vencimento</strong> por data/KM, além do controle rigoroso de <strong>garantias de peças e serviços</strong> realizados.
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="closeVehicleComingSoonModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/30 text-amber-300 font-bold text-xs hover:bg-amber-500/30 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">notifications_active</span>
+                    <span>Notifique-me quando lançar</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Inject Wallet Coming Soon Modal
+    const walletComingSoonModalHTML = `
+        <div id="wallet-coming-soon-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+            <div class="glass-card w-[92%] max-w-[460px] p-6 md:p-7 rounded-2xl flex flex-col gap-5 transform scale-95 transition-all duration-300 border border-amber-500/20 bg-gradient-to-b from-[#131b2e] to-[#0b1326]">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                            <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-base text-on-surface">Carteira de Documentos</h3>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold uppercase tracking-wider">Em Breve</span>
+                            </div>
+                            <p class="text-xs text-on-surface-variant/80 mt-0.5">Seus documentos essenciais sempre à mão e organizados.</p>
+                        </div>
+                    </div>
+                    <button onclick="closeWalletComingSoonModal()" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">close</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <!-- Feature 1: Arquivamento Digital -->
+                    <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                        <div class="flex items-center gap-2 text-secondary-fixed font-bold">
+                            <span class="material-symbols-outlined text-base">folder_shared</span>
+                            <span>Arquivamento Seguro de Documentos</span>
+                        </div>
+                        <p class="text-on-surface-variant leading-relaxed">
+                            Espaço exclusivo para armazenar e consultar digitalmente <strong>CRLV do Veículo</strong>, <strong>Selo GNV</strong>, <strong>CNH do Condutor</strong>, apólices de seguro e comprovantes.
+                        </p>
+                    </div>
+
+                    <!-- Feature 2: Lembretes de Vencimento -->
+                    <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                        <div class="flex items-center gap-2 text-primary font-bold">
+                            <span class="material-symbols-outlined text-base">alarm</span>
+                            <span>Alertas de Renovação & Vencimentos</span>
+                        </div>
+                        <p class="text-on-surface-variant leading-relaxed">
+                            Receba avisos automáticos antes do vencimento do seu <strong>Licenciamento</strong>, <strong>Vistoria do GNV</strong> e <strong>Validade da CNH</strong> para nunca perder os prazos legais.
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="closeWalletComingSoonModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/30 text-amber-300 font-bold text-xs hover:bg-amber-500/30 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">notifications_active</span>
+                    <span>Notifique-me quando lançar</span>
+                </button>
+            </div>
+        </div>
+    `;
+
     document.body.insertAdjacentHTML('beforeend', loaderHTML);
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     document.body.insertAdjacentHTML('beforeend', iosInstallModalHTML);
+    document.body.insertAdjacentHTML('beforeend', vehicleComingSoonModalHTML);
+    document.body.insertAdjacentHTML('beforeend', walletComingSoonModalHTML);
 
     const loader = document.getElementById('global-loader');
     const modal = document.getElementById('reservation-modal');
@@ -486,6 +596,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="material-symbols-outlined mb-1">list_alt</span>
                     Reservas
                 </a>
+                <button onclick="openVehicleComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/70 hover:text-amber-400 cursor-pointer relative" id="desktop-veiculo" title="Controle do Veículo (Em Breve)">
+                    <span class="material-symbols-outlined mb-1">directions_car</span>
+                    <span class="flex items-center gap-0.5">
+                        Veículo
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    </span>
+                </button>
+                <button onclick="openWalletComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/70 hover:text-amber-400 cursor-pointer relative" id="desktop-carteira" title="Documentos / Carteira (Em Breve)">
+                    <span class="material-symbols-outlined mb-1">account_balance_wallet</span>
+                    <span class="flex items-center gap-0.5">
+                        Carteira
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    </span>
+                </button>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="financeiro.html" id="desktop-financeiro">
                     <span class="material-symbols-outlined mb-1">payments</span>
                     Financeiro
@@ -512,27 +636,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // BottomNavBar Template (Mobile Only)
     const bottomNavBarHTML = `
-        <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(90%,400px)] h-20 px-6 flex justify-between items-center z-50 bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-full" id="mobile-nav-container">
+        <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(96%,460px)] h-20 px-3 flex justify-between items-center z-50 bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-full" id="mobile-nav-container">
             <div id="mobile-nav-indicator" class="absolute lens-bubble rounded-full transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
-            <!-- Dashboard -->
-            <a href="index.html" id="mobile-dashboard" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
-                <span class="material-symbols-outlined">dashboard</span>
+            <!-- 1. Dashboard -->
+            <a href="index.html" id="mobile-dashboard" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
+                <span class="material-symbols-outlined text-lg">dashboard</span>
             </a>
-            <!-- Reservas -->
-            <a href="historico_reserva.html" id="mobile-reservas" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
-                <span class="material-symbols-outlined">list_alt</span>
+            <!-- 2. Reservas -->
+            <a href="historico_reserva.html" id="mobile-reservas" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
+                <span class="material-symbols-outlined text-lg">list_alt</span>
             </a>
-            <!-- Botão Adicionar "+" -->
-            <button id="mobile-add-btn" class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg shadow-primary/30 active:scale-95 transition-transform -translate-y-4 z-20">
-                <span class="material-symbols-outlined text-2xl font-bold">add</span>
+            <!-- 3. Controle Veículo (Em Breve) -->
+            <button onclick="openVehicleComingSoonModal()" id="mobile-veiculo" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-amber-400 relative" title="Controle do Veículo (Em Breve)">
+                <span class="material-symbols-outlined text-lg">directions_car</span>
+                <span class="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
             </button>
-            <!-- Financeiro -->
-            <a href="financeiro.html" id="mobile-financeiro" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
-                <span class="material-symbols-outlined">payments</span>
+
+            <!-- 4. CENTRO: Botão Adicionar "+" Grande e Destacado -->
+            <button id="mobile-add-btn" class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-xl shadow-primary/40 active:scale-95 transition-transform -translate-y-4 z-20 shrink-0 border border-white/20">
+                <span class="material-symbols-outlined text-2xl font-extrabold">add</span>
+            </button>
+
+            <!-- 5. Carteira Documentos (Em Breve) -->
+            <button onclick="openWalletComingSoonModal()" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-amber-400 relative" title="Carteira de Documentos (Em Breve)">
+                <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
+                <span class="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+            </button>
+            <!-- 6. Financeiro -->
+            <a href="financeiro.html" id="mobile-financeiro" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
+                <span class="material-symbols-outlined text-lg">payments</span>
             </a>
-            <!-- Ajustes -->
-            <a href="config.html" id="mobile-ajustes" class="nav-mobile-item flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300">
-                <span class="material-symbols-outlined">settings</span>
+            <!-- 7. Ajustes -->
+            <a href="config.html" id="mobile-ajustes" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
+                <span class="material-symbols-outlined text-lg">settings</span>
             </a>
         </nav>
     `;
@@ -1121,3 +1257,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// Global functions for Vehicle Coming Soon modal
+function openVehicleComingSoonModal() {
+    const modal = document.getElementById('vehicle-coming-soon-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.classList.add('opacity-100');
+        const innerCard = modal.querySelector('.glass-card');
+        if (innerCard) {
+            innerCard.classList.remove('scale-95');
+            innerCard.classList.add('scale-100');
+        }
+    }, 10);
+}
+
+function closeVehicleComingSoonModal() {
+    const modal = document.getElementById('vehicle-coming-soon-modal');
+    if (!modal) return;
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    const innerCard = modal.querySelector('.glass-card');
+    if (innerCard) {
+        innerCard.classList.remove('scale-100');
+        innerCard.classList.add('scale-95');
+    }
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+// Global functions for Wallet Coming Soon modal
+function openWalletComingSoonModal() {
+    const modal = document.getElementById('wallet-coming-soon-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.classList.add('opacity-100');
+        const innerCard = modal.querySelector('.glass-card');
+        if (innerCard) {
+            innerCard.classList.remove('scale-95');
+            innerCard.classList.add('scale-100');
+        }
+    }, 10);
+}
+
+function closeWalletComingSoonModal() {
+    const modal = document.getElementById('wallet-coming-soon-modal');
+    if (!modal) return;
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    const innerCard = modal.querySelector('.glass-card');
+    if (innerCard) {
+        innerCard.classList.remove('scale-100');
+        innerCard.classList.add('scale-95');
+    }
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}

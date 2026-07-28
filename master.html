@@ -80,9 +80,10 @@
 
         /* Status badges */
         .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
-        .badge-pendente  { background: rgba(251,188,4,0.15); color: #fbbc04; border: 1px solid rgba(251,188,4,0.3); }
         .badge-aprovado  { background: rgba(68,245,190,0.12); color: #44f5be; border: 1px solid rgba(68,245,190,0.3); }
-        .badge-expirado  { background: rgba(255,180,171,0.12); color: #ffb4ab; border: 1px solid rgba(255,180,171,0.3); }
+        .badge-pendente  { background: rgba(251,188,4,0.15); color: #fbbc04; border: 1px solid rgba(251,188,4,0.3); }
+        .badge-congelado { background: rgba(255,152,0,0.15); color: #ff9800; border: 1px solid rgba(255,152,0,0.3); }
+        .badge-expirado  { background: rgba(255,80,80,0.15); color: #ff5050; border: 1px solid rgba(255,80,80,0.3); }
         .badge-rejeitado { background: rgba(255,80,80,0.1);   color: #ff7070; border: 1px solid rgba(255,80,80,0.25); }
 
         /* Stat cards */
@@ -189,35 +190,26 @@
 
         <!-- Users Section -->
         <div id="section-users" class="space-y-6">
-            <!-- Stats Row (Forced single row with responsive scaling) -->
-            <div id="stats-row" class="grid grid-cols-4 gap-2 sm:gap-4 mb-6 animate-fade-in" style="animation-delay:.05s">
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl">
-                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5">Total</p>
-                    <p id="stat-total" class="text-base sm:text-3xl font-bold text-on-surface">—</p>
+            <!-- Stats Row with Lens Bubble Indicator -->
+            <div id="stats-row" class="relative grid grid-cols-4 gap-2 sm:gap-4 mb-6 animate-fade-in p-1.5 rounded-2xl" style="animation-delay:.05s">
+                <div id="card-bubble-indicator" class="absolute lens-bubble rounded-xl transition-all duration-300 ease-out z-0 opacity-0 pointer-events-none" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
+                
+                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-emerald-500/20 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Aprovado" onclick="toggleCardFilter('Aprovado', this)">
+                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Ativos</p>
+                    <p id="stat-active" class="text-base sm:text-3xl font-bold text-[#44f5be] pointer-events-none">—</p>
                 </div>
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl">
-                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5">Ativos</p>
-                    <p id="stat-active" class="text-base sm:text-3xl font-bold text-secondary">—</p>
+                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-yellow-500/20 bg-yellow-500/5 cursor-pointer hover:bg-yellow-500/10 hover:border-yellow-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Pendente" onclick="toggleCardFilter('Pendente', this)">
+                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Pendentes</p>
+                    <p id="stat-pending" class="text-base sm:text-3xl font-bold text-[#fbbc04] pointer-events-none">—</p>
                 </div>
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl">
-                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5">Pendentes</p>
-                    <p id="stat-pending" class="text-base sm:text-3xl font-bold text-yellow-400">—</p>
+                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-orange-500/20 bg-orange-500/5 cursor-pointer hover:bg-orange-500/10 hover:border-orange-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Congelado" onclick="toggleCardFilter('Congelado', this)">
+                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Congelados</p>
+                    <p id="stat-frozen" class="text-base sm:text-3xl font-bold text-[#ff9800] pointer-events-none">—</p>
                 </div>
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl">
-                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5">Expirados</p>
-                    <p id="stat-expired" class="text-base sm:text-3xl font-bold text-error">—</p>
+                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-red-500/20 bg-red-500/5 cursor-pointer hover:bg-red-500/10 hover:border-red-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Expirado" onclick="toggleCardFilter('Expirado', this)">
+                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Expirados</p>
+                    <p id="stat-expired" class="text-base sm:text-3xl font-bold text-[#ff5050] pointer-events-none">—</p>
                 </div>
-            </div>
-
-            <!-- Filter Tabs (Forced single row with horizontal scroll on mobile) -->
-            <div class="relative flex gap-1.5 mb-6 overflow-x-auto pb-2 -mb-2 no-scrollbar whitespace-nowrap animate-fade-in" style="animation-delay:.1s" id="status-tabs-container">
-                <div id="status-tabs-indicator" class="absolute lens-bubble rounded-full transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
-                <button class="tab-btn active !px-3.5 !py-1.5 text-xs sm:text-sm shrink-0 z-10 relative" data-filter="all" onclick="setFilter('all', this)">Todos</button>
-                <button class="tab-btn !px-3.5 !py-1.5 text-xs sm:text-sm shrink-0 z-10 relative" data-filter="Pendente" onclick="setFilter('Pendente', this)">Pendentes</button>
-                <button class="tab-btn !px-3.5 !py-1.5 text-xs sm:text-sm shrink-0 z-10 relative" data-filter="Aprovado" onclick="setFilter('Aprovado', this)">Ativos</button>
-                <button class="tab-btn !px-3.5 !py-1.5 text-xs sm:text-sm shrink-0 z-10 relative" data-filter="Congelado" onclick="setFilter('Congelado', this)">Congelados</button>
-                <button class="tab-btn !px-3.5 !py-1.5 text-xs sm:text-sm shrink-0 z-10 relative" data-filter="Expirado" onclick="setFilter('Expirado', this)">Expirados</button>
-                <button class="tab-btn !px-3.5 !py-1.5 text-xs sm:text-sm shrink-0 z-10 relative" data-filter="Rejeitado" onclick="setFilter('Rejeitado', this)">Recusados</button>
             </div>
 
             <!-- Search and Sort Row for Users -->
@@ -376,7 +368,7 @@
         function expiryLabel(user) {
             if (user.status === 'Congelado') {
                 const days = user.frozen_days_remaining || 0;
-                return `<span class="text-xs text-yellow-400 font-semibold">Congelado (${days}d salvos)</span>`;
+                return `<span class="text-xs text-[#ff9800] font-semibold">Congelado (${days}d salvos)</span>`;
             }
             if (user.status !== 'Aprovado' || !user.expires_at) return '—';
             const days = daysUntil(user.expires_at);
@@ -392,7 +384,7 @@
                 'Aprovado': '<span class="badge badge-aprovado">● Ativo</span>',
                 'Expirado': '<span class="badge badge-expirado">● Expirado</span>',
                 'Rejeitado': '<span class="badge badge-rejeitado">● Recusado</span>',
-                'Congelado': '<span class="badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/25">● Congelado</span>'
+                'Congelado': '<span class="badge badge-congelado">● Congelado</span>'
             };
             return map[status] || `<span class="badge">${status}</span>`;
         }
@@ -456,10 +448,15 @@
             });
 
             // Update stats always from allUsers
-            document.getElementById('stat-total').textContent   = allUsers.length;
-            document.getElementById('stat-active').textContent  = allUsers.filter(u => u.status === 'Aprovado').length;
-            document.getElementById('stat-pending').textContent = allUsers.filter(u => u.status === 'Pendente').length;
-            document.getElementById('stat-expired').textContent = allUsers.filter(u => u.status === 'Expirado').length;
+            const statActiveEl = document.getElementById('stat-active');
+            const statPendingEl = document.getElementById('stat-pending');
+            const statFrozenEl = document.getElementById('stat-frozen');
+            const statExpiredEl = document.getElementById('stat-expired');
+
+            if (statActiveEl) statActiveEl.textContent = allUsers.filter(u => u.status === 'Aprovado').length;
+            if (statPendingEl) statPendingEl.textContent = allUsers.filter(u => u.status === 'Pendente').length;
+            if (statFrozenEl) statFrozenEl.textContent = allUsers.filter(u => u.status === 'Congelado').length;
+            if (statExpiredEl) statExpiredEl.textContent = allUsers.filter(u => u.status === 'Expirado').length;
 
             if (filtered.length === 0) {
                 body.innerHTML = '';
@@ -470,11 +467,11 @@
 
             body.innerHTML = filtered.map(user => {
                 const borderColors = {
-                    'Pendente': '#fbbc04',
-                    'Aprovado': '#44f5be',
-                    'Expirado': '#ffb4ab',
-                    'Rejeitado': '#ff7070',
-                    'Congelado': '#facc15'
+                    'Aprovado': '#44f5be', // Verde (Ativo)
+                    'Pendente': '#fbbc04', // Amarelo (Pendente)
+                    'Congelado': '#ff9800', // Laranja (Congelado)
+                    'Expirado': '#ff5050', // Vermelho (Expirado)
+                    'Rejeitado': '#ff7070'  // Recusado
                 };
                 const borderColor = borderColors[user.status] || '#8b90a0';
 
@@ -516,12 +513,51 @@
             }).join('');
         }
 
-        function setFilter(filter, btn) {
-            currentFilter = filter;
-            document.querySelectorAll('#status-tabs-container .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            updateStatusTabsIndicator(btn);
+        function toggleCardFilter(status, cardEl) {
+            const indicator = document.getElementById('card-bubble-indicator');
+            if (currentFilter === status) {
+                // If clicking active card again, reset filter to 'all'
+                currentFilter = 'all';
+                if (indicator) {
+                    indicator.classList.add('opacity-0');
+                    indicator.classList.remove('opacity-100');
+                }
+            } else {
+                currentFilter = status;
+                updateCardBubbleIndicator(cardEl);
+            }
             renderUsers();
+        }
+
+        function updateCardBubbleIndicator(cardEl) {
+            const indicator = document.getElementById('card-bubble-indicator');
+            if (!indicator || !cardEl) return;
+
+            const rect = cardEl.getBoundingClientRect();
+            const containerRect = cardEl.parentElement.getBoundingClientRect();
+
+            const currentLeft = parseFloat(indicator.dataset.lastLeft) || 0;
+            const targetLeft = rect.left - containerRect.left;
+            const dist = Math.abs(targetLeft - currentLeft);
+
+            if (dist > 5 && indicator.classList.contains('opacity-100')) {
+                indicator.style.transform = `scaleX(1.12) scaleY(0.88)`;
+                indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
+            }
+
+            indicator.style.left = `${targetLeft}px`;
+            indicator.style.width = `${rect.width}px`;
+            indicator.style.height = `${rect.height}px`;
+            indicator.style.top = `${rect.top - containerRect.top}px`;
+            indicator.dataset.lastLeft = targetLeft;
+
+            indicator.classList.remove('opacity-0', 'pointer-events-none');
+            indicator.classList.add('opacity-100');
+
+            clearTimeout(indicator.timeoutId);
+            indicator.timeoutId = setTimeout(() => {
+                indicator.style.transform = 'scaleX(1) scaleY(1)';
+            }, 250);
         }
 
         // ─── Toast ───────────────────────────────────────────────────────────────
@@ -934,33 +970,6 @@
             
             if (dist > 5) {
                 indicator.style.transform = `scaleX(1.15) scaleY(0.85)`;
-                indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
-            }
-
-            indicator.style.left = `${targetLeft}px`;
-            indicator.style.width = `${rect.width}px`;
-            indicator.style.height = `${rect.height}px`;
-            indicator.style.top = `${rect.top - containerRect.top}px`;
-            indicator.dataset.lastLeft = targetLeft;
-            
-            clearTimeout(indicator.timeoutId);
-            indicator.timeoutId = setTimeout(() => {
-                indicator.style.transform = 'scaleX(1) scaleY(1)';
-            }, 250);
-        }
-
-        function updateStatusTabsIndicator(activeBtn) {
-            const indicator = document.getElementById('status-tabs-indicator');
-            if (!indicator) return;
-            const rect = activeBtn.getBoundingClientRect();
-            const containerRect = activeBtn.parentElement.getBoundingClientRect();
-            
-            const currentLeft = parseFloat(indicator.dataset.lastLeft) || 0;
-            const targetLeft = rect.left - containerRect.left;
-            const dist = Math.abs(targetLeft - currentLeft);
-            
-            if (dist > 5) {
-                indicator.style.transform = `scaleX(1.18) scaleY(0.82)`;
                 indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
             }
 
