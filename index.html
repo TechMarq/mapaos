@@ -219,31 +219,39 @@
             </div>
         </div>
 
-        <!-- Bento Grid for Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <!-- Bento Grid for Stats (1 linha / Ícone no topo vazando borda) -->
+        <div class="grid grid-cols-4 gap-2 md:gap-4 mb-6 pt-3">
             <!-- Total Reservations -->
-            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">TOTAL</span>
-                <div id="stat-total" class="text-3xl font-extrabold text-primary-fixed-dim">0</div>
-                <span class="material-symbols-outlined text-primary text-lg absolute top-3.5 right-4 opacity-50">book_online</span>
+            <div class="glass-card rounded-xl px-2 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-14 md:h-16 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-primary/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-primary text-base md:text-lg">book_online</span>
+                </div>
+                <span class="text-[8px] md:text-[10px] font-bold text-on-surface-variant uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">TOTAL</span>
+                <div id="stat-total" class="text-base md:text-2xl font-extrabold text-primary-fixed-dim leading-none mt-0.5">0</div>
             </div>
             <!-- Average -->
-            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">MÉDIA DIÁRIA</span>
-                <div id="stat-average" class="text-3xl font-extrabold text-violet-400">0</div>
-                <span class="material-symbols-outlined text-violet-400 text-lg absolute top-3.5 right-4 opacity-50">analytics</span>
+            <div class="glass-card rounded-xl px-2 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-14 md:h-16 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-violet-400/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-violet-400 text-base md:text-lg">analytics</span>
+                </div>
+                <span class="text-[8px] md:text-[10px] font-bold text-on-surface-variant uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">MÉDIA DIÁRIA</span>
+                <div id="stat-average" class="text-base md:text-2xl font-extrabold text-violet-400 leading-none mt-0.5">0</div>
             </div>
             <!-- Pending -->
-            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">PENDENTES</span>
-                <div id="stat-pending" class="text-3xl font-extrabold text-amber-400">0</div>
-                <span class="material-symbols-outlined text-amber-400 text-lg absolute top-3.5 right-4 opacity-50">schedule</span>
+            <div class="glass-card rounded-xl px-2 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-14 md:h-16 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-amber-400/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-amber-400 text-base md:text-lg">schedule</span>
+                </div>
+                <span class="text-[8px] md:text-[10px] font-bold text-on-surface-variant uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">PENDENTES</span>
+                <div id="stat-pending" class="text-base md:text-2xl font-extrabold text-amber-400 leading-none mt-0.5">0</div>
             </div>
             <!-- Paid -->
-            <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-[96px] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-                <span class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">PAGOS</span>
-                <div id="stat-paid" class="text-3xl font-extrabold text-secondary-container">0</div>
-                <span class="material-symbols-outlined text-secondary-container text-lg absolute top-3.5 right-4 opacity-50">payments</span>
+            <div class="glass-card rounded-xl px-2 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-14 md:h-16 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-secondary-container/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-secondary-container text-base md:text-lg">payments</span>
+                </div>
+                <span class="text-[8px] md:text-[10px] font-bold text-on-surface-variant uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">PAGOS</span>
+                <div id="stat-paid" class="text-base md:text-2xl font-extrabold text-secondary-container leading-none mt-0.5">0</div>
             </div>
         </div>
 
