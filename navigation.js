@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">domain</span>
                             <input id="modal-client-search" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Buscar cliente..." autocomplete="off" required />
                         </div>
-                        <div id="client-autocomplete-list" class="absolute top-[76px] left-0 right-0 max-h-48 overflow-y-auto bg-[#0b1326]/95 border border-white/10 rounded-xl z-50 hidden shadow-2xl backdrop-blur-xl">
+                        <div id="client-autocomplete-list" class="absolute top-[76px] left-0 right-0 max-h-48 overflow-y-auto bg-[#0b1326]/95 border border-white/10 rounded-lg z-50 hidden shadow-2xl backdrop-blur-xl">
                             <!-- Populated dynamically -->
                         </div>
                     </div>

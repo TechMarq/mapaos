@@ -158,17 +158,16 @@
         </div>
         <!-- Filters Section -->
         <section class="flex flex-col gap-3 mb-stack-gap-md">
-            <!-- Unified Filters & Actions Container -->
+            <!-- Line 1: Filters (Date & Status) -->
             <div class="flex flex-wrap gap-2 items-center">
                 <!-- Date Range Selector -->
                 <div class="relative flex items-center shrink-0">
                     <span class="material-symbols-outlined absolute left-4 text-on-surface-variant text-sm pointer-events-none">calendar_month</span>
                     <select id="select-date-filter" class="pl-10 pr-8 py-2 glass-card rounded-full text-label-sm font-label-sm border border-white/10 bg-transparent text-on-surface hover:text-primary transition-colors focus:ring-0 outline-none appearance-none cursor-pointer">
-                        <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
-                        <option value="7D" class="bg-[#0b1326] text-on-surface">7D (Últimos 7 dias)</option>
-                        <option value="15D" class="bg-[#0b1326] text-on-surface">15D (Últimos 15 dias)</option>
-                        <option value="30D" class="bg-[#0b1326] text-on-surface">30D (Últimos 30 dias)</option>
+                        <option value="mes" selected class="bg-[#0b1326] text-on-surface">Mês Atual</option>
+                        <option value="15D" class="bg-[#0b1326] text-on-surface">15 dias</option>
                         <option value="anterior" class="bg-[#0b1326] text-on-surface">Mês Anterior</option>
+                        <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
                         <option value="custom" class="bg-[#0b1326] text-on-surface">Personalizado...</option>
                     </select>
                 </div>
@@ -180,46 +179,44 @@
                     <input type="date" id="custom-end-date" class="glass-input px-3 py-1.5 rounded-xl text-xs bg-transparent border border-white/10 text-on-surface focus:ring-0 outline-none" />
                 </div>
 
-                <!-- Sorting Selector -->
-                <div class="relative flex items-center shrink-0">
-                    <span class="material-symbols-outlined absolute left-4 text-on-surface-variant text-sm pointer-events-none">swap_vert</span>
-                    <select id="select-sort-order" class="pl-10 pr-8 py-2 glass-card rounded-full text-label-sm font-label-sm border border-white/10 bg-transparent text-on-surface hover:text-primary transition-colors focus:ring-0 outline-none appearance-none cursor-pointer">
-                        <option value="desc" class="bg-[#0b1326] text-on-surface">Mais Recentes</option>
-                        <option value="asc" class="bg-[#0b1326] text-on-surface">Mais Antigas</option>
-                    </select>
-                </div>
-
                 <!-- Status Filter button -->
                 <button id="btn-status-filter" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-on-surface-variant/80 hover:text-primary transition-colors flex items-center gap-2 shrink-0">
                     <span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
                     <span id="status-filter-text">Todos Status</span>
                 </button>
+            </div>
 
+            <!-- Line 2: Actions & View mode (Conciliação, Exportar, Cards) -->
+            <div class="flex flex-wrap gap-2 items-center">
                 <!-- Conciliação (Reconciliation) button -->
-                <button id="btn-reconciliation" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-secondary hover:bg-secondary/10 hover:border-secondary/30 transition-all flex items-center gap-2 shrink-0">
+                <button id="btn-reconciliation" class="px-4 py-2 glass-card rounded-full text-label-sm font-label-sm text-secondary hover:bg-secondary/10 hover:border-secondary/30 transition-all flex items-center gap-2 shrink-0">
                     <span class="material-symbols-outlined text-sm">upload</span>
                     Conciliação
                 </button>
 
                 <!-- Export button -->
-                <button id="btn-export" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all flex items-center gap-2 shrink-0">
+                <button id="btn-export" class="px-4 py-2 glass-card rounded-full text-label-sm font-label-sm text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all flex items-center gap-2 shrink-0">
                     <span class="material-symbols-outlined text-sm">download</span>
                     Exportar
                 </button>
 
                 <!-- View Mode Toggle -->
-                <button id="btn-toggle-view" class="px-5 py-2 glass-card rounded-full text-label-sm font-label-sm text-primary hover:bg-primary/10 hover:border-primary/30 transition-all flex items-center gap-2 shrink-0" title="Alternar Visualização">
+                <button id="btn-toggle-view" class="px-4 py-2 glass-card rounded-full text-label-sm font-label-sm text-primary hover:bg-primary/10 hover:border-primary/30 transition-all flex items-center gap-2 shrink-0" title="Alternar Visualização">
                     <span id="view-mode-icon" class="material-symbols-outlined text-sm">grid_view</span>
                     <span id="view-mode-text">Cards</span>
                 </button>
             </div>
 
-            <!-- Search Input Block -->
-            <div class="w-full flex justify-stretch sm:justify-start">
-                <div class="glass-card flex items-center px-4 py-2 rounded-xl border-white/10 w-full sm:w-64">
+            <!-- Search Input Block & Sort Toggle Button -->
+            <div class="w-full flex items-center gap-2">
+                <div class="glass-card flex items-center px-4 py-2 rounded-xl border-white/10 flex-1 sm:w-64 sm:flex-initial h-10">
                     <span class="material-symbols-outlined text-on-surface-variant mr-2" data-icon="search">search</span>
                     <input id="search-input" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full p-0 placeholder:text-on-surface-variant/50" placeholder="Buscar OS ou cliente..." type="text">
                 </div>
+                <!-- Sort toggle button next to search bar -->
+                <button id="btn-sort-toggle" class="w-10 h-10 glass-card rounded-full border border-white/10 text-orange-400 hover:text-orange-300 transition-colors flex items-center justify-center shrink-0" title="Alternar Ordenação (Mais Recentes / Mais Antigas)">
+                    <span id="sort-toggle-icon" class="material-symbols-outlined text-lg text-orange-400">arrow_downward</span>
+                </button>
             </div>
         </section>
         <!-- Reservations List -->
@@ -412,7 +409,7 @@
         let allReservations = [];
         let allClients = [];
         let statusFilter = 'Todos'; // 'Todos', 'Pendente', 'Paga'
-        let dateRangeFilter = 'Todos'; // 'Todos', '7D', '15D', '30D', 'anterior', 'custom'
+        let dateRangeFilter = 'mes'; // Default: current month ('mes')
         let sortOrder = 'desc'; // 'desc' (most recent first) or 'asc' (oldest first)
         let searchQuery = '';
         let currentFilteredReservations = [];
@@ -455,6 +452,14 @@
             return new Date(0);
         }
 
+        // Helper to format Date object to YYYY-MM-DD
+        function formatDateToISO(dateObj) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // Render reservations dynamically from database helper
         async function loadAndRenderReservations(forceReload = true) {
             const container = document.getElementById('reservations-list-container');
@@ -481,25 +486,15 @@
                 const today = new Date();
                 today.setHours(23, 59, 59, 999);
 
-                if (dateRangeFilter === '7D') {
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 7);
-                    limitDate.setHours(0, 0, 0, 0);
+                if (dateRangeFilter === 'mes') {
+                    const firstDayMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                     filtered = filtered.filter(item => {
                         const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
+                        return itemDate >= firstDayMonth && itemDate <= today;
                     });
                 } else if (dateRangeFilter === '15D') {
                     const limitDate = new Date();
                     limitDate.setDate(today.getDate() - 15);
-                    limitDate.setHours(0, 0, 0, 0);
-                    filtered = filtered.filter(item => {
-                        const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
-                    });
-                } else if (dateRangeFilter === '30D') {
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 30);
                     limitDate.setHours(0, 0, 0, 0);
                     filtered = filtered.filter(item => {
                         const itemDate = parseItemDate(item.date);
@@ -642,10 +637,10 @@
                                     ${isPaid && item.net_value ? `<span class="text-[10px] text-secondary font-medium">Liq: R$ ${item.net_value}</span>` : ''}
                                 </div>
                                 <div class="flex gap-1 shrink-0">
-                                    <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all flex items-center justify-center" title="Editar">
+                                    <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all flex items-center justify-center text-on-surface-variant" title="Editar">
                                         <span class="material-symbols-outlined text-[14px]">edit</span>
                                     </button>
-                                    <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error transition-all flex items-center justify-center" title="Excluir">
+                                    <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 hover:bg-red-500/10 text-error transition-all flex items-center justify-center" title="Excluir">
                                         <span class="material-symbols-outlined text-[14px]">delete</span>
                                     </button>
                                 </div>
@@ -689,22 +684,19 @@
                                         ${extraDetailsHTML}
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between md:flex-col md:items-end md:gap-2 border-t border-white/5 pt-4 md:pt-0 md:border-none">
-                                    <div class="flex justify-between items-center w-full md:flex-col md:items-end md:gap-1">
-                                        <span class="font-label-sm text-on-surface-variant text-xs md:hidden">Valores</span>
-                                        <div class="text-right flex flex-col items-end">
-                                            <span class="${valueColor}">Total: R$ ${item.value || '—'}</span>
-                                            ${isPaid && item.net_value ? `<span class="text-[11px] text-secondary/90 font-medium">Líquido (70%): R$ ${item.net_value}</span>` : ''}
-                                            <p class="text-[10px] text-on-surface-variant/50 hidden md:block mt-0.5">${subtext}</p>
-                                        </div>
+                                <div class="flex items-center justify-between md:flex-col md:items-end md:gap-3 border-t border-white/5 pt-3 md:pt-0 md:border-none">
+                                    <div class="text-left md:text-right flex flex-col justify-center">
+                                        <span class="${valueColor}">Total: R$ ${item.value || '—'}</span>
+                                        ${isPaid && item.net_value ? `<span class="text-[11px] text-secondary/90 font-medium">Líquido (70%): R$ ${item.net_value}</span>` : ''}
+                                        <p class="text-[10px] text-on-surface-variant/50 hidden md:block mt-0.5">${subtext}</p>
                                     </div>
-                                    <!-- Action Buttons -->
-                                    <div class="flex gap-2 mt-2 md:mt-1">
-                                        <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all flex items-center justify-center" title="Editar">
-                                            <span class="material-symbols-outlined text-sm">edit</span>
+                                    <!-- Action Buttons (Circular) -->
+                                    <div class="flex gap-2 shrink-0">
+                                        <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all flex items-center justify-center text-on-surface-variant" title="Editar">
+                                            <span class="material-symbols-outlined text-base">edit</span>
                                         </button>
-                                        <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center" title="Excluir">
-                                            <span class="material-symbols-outlined text-sm">delete</span>
+                                        <button onclick="event.stopPropagation(); doDeleteReservation('${item.id}')" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center" title="Excluir">
+                                            <span class="material-symbols-outlined text-base">delete</span>
                                         </button>
                                     </div>
                                 </div>
@@ -739,7 +731,6 @@
             const customDateContainer = document.getElementById('custom-date-container');
             const customStartDate = document.getElementById('custom-start-date');
             const customEndDate = document.getElementById('custom-end-date');
-            const selectSort = document.getElementById('select-sort-order');
 
             const btnStatus = document.getElementById('btn-status-filter');
             const txtStatus = document.getElementById('status-filter-text');
@@ -758,24 +749,30 @@
                         if (customDateContainer) customDateContainer.classList.add('hidden');
                         if (customStartDate) customStartDate.value = '';
                         if (customEndDate) customEndDate.value = '';
-                        loadAndRenderReservations(false);
+                        loadAndRenderReservations(true);
                     }
                 });
             }
 
             // Custom date picker events
             if (customStartDate) {
-                customStartDate.addEventListener('change', () => { visibleLimit = 10; loadAndRenderReservations(false); });
+                customStartDate.addEventListener('change', () => { visibleLimit = 10; loadAndRenderReservations(true); });
             }
             if (customEndDate) {
-                customEndDate.addEventListener('change', () => { visibleLimit = 10; loadAndRenderReservations(false); });
+                customEndDate.addEventListener('change', () => { visibleLimit = 10; loadAndRenderReservations(true); });
             }
 
-            // 2. Sort Selector Trigger
-            if (selectSort) {
-                selectSort.addEventListener('change', (e) => {
-                    sortOrder = e.target.value;
-                    visibleLimit = 10; // Reset limit on filter change
+            const btnSortToggle = document.getElementById('btn-sort-toggle');
+            const sortToggleIcon = document.getElementById('sort-toggle-icon');
+
+            // 2. Sort Toggle Trigger (Arrow Down = Mais Recente, Arrow Up = Mais Antigo)
+            if (btnSortToggle) {
+                btnSortToggle.addEventListener('click', () => {
+                    sortOrder = (sortOrder === 'desc') ? 'asc' : 'desc';
+                    if (sortToggleIcon) {
+                        sortToggleIcon.textContent = (sortOrder === 'desc') ? 'arrow_downward' : 'arrow_upward';
+                    }
+                    visibleLimit = 10;
                     loadAndRenderReservations(false);
                 });
             }

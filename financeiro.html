@@ -141,11 +141,10 @@
             <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
                 <!-- Date Filter Selector -->
                 <select id="filter-date-range" class="glass-card rounded-full px-4 py-2 text-xs font-semibold text-primary border-white/5 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all">
-                    <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
-                    <option value="7D" class="bg-[#0b1326] text-on-surface">Últimos 7 dias</option>
-                    <option value="15D" class="bg-[#0b1326] text-on-surface">Últimos 15 dias</option>
-                    <option value="30D" class="bg-[#0b1326] text-on-surface">Últimos 30 dias</option>
                     <option value="mes" class="bg-[#0b1326] text-on-surface" selected>Este Mês</option>
+                    <option value="15D" class="bg-[#0b1326] text-on-surface">15 dias</option>
+                    <option value="anterior" class="bg-[#0b1326] text-on-surface">Mês Anterior</option>
+                    <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
                     <option value="custom" class="bg-[#0b1326] text-on-surface">Personalizado</option>
                 </select>
 
@@ -158,18 +157,26 @@
             </div>
         </div>
 
-        <!-- Indicators Grid -->
-        <div class="grid grid-cols-1 gap-4">
+        <!-- Bento Grid for Stats (Mesma linha / Estilo compacto Home) -->
+        <div class="grid grid-cols-2 gap-3 md:gap-4 mb-6 pt-3">
             <!-- Received (Paga) Card -->
-            <div class="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between h-28 border-l-4 border-l-secondary">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-secondary uppercase tracking-wider">Líquido Recebido</span>
-                    <span class="material-symbols-outlined text-secondary text-lg">check_circle</span>
+            <div class="glass-card rounded-xl px-3 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-16 md:h-20 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-secondary/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-secondary text-base md:text-lg">check_circle</span>
                 </div>
-                <div>
-                    <h3 id="metric-received" class="text-2xl font-bold text-on-surface">R$ 0,00</h3>
-                    <p id="metric-received-count" class="text-[10px] text-on-surface-variant mt-0.5">0 OS conciliadas</p>
+                <span class="text-[8px] md:text-[10px] font-bold text-secondary uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">LÍQUIDO RECEBIDO</span>
+                <div id="metric-received" class="text-sm md:text-xl font-extrabold text-secondary leading-none mt-0.5">R$ 0,00</div>
+                <span id="metric-received-count" class="text-[8px] md:text-[10px] text-on-surface-variant/70 mt-0.5">0 OS conciliadas</span>
+            </div>
+
+            <!-- Total Runs (Corridas Totais) Card -->
+            <div class="glass-card rounded-xl px-3 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-16 md:h-20 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-primary/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-primary text-base md:text-lg">directions_car</span>
                 </div>
+                <span class="text-[8px] md:text-[10px] font-bold text-primary uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">CORRIDAS TOTAIS</span>
+                <div id="metric-total-runs" class="text-sm md:text-xl font-extrabold text-primary leading-none mt-0.5">0</div>
+                <span id="metric-total-runs-subtitle" class="text-[8px] md:text-[10px] text-on-surface-variant/70 mt-0.5">OS no período</span>
             </div>
         </div>
 
@@ -308,13 +315,11 @@
                 const today = new Date();
                 today.setHours(23, 59, 59, 999);
 
-                if (dateRangeFilter === '7D') {
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 7);
-                    limitDate.setHours(0, 0, 0, 0);
+                if (dateRangeFilter === 'mes') {
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
                     filtered = filtered.filter(item => {
                         const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
+                        return itemDate >= startOfMonth && itemDate <= today;
                     });
                 } else if (dateRangeFilter === '15D') {
                     const limitDate = new Date();
@@ -324,19 +329,12 @@
                         const itemDate = parseItemDate(item.date);
                         return itemDate >= limitDate && itemDate <= today;
                     });
-                } else if (dateRangeFilter === '30D') {
-                    const limitDate = new Date();
-                    limitDate.setDate(today.getDate() - 30);
-                    limitDate.setHours(0, 0, 0, 0);
+                } else if (dateRangeFilter === 'anterior') {
+                    const firstDayPrevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastDayPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
                     filtered = filtered.filter(item => {
                         const itemDate = parseItemDate(item.date);
-                        return itemDate >= limitDate && itemDate <= today;
-                    });
-                } else if (dateRangeFilter === 'mes') {
-                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
-                    filtered = filtered.filter(item => {
-                        const itemDate = parseItemDate(item.date);
-                        return itemDate >= startOfMonth && itemDate <= today;
+                        return itemDate >= firstDayPrevMonth && itemDate <= lastDayPrevMonth;
                     });
                 } else if (dateRangeFilter === 'custom') {
                     const startVal = document.getElementById('custom-start-date').value;
@@ -422,6 +420,11 @@
             // Render Metrics
             document.getElementById('metric-received').textContent = totalReceived.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('metric-received-count').textContent = `${countReceived} OS conciliadas`;
+
+            const totalRunsEl = document.getElementById('metric-total-runs');
+            if (totalRunsEl) {
+                totalRunsEl.textContent = filtered.length;
+            }
 
             // Render Client Table
             const tbody = document.getElementById('clients-table-body');
