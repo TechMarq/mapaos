@@ -489,7 +489,7 @@
                                 </div>
                                 <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email}</span>
                                 <span class="text-[10px] text-on-surface-variant/60 flex items-center gap-1.5 flex-wrap">
-                                    <span>Tel: ${user.phone || '—'}</span>
+                                    <span>Tel: ${user.phone ? `<a href="https://wa.me/55${user.phone.replace(/\D/g, '')}" target="_blank" rel="noopener noreferrer" class="text-secondary hover:underline inline-flex items-center gap-0.5" title="Abrir WhatsApp"><span class="material-symbols-outlined text-[11px]">chat</span>${user.phone}</a>` : '—'}</span>
                                     <span>•</span>
                                     <span>Cadastrado em: ${formatDate(user.created_at)}</span>
                                 </span>
