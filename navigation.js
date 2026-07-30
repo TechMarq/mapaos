@@ -258,21 +258,119 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Triggered when user clicks the notification bell in top bar
-    window.triggerHeaderNotificationModal = async function() {
+    // Toggle Notification Dropdown list in header
+    window.toggleNotificationDropdown = async function(e) {
+        if (e) e.stopPropagation();
+        
+        let dropdown = document.getElementById('header-notif-dropdown');
+        if (dropdown) {
+            const isHidden = dropdown.classList.contains('hidden');
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                await renderNotificationDropdownItems();
+            } else {
+                dropdown.classList.add('hidden');
+            }
+            return;
+        }
+
+        // Create dropdown element
+        const dropdownHTML = `
+            <div id="header-notif-dropdown" class="absolute top-16 left-0 right-0 sm:left-12 sm:right-auto w-full sm:w-[360px] bg-[#131b2e]/95 backdrop-blur-xl p-4 rounded-2xl border border-white/20 shadow-2xl shadow-black/80 z-[9999] flex flex-col gap-3 transition-all duration-300">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                    <div class="flex items-center gap-2 text-primary font-bold text-xs">
+                        <span class="material-symbols-outlined text-base">notifications</span>
+                        <span>Notificações</span>
+                    </div>
+                    <span id="notif-dropdown-count" class="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold border border-primary/30">0 ativas</span>
+                </div>
+                <div id="notif-dropdown-list" class="max-h-[320px] overflow-y-auto no-scrollbar flex flex-col gap-2.5">
+                    <div class="text-center py-6 text-xs text-on-surface-variant/70 flex items-center justify-center gap-2">
+                        <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span>Carregando avisos...</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const header = document.querySelector('header');
+        if (header) {
+            header.insertAdjacentHTML('beforeend', dropdownHTML);
+            await renderNotificationDropdownItems();
+        }
+    };
+
+    async function renderNotificationDropdownItems() {
+        const listContainer = document.getElementById('notif-dropdown-list');
+        const countSpan = document.getElementById('notif-dropdown-count');
+        if (!listContainer) return;
+
+        if (typeof dbGetActiveNotifications !== 'function') {
+            listContainer.innerHTML = `<p class="text-xs text-center py-4 text-on-surface-variant/60">Sem dados de notificação.</p>`;
+            return;
+        }
+
+        const activeNotifs = await dbGetActiveNotifications();
+        let seenIds = [];
+        try {
+            seenIds = JSON.parse(localStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
+        } catch (e) { seenIds = []; }
+
+        if (countSpan) {
+            countSpan.textContent = `${activeNotifs ? activeNotifs.length : 0} ativas`;
+        }
+
+        if (!activeNotifs || activeNotifs.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center py-6 text-xs text-on-surface-variant/70 flex flex-col items-center gap-1.5">
+                    <span class="material-symbols-outlined text-2xl text-on-surface-variant/40">notifications_off</span>
+                    <span>Nenhuma notificação ativa no momento.</span>
+                </div>
+            `;
+            return;
+        }
+
+        listContainer.innerHTML = activeNotifs.map(n => {
+            const isUnread = !seenIds.includes(n.id);
+            const dateStr = n.created_at ? new Date(n.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+
+            return `
+                <div onclick="openSingleNotifModal('${n.id}')" class="p-3.5 rounded-xl ${isUnread ? 'bg-[#1e2942] border-primary/40' : 'bg-[#171f33] border-white/10'} border hover:bg-[#253250] transition-all cursor-pointer flex flex-col gap-1.5 relative group shadow-md">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-xs text-on-surface truncate pr-2">${n.title}</span>
+                        ${isUnread ? '<span class="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 ring-2 ring-red-500/30"></span>' : ''}
+                    </div>
+                    <p class="text-[11px] text-on-surface-variant/90 line-clamp-2 leading-relaxed">${n.message}</p>
+                    ${dateStr ? `<span class="text-[9px] text-on-surface-variant/60 self-end mt-0.5">${dateStr}</span>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Open specific notification modal when clicked from dropdown list
+    window.openSingleNotifModal = async function(notifId) {
         if (typeof dbGetActiveNotifications === 'function') {
             const activeNotifs = await dbGetActiveNotifications();
-            if (activeNotifs && activeNotifs.length > 0) {
-                renderUserNotificationModal(activeNotifs[0]);
-            } else {
-                if (typeof showToast === 'function') {
-                    showToast('Nenhuma notificação nova no momento.', false);
-                } else {
-                    alert('Nenhuma notificação nova no momento.');
-                }
+            const target = activeNotifs.find(n => n.id === notifId);
+            if (target) {
+                renderUserNotificationModal(target);
+                const dropdown = document.getElementById('header-notif-dropdown');
+                if (dropdown) dropdown.classList.add('hidden');
             }
         }
     };
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('header-notif-dropdown');
+        const bellBtn = document.getElementById('header-notif-bell-btn');
+        if (dropdown && !dropdown.contains(e.target) && bellBtn && !bellBtn.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
 
     checkAndDisplayNotifications();
     setTimeout(updateNotificationBellDot, 800);
@@ -741,11 +839,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${expiryBadgeHTML}
                     </div>
                 </div>
-                <!-- Top Bar Notification Bell Button -->
-                <button id="header-notif-bell-btn" onclick="triggerHeaderNotificationModal()" class="relative p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all flex items-center justify-center border border-white/5 active:scale-95 cursor-pointer ml-1" title="Notificações">
-                    <span class="material-symbols-outlined text-xl">notifications</span>
+                <!-- Top Bar Notification Bell Button (Perfectly Round) -->
+                <button id="header-notif-bell-btn" onclick="toggleNotificationDropdown(event)" class="relative w-9 h-9 rounded-full text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all flex items-center justify-center border border-white/10 active:scale-95 cursor-pointer shrink-0" title="Notificações">
+                    <span class="material-symbols-outlined text-lg">notifications</span>
                     <!-- Unread Red Indicator Dot -->
-                    <span id="notif-bell-dot" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse"></span>
+                    <span id="notif-bell-dot" class="hidden absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse"></span>
                 </button>
             </div>
             <!-- Desktop Menu -->
@@ -759,18 +857,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="material-symbols-outlined mb-1">list_alt</span>
                     Reservas
                 </a>
-                <button onclick="openVehicleComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/70 hover:text-amber-400 cursor-pointer relative" id="desktop-veiculo" title="Controle do Veículo (Em Breve)">
-                    <span class="material-symbols-outlined mb-1">directions_car</span>
+                <button onclick="openVehicleComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/40 hover:text-on-surface-variant/60 cursor-pointer relative" id="desktop-veiculo" title="Controle do Veículo (Bloqueado / Em Breve)">
+                    <span class="material-symbols-outlined mb-1 text-on-surface-variant/40">directions_car</span>
                     <span class="flex items-center gap-0.5">
                         Veículo
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span class="material-symbols-outlined text-[10px] text-on-surface-variant/40">lock</span>
                     </span>
                 </button>
-                <button onclick="openWalletComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/70 hover:text-amber-400 cursor-pointer relative" id="desktop-carteira" title="Documentos / Carteira (Em Breve)">
-                    <span class="material-symbols-outlined mb-1">account_balance_wallet</span>
+                <button onclick="openWalletComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/40 hover:text-on-surface-variant/60 cursor-pointer relative" id="desktop-carteira" title="Documentos / Carteira (Bloqueado / Em Breve)">
+                    <span class="material-symbols-outlined mb-1 text-on-surface-variant/40">account_balance_wallet</span>
                     <span class="flex items-center gap-0.5">
                         Carteira
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span class="material-symbols-outlined text-[10px] text-on-surface-variant/40">lock</span>
                     </span>
                 </button>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="financeiro.html" id="desktop-financeiro">
@@ -809,10 +907,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <a href="historico_reserva.html" id="mobile-reservas" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
                 <span class="material-symbols-outlined text-lg">list_alt</span>
             </a>
-            <!-- 3. Controle Veículo (Em Breve) -->
-            <button onclick="openVehicleComingSoonModal()" id="mobile-veiculo" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-amber-400 relative" title="Controle do Veículo (Em Breve)">
+            <!-- 3. Controle Veículo (Em Breve / Bloqueado) -->
+            <button onclick="openVehicleComingSoonModal()" id="mobile-veiculo" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant/40 relative opacity-60" title="Controle do Veículo (Bloqueado)">
                 <span class="material-symbols-outlined text-lg">directions_car</span>
-                <span class="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-on-surface-variant/60">lock</span>
             </button>
 
             <!-- 4. CENTRO: Botão Adicionar "+" Grande e Destacado -->
@@ -820,10 +918,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="material-symbols-outlined text-2xl font-extrabold">add</span>
             </button>
 
-            <!-- 5. Carteira Documentos (Em Breve) -->
-            <button onclick="openWalletComingSoonModal()" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-amber-400 relative" title="Carteira de Documentos (Em Breve)">
+            <!-- 5. Carteira Documentos (Em Breve / Bloqueado) -->
+            <button onclick="openWalletComingSoonModal()" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant/40 relative opacity-60" title="Carteira de Documentos (Bloqueado)">
                 <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
-                <span class="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-on-surface-variant/60">lock</span>
             </button>
             <!-- 6. Financeiro -->
             <a href="financeiro.html" id="mobile-financeiro" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
