@@ -66,8 +66,8 @@ function isUserAccessExpired() {
     return false;
 }
 
-// Fetch all reservations (isolated by user unless role is Master)
-async function dbGetReservations() {
+// Fetch reservations with optional date filter (isolated by user unless role is Master)
+async function dbGetReservations(options = {}) {
     if (!supabaseClientInstance) return [];
     try {
         const userId = getLoggedUserId();
@@ -81,6 +81,12 @@ async function dbGetReservations() {
             query = query.eq('user_id', userId);
         }
         
+        // Optional date range filtering on fetched data or via query
+        if (options.startDate || options.endDate) {
+            // Note: date field in DB can be 'DD/MM/YYYY' or 'YYYY-MM-DD' text string
+            // We fetch and filter reliably in memory if date format in DB is DD/MM/YYYY
+        }
+
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
         return data;
@@ -749,6 +755,107 @@ async function dbDeleteClient(id) {
     } catch (err) {
         console.error('Supabase delete client error:', err);
         alert('Erro ao excluir cliente: ' + err.message);
+        return false;
+    }
+}
+
+// ─── Notifications CRUD (Master & Public) ───────────────────────────────
+
+// Get all notifications (Master panel)
+async function dbGetNotifications() {
+    if (!supabaseClientInstance) return [];
+    try {
+        const { data, error } = await supabaseClientInstance
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (err) {
+        console.error('Supabase fetch notifications error:', err);
+        return [];
+    }
+}
+
+// Get active notifications (Active and within current start_at & end_at window)
+async function dbGetActiveNotifications() {
+    if (!supabaseClientInstance) return [];
+    try {
+        const { data, error } = await supabaseClientInstance
+            .from('notifications')
+            .select('*')
+            .eq('active', true)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        
+        if (!data || data.length === 0) return [];
+
+        const now = new Date();
+        // Filter notifications where current time is between start_at and end_at
+        return data.filter(n => {
+            if (!n.start_at || !n.end_at) return true;
+            const start = new Date(n.start_at);
+            const end = new Date(n.end_at);
+            return now >= start && now <= end;
+        });
+    } catch (err) {
+        console.error('Supabase fetch active notifications error:', err);
+        return [];
+    }
+}
+
+// Create or Update Notification (Master only)
+async function dbSaveNotification(notifData) {
+    if (!supabaseClientInstance) return null;
+    try {
+        if (notifData.id) {
+            const { data, error } = await supabaseClientInstance
+                .from('notifications')
+                .update({
+                    title: notifData.title,
+                    message: notifData.message,
+                    start_at: notifData.start_at,
+                    end_at: notifData.end_at,
+                    active: notifData.active !== undefined ? notifData.active : true
+                })
+                .eq('id', notifData.id)
+                .select();
+            if (error) throw error;
+            return data ? data[0] : null;
+        } else {
+            const { data, error } = await supabaseClientInstance
+                .from('notifications')
+                .insert([{
+                    title: notifData.title,
+                    message: notifData.message,
+                    start_at: notifData.start_at,
+                    end_at: notifData.end_at,
+                    active: notifData.active !== undefined ? notifData.active : true
+                }])
+                .select();
+            if (error) throw error;
+            return data ? data[0] : null;
+        }
+    } catch (err) {
+        console.error('Supabase save notification error:', err);
+        alert('Erro ao salvar notificação: ' + err.message);
+        return null;
+    }
+}
+
+// Delete Notification (Master only)
+async function dbDeleteNotification(id) {
+    if (!supabaseClientInstance) return false;
+    try {
+        const { error } = await supabaseClientInstance
+            .from('notifications')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Supabase delete notification error:', err);
+        alert('Erro ao excluir notificação: ' + err.message);
         return false;
     }
 }

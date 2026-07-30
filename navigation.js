@@ -134,17 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const activeNotifs = await dbGetActiveNotifications();
                     if (!activeNotifs || activeNotifs.length === 0) return;
 
-                    // Read seen notification IDs in current session
-                    let seenIds = [];
-                    try {
-                        seenIds = JSON.parse(sessionStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
-                    } catch (e) { seenIds = []; }
-
-                    const unseenNotifs = activeNotifs.filter(n => !seenIds.includes(n.id));
-                    if (unseenNotifs.length === 0) return;
-
-                    // Display the first unseen notification
-                    const currentNotif = unseenNotifs[0];
+                    // Display the latest active notification every time page loads/refreshes
+                    const currentNotif = activeNotifs[0];
                     renderUserNotificationModal(currentNotif);
                 }
             }, 100);
