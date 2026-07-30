@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Erro ao processar last_login em background:', e);
     }
 
-    // Check and display active notifications in standard modal for users (Master is excluded)
+    // Check and display active notifications in standard modal for users (Master is excluded, only shows right after login)
     async function checkAndDisplayNotifications() {
         try {
             const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
@@ -128,13 +128,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const loggedUser = JSON.parse(loggedUserRaw);
             if (loggedUser && loggedUser.role === 'Master') return; // Master creates notifications, doesn't need popups
 
+            // Only trigger if user just completed login action
+            const justLoggedIn = sessionStorage.getItem('MAPAOS_JUST_LOGGED_IN');
+            if (!justLoggedIn) return;
+
             const notifCheckInterval = setInterval(async () => {
                 if (typeof dbGetActiveNotifications === 'function' && typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
                     clearInterval(notifCheckInterval);
+                    
+                    // Consume the flag so refreshing the page won't trigger the modal again
+                    sessionStorage.removeItem('MAPAOS_JUST_LOGGED_IN');
+
                     const activeNotifs = await dbGetActiveNotifications();
                     if (!activeNotifs || activeNotifs.length === 0) return;
 
-                    // Display the latest active notification every time page loads/refreshes
+                    // Display the latest active notification
                     const currentNotif = activeNotifs[0];
                     renderUserNotificationModal(currentNotif);
                 }
@@ -203,13 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.classList.remove('scale-100');
             card.classList.add('scale-95');
 
-            // Mark notification as seen in current session
+            // Mark notification as seen in localStorage
             try {
-                let seenIds = JSON.parse(sessionStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
+                let seenIds = JSON.parse(localStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
                 if (!seenIds.includes(notif.id)) {
                     seenIds.push(notif.id);
-                    sessionStorage.setItem('MAPAOS_SEEN_NOTIFICATIONS', JSON.stringify(seenIds));
+                    localStorage.setItem('MAPAOS_SEEN_NOTIFICATIONS', JSON.stringify(seenIds));
                 }
+                updateNotificationBellDot();
             } catch (e) {}
 
             setTimeout(() => { modal.remove(); }, 300);
@@ -217,9 +226,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('close-user-notif-btn').addEventListener('click', closeModalFunc);
         document.getElementById('ack-user-notif-btn').addEventListener('click', closeModalFunc);
+    };
+
+    // Helper to check unread notifications and toggle the red dot on header bell icon
+    async function updateNotificationBellDot() {
+        try {
+            const bellDot = document.getElementById('notif-bell-dot');
+            if (!bellDot) return;
+
+            if (typeof dbGetActiveNotifications === 'function' && typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+                const activeNotifs = await dbGetActiveNotifications();
+                if (!activeNotifs || activeNotifs.length === 0) {
+                    bellDot.classList.add('hidden');
+                    return;
+                }
+
+                let seenIds = [];
+                try {
+                    seenIds = JSON.parse(localStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
+                } catch (e) { seenIds = []; }
+
+                const hasUnread = activeNotifs.some(n => !seenIds.includes(n.id));
+                if (hasUnread) {
+                    bellDot.classList.remove('hidden');
+                } else {
+                    bellDot.classList.add('hidden');
+                }
+            }
+        } catch (e) {
+            console.error('Error updating notification bell dot:', e);
+        }
     }
 
+    // Triggered when user clicks the notification bell in top bar
+    window.triggerHeaderNotificationModal = async function() {
+        if (typeof dbGetActiveNotifications === 'function') {
+            const activeNotifs = await dbGetActiveNotifications();
+            if (activeNotifs && activeNotifs.length > 0) {
+                renderUserNotificationModal(activeNotifs[0]);
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast('Nenhuma notificação nova no momento.', false);
+                } else {
+                    alert('Nenhuma notificação nova no momento.');
+                }
+            }
+        }
+    };
+
     checkAndDisplayNotifications();
+    setTimeout(updateNotificationBellDot, 800);
 
     // Dynamic clients list loaded from Supabase database
     let clientsList = [];
@@ -685,6 +741,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${expiryBadgeHTML}
                     </div>
                 </div>
+                <!-- Top Bar Notification Bell Button -->
+                <button id="header-notif-bell-btn" onclick="triggerHeaderNotificationModal()" class="relative p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all flex items-center justify-center border border-white/5 active:scale-95 cursor-pointer ml-1" title="Notificações">
+                    <span class="material-symbols-outlined text-xl">notifications</span>
+                    <!-- Unread Red Indicator Dot -->
+                    <span id="notif-bell-dot" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse"></span>
+                </button>
             </div>
             <!-- Desktop Menu -->
             <div class="hidden md:flex gap-6 items-center relative" id="desktop-menu-container">

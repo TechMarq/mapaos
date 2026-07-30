@@ -445,6 +445,7 @@ async function dbLoginUser(email, password) {
 
         profile.last_login = nowIso;
         localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(profile));
+        sessionStorage.setItem('MAPAOS_JUST_LOGGED_IN', 'true');
         return { success: true, user: profile };
 
     } catch (err) {
