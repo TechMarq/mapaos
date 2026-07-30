@@ -120,6 +120,116 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Erro ao processar last_login em background:', e);
     }
 
+    // Check and display active notifications in standard modal for users (Master is excluded)
+    async function checkAndDisplayNotifications() {
+        try {
+            const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+            if (!loggedUserRaw) return;
+            const loggedUser = JSON.parse(loggedUserRaw);
+            if (loggedUser && loggedUser.role === 'Master') return; // Master creates notifications, doesn't need popups
+
+            const notifCheckInterval = setInterval(async () => {
+                if (typeof dbGetActiveNotifications === 'function' && typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+                    clearInterval(notifCheckInterval);
+                    const activeNotifs = await dbGetActiveNotifications();
+                    if (!activeNotifs || activeNotifs.length === 0) return;
+
+                    // Read seen notification IDs in current session
+                    let seenIds = [];
+                    try {
+                        seenIds = JSON.parse(sessionStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
+                    } catch (e) { seenIds = []; }
+
+                    const unseenNotifs = activeNotifs.filter(n => !seenIds.includes(n.id));
+                    if (unseenNotifs.length === 0) return;
+
+                    // Display the first unseen notification
+                    const currentNotif = unseenNotifs[0];
+                    renderUserNotificationModal(currentNotif);
+                }
+            }, 100);
+            setTimeout(() => clearInterval(notifCheckInterval), 6000);
+        } catch (err) {
+            console.error('Erro ao buscar notificações do usuário:', err);
+        }
+    }
+
+    window.renderUserNotificationModal = function(notif) {
+        // Remove existing modal if any
+        const existing = document.getElementById('user-notif-modal');
+        if (existing) existing.remove();
+
+        const modalHTML = `
+            <div id="user-notif-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#060e20]/85 backdrop-blur-md transition-all duration-300 opacity-0 pointer-events-none p-4">
+                <div class="glass-card w-[92%] max-w-[500px] p-6 sm:p-8 rounded-3xl flex flex-col gap-5 border border-white/15 shadow-2xl transform scale-95 transition-all duration-300 relative overflow-hidden">
+                    
+                    <!-- Decorative glow behind header -->
+                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- Header icon & Title -->
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary-container/20 border border-primary/30 flex items-center justify-center shrink-0 text-primary shadow-inner">
+                            <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">campaign</span>
+                        </div>
+                        <div class="flex-1 min-w-0 pr-6">
+                            <span class="text-[10px] uppercase font-bold tracking-widest text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 inline-block mb-1">Aviso Importante</span>
+                            <h3 class="text-lg font-bold text-on-surface leading-tight tracking-tight">${notif.title}</h3>
+                        </div>
+                        <button id="close-user-notif-btn" class="absolute top-5 right-5 text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                            <span class="material-symbols-outlined text-xl">close</span>
+                        </button>
+                    </div>
+
+                    <!-- Message Body -->
+                    <div class="max-h-[50vh] overflow-y-auto pr-1 no-scrollbar text-xs sm:text-sm text-on-surface-variant/90 leading-relaxed whitespace-pre-line border-y border-white/5 py-4">
+                        ${notif.message}
+                    </div>
+
+                    <!-- Action Footer -->
+                    <div class="flex items-center justify-end pt-1">
+                        <button id="ack-user-notif-btn" class="w-full sm:w-auto px-6 h-11 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg">
+                            <span>Estou Ciente</span>
+                            <span class="material-symbols-outlined text-base">check</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const modal = document.getElementById('user-notif-modal');
+        const card = modal.querySelector('.glass-card');
+
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        });
+
+        const closeModalFunc = () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+
+            // Mark notification as seen in current session
+            try {
+                let seenIds = JSON.parse(sessionStorage.getItem('MAPAOS_SEEN_NOTIFICATIONS') || '[]');
+                if (!seenIds.includes(notif.id)) {
+                    seenIds.push(notif.id);
+                    sessionStorage.setItem('MAPAOS_SEEN_NOTIFICATIONS', JSON.stringify(seenIds));
+                }
+            } catch (e) {}
+
+            setTimeout(() => { modal.remove(); }, 300);
+        };
+
+        document.getElementById('close-user-notif-btn').addEventListener('click', closeModalFunc);
+        document.getElementById('ack-user-notif-btn').addEventListener('click', closeModalFunc);
+    }
+
+    checkAndDisplayNotifications();
+
     // Dynamic clients list loaded from Supabase database
     let clientsList = [];
     async function fetchClients() {

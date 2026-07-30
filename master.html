@@ -186,6 +186,9 @@
             <button id="main-tab-clients" class="px-5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant transition-all active:scale-[0.98] z-10 relative bg-transparent scale-100" onclick="switchMainTab('clients', this)">
                 <span class="flex items-center gap-1.5 z-20"><span class="material-symbols-outlined text-base">domain</span> Clientes</span>
             </button>
+            <button id="main-tab-notifications" class="px-5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant transition-all active:scale-[0.98] z-10 relative bg-transparent scale-100" onclick="switchMainTab('notifications', this)">
+                <span class="flex items-center gap-1.5 z-20"><span class="material-symbols-outlined text-base">campaign</span> Notificações</span>
+            </button>
         </div>
 
         <!-- Users Section -->
@@ -285,7 +288,92 @@
                 <p class="text-sm">Nenhum cliente cadastrado.</p>
             </div>
         </div>
+
+        <!-- Notifications Management Section -->
+        <div id="section-notifications" class="hidden space-y-6 animate-fade-in">
+            <!-- Header Card for Notifications -->
+            <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-4 justify-between">
+                <div class="flex-1">
+                    <h2 class="text-sm font-semibold text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-base">campaign</span>
+                        Gerenciar Notificações & Notícias
+                    </h2>
+                    <p class="text-xs text-on-surface-variant mt-0.5">Crie avisos com período de exibição pré-definido para serem mostrados ao usuário na tela de login.</p>
+                </div>
+                <button onclick="openNotifModal()" class="h-10 px-5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shrink-0 shadow-lg">
+                    <span class="material-symbols-outlined text-sm">add_alert</span> Criar Nova Notícia
+                </button>
+            </div>
+
+            <!-- Notifications List Container -->
+            <div id="notifications-table-body" class="space-y-3">
+                <!-- Loaded dynamically -->
+            </div>
+
+            <!-- Empty Notifications State -->
+            <div id="notifications-empty-state" class="hidden text-center py-16 text-on-surface-variant glass-card rounded-2xl">
+                <span class="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-3 block">notifications_off</span>
+                <p class="text-sm">Nenhuma notícia ou notificação cadastrada.</p>
+            </div>
+        </div>
     </main>
+
+    <!-- Create / Edit Notification Modal -->
+    <div id="notif-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
+        <div class="glass-card w-[90%] max-w-[550px] p-6 md:p-8 rounded-2xl flex flex-col gap-5 transform scale-95 transition-all duration-300 border-t-white/20">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 id="notif-modal-title" class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-2xl">campaign</span> Criar Notícia
+                    </h3>
+                    <p class="text-on-surface-variant text-xs mt-1">Defina a mensagem e o intervalo de tempo em que a notificação ficará visível aos usuários.</p>
+                </div>
+                <button onclick="closeNotifModal()" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="notif-form" class="flex flex-col gap-4" onsubmit="event.preventDefault(); handleSaveNotification();">
+                <input type="hidden" id="notif-id" />
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-on-surface-variant px-1">Título da Notícia / Aviso *</label>
+                    <input type="text" id="notif-title-input" class="glass-input h-11 px-4 rounded-xl text-xs text-on-surface" placeholder="Ex: Manutenção Programada do Sistema" required />
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-on-surface-variant px-1">Conteúdo da Mensagem *</label>
+                    <textarea id="notif-message-input" rows="4" class="glass-input p-4 rounded-xl text-xs text-on-surface resize-none" placeholder="Digite aqui o comunicado completo que será exibido no modal do usuário..." required></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-on-surface-variant px-1">Início da Exibição *</label>
+                        <input type="datetime-local" id="notif-start-input" class="glass-input h-11 px-3 rounded-xl text-xs text-on-surface [color-scheme:dark]" required />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-on-surface-variant px-1">Fim da Exibição *</label>
+                        <input type="datetime-local" id="notif-end-input" class="glass-input h-11 px-3 rounded-xl text-xs text-on-surface [color-scheme:dark]" required />
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1 px-1">
+                    <input type="checkbox" id="notif-active-input" class="w-4 h-4 rounded border-white/20 bg-white/5 text-primary focus:ring-0 cursor-pointer" checked />
+                    <label for="notif-active-input" class="text-xs text-on-surface cursor-pointer select-none font-medium">Notificação Ativa (Permitir exibição dentro do período)</label>
+                </div>
+
+                <div class="flex items-center gap-2 mt-2">
+                    <button type="button" onclick="previewFormNotification()" class="flex-1 h-11 rounded-xl bg-white/5 border border-white/10 text-on-surface hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all">
+                        <span class="material-symbols-outlined text-base text-primary">visibility</span>
+                        <span>Pré-visualizar</span>
+                    </button>
+                    <button type="submit" id="btn-notif-submit" class="flex-1 primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-11 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-1.5 text-xs">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        <span>Salvar Notificação</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Edit Client Modal -->
     <div id="edit-client-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
@@ -328,6 +416,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
+    <script src="navigation.js"></script>
     <script>
         // ─── Auth Guard ──────────────────────────────────────────────────────────
         (function() {
@@ -666,9 +755,11 @@
         }
 
         // ─── Main Tabs Switching ───────────────────────────────────────────────
+        let allNotifications = [];
+
         function switchMainTab(tab, btn) {
             activeMainTab = tab;
-            document.querySelectorAll('#main-tab-users, #main-tab-clients').forEach(b => {
+            document.querySelectorAll('#main-tab-users, #main-tab-clients, #main-tab-notifications').forEach(b => {
                 b.className = "px-5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant transition-all active:scale-[0.98] z-10 relative bg-transparent scale-100";
             });
 
@@ -677,16 +768,257 @@
 
             const secUsers = document.getElementById('section-users');
             const secClients = document.getElementById('section-clients');
+            const secNotifs = document.getElementById('section-notifications');
+
+            secUsers.classList.add('hidden');
+            secClients.classList.add('hidden');
+            secNotifs.classList.add('hidden');
 
             if (tab === 'users') {
                 secUsers.classList.remove('hidden');
-                secClients.classList.add('hidden');
                 renderUsers();
-            } else {
-                secUsers.classList.add('hidden');
+            } else if (tab === 'clients') {
                 secClients.classList.remove('hidden');
                 loadAndRenderClients();
+            } else if (tab === 'notifications') {
+                secNotifs.classList.remove('hidden');
+                loadAndRenderNotifications();
             }
+        }
+
+        // ─── Notifications Management Functions ─────────────────────────
+
+        async function loadAndRenderNotifications() {
+            const body = document.getElementById('notifications-table-body');
+            body.innerHTML = `
+                <div class="flex items-center justify-center py-16 text-on-surface-variant gap-3 glass-card rounded-2xl">
+                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="text-sm">Carregando notificações...</span>
+                </div>
+            `;
+
+            if (typeof dbGetNotifications === 'function') {
+                allNotifications = await dbGetNotifications();
+            }
+            renderNotificationsOnly();
+        }
+
+        function renderNotificationsOnly() {
+            const body = document.getElementById('notifications-table-body');
+            const empty = document.getElementById('notifications-empty-state');
+
+            if (!allNotifications || allNotifications.length === 0) {
+                body.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            const now = new Date();
+
+            body.innerHTML = allNotifications.map(n => {
+                const startDate = new Date(n.start_at);
+                const endDate = new Date(n.end_at);
+
+                let statusBadge = '';
+                if (!n.active) {
+                    statusBadge = `<span class="badge" style="background:rgba(255,255,255,0.08); color:#8b90a0; border:1px solid rgba(255,255,255,0.15)">● Inativa</span>`;
+                } else if (now < startDate) {
+                    statusBadge = `<span class="badge badge-pendente">● Agendada</span>`;
+                } else if (now > endDate) {
+                    statusBadge = `<span class="badge badge-expirado">● Expirada</span>`;
+                } else {
+                    statusBadge = `<span class="badge badge-aprovado">● Ativa Agora</span>`;
+                }
+
+                const dateRangeStr = `${formatDateTime(n.start_at)}  até  ${formatDateTime(n.end_at)}`;
+
+                const titleEscaped = (n.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const msgEscaped = (n.message || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+                return `
+                    <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 ${n.active && now >= startDate && now <= endDate ? 'border-l-[#44f5be]' : 'border-l-white/20'}">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                ${statusBadge}
+                                <h3 class="font-bold text-on-surface text-base truncate">${n.title}</h3>
+                            </div>
+                            <p class="text-xs text-on-surface-variant/90 line-clamp-2 mb-2 whitespace-pre-line">${n.message}</p>
+                            <div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70">
+                                <span class="material-symbols-outlined text-xs">schedule</span>
+                                <span>Vigência: ${dateRangeStr}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick="previewNotification('${n.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all text-xs font-semibold text-on-surface flex items-center gap-1" title="Visualizar prévia de como os usuários verão">
+                                <span class="material-symbols-outlined text-sm text-primary">visibility</span>
+                                <span class="hidden sm:inline">Visualizar</span>
+                            </button>
+                            <button onclick="toggleNotificationActive('${n.id}', ${!n.active})" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 transition-all text-xs font-semibold text-on-surface flex items-center gap-1" title="${n.active ? 'Desativar' : 'Ativar'}">
+                                <span class="material-symbols-outlined text-sm text-primary">${n.active ? 'toggle_on' : 'toggle_off'}</span>
+                                <span class="hidden sm:inline">${n.active ? 'Pausar' : 'Ativar'}</span>
+                            </button>
+                            <button onclick="openNotifModal('${n.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all" title="Editar">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </button>
+                            <button onclick="handleDeleteNotification('${n.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all" title="Excluir">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function previewNotification(id) {
+            const notif = allNotifications.find(n => n.id === id);
+            if (!notif) return;
+            if (typeof renderUserNotificationModal === 'function') {
+                renderUserNotificationModal(notif);
+            }
+        }
+
+        function previewFormNotification() {
+            const title = document.getElementById('notif-title-input').value.trim() || 'Título de Exemplo';
+            const message = document.getElementById('notif-message-input').value.trim() || 'Esta é uma pré-visualização do comunicado que os usuários verão quando entrarem na plataforma.';
+            
+            if (typeof renderUserNotificationModal === 'function') {
+                renderUserNotificationModal({
+                    id: 'preview-temp',
+                    title: title,
+                    message: message
+                });
+            }
+        }
+
+        function openNotifModal(id = null) {
+            const modal = document.getElementById('notif-modal');
+            const titleElem = document.getElementById('notif-modal-title');
+            document.getElementById('notif-form').reset();
+            document.getElementById('notif-id').value = '';
+
+            if (id) {
+                const notif = allNotifications.find(n => n.id === id);
+                if (notif) {
+                    titleElem.innerHTML = `<span class="material-symbols-outlined text-2xl">edit_notifications</span> Editar Notícia`;
+                    document.getElementById('notif-id').value = notif.id;
+                    document.getElementById('notif-title-input').value = notif.title;
+                    document.getElementById('notif-message-input').value = notif.message;
+                    
+                    // Format dates for datetime-local input (YYYY-MM-THH:mm)
+                    if (notif.start_at) {
+                        const d = new Date(notif.start_at);
+                        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                        document.getElementById('notif-start-input').value = d.toISOString().slice(0, 16);
+                    }
+                    if (notif.end_at) {
+                        const d = new Date(notif.end_at);
+                        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                        document.getElementById('notif-end-input').value = d.toISOString().slice(0, 16);
+                    }
+                    document.getElementById('notif-active-input').checked = notif.active;
+                }
+            } else {
+                titleElem.innerHTML = `<span class="material-symbols-outlined text-2xl">campaign</span> Criar Nova Notícia`;
+                // Default start date = now, end date = +7 days
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('notif-start-input').value = now.toISOString().slice(0, 16);
+
+                const end = new Date();
+                end.setDate(end.getDate() + 7);
+                end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+                document.getElementById('notif-end-input').value = end.toISOString().slice(0, 16);
+
+                document.getElementById('notif-active-input').checked = true;
+            }
+
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('.glass-card').classList.remove('scale-95');
+                modal.querySelector('.glass-card').classList.add('scale-100');
+            });
+        }
+
+        function closeNotifModal() {
+            const modal = document.getElementById('notif-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.glass-card').classList.remove('scale-100');
+            modal.querySelector('.glass-card').classList.add('scale-95');
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
+        }
+
+        async function handleSaveNotification() {
+            const id = document.getElementById('notif-id').value;
+            const title = document.getElementById('notif-title-input').value.trim();
+            const message = document.getElementById('notif-message-input').value.trim();
+            const startVal = document.getElementById('notif-start-input').value;
+            const endVal = document.getElementById('notif-end-input').value;
+            const active = document.getElementById('notif-active-input').checked;
+
+            if (!title || !message || !startVal || !endVal) {
+                showToast('Preencha todos os campos obrigatórios.', true);
+                return;
+            }
+
+            const startAt = new Date(startVal).toISOString();
+            const endAt = new Date(endVal).toISOString();
+
+            if (new Date(endAt) <= new Date(startAt)) {
+                showToast('A data de fim deve ser posterior à data de início.', true);
+                return;
+            }
+
+            const btn = document.getElementById('btn-notif-submit');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin text-base font-bold">↻</span><span>Salvando...</span>`;
+
+            const res = await dbSaveNotification({
+                id: id || null,
+                title,
+                message,
+                start_at: startAt,
+                end_at: endAt,
+                active
+            });
+
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-base">save</span><span>Salvar Notificação</span>`;
+
+            if (res) {
+                showToast(id ? 'Notícia atualizada com sucesso!' : 'Notícia criada com sucesso!', false);
+                closeNotifModal();
+                loadAndRenderNotifications();
+            } else {
+                showToast('Erro ao salvar notícia.', true);
+            }
+        }
+
+        async function toggleNotificationActive(id, newActive) {
+            const notif = allNotifications.find(n => n.id === id);
+            if (!notif) return;
+            const res = await dbSaveNotification({
+                ...notif,
+                active: newActive
+            });
+            if (res) {
+                showToast(`Notificação ${newActive ? 'ativada' : 'pausada'}.`, false);
+                loadAndRenderNotifications();
+            }
+        }
+
+        async function handleDeleteNotification(id) {
+            showConfirm('Tem certeza que deseja excluir esta notificação?', async () => {
+                const ok = await dbDeleteNotification(id);
+                if (ok) {
+                    showToast('Notificação excluída.', false);
+                    loadAndRenderNotifications();
+                }
+            });
         }
 
         async function loadAndRenderClients() {
@@ -949,7 +1281,7 @@
 
             // Resize alignment listener
             window.addEventListener('resize', () => {
-                const activeMain = document.querySelector('#main-tab-users.text-on-primary, #main-tab-clients.text-on-primary');
+                const activeMain = document.querySelector('#main-tab-users.text-primary, #main-tab-clients.text-primary, #main-tab-notifications.text-primary');
                 if (activeMain) updateMainTabsIndicator(activeMain);
                 
                 const activeStatus = document.querySelector('#status-tabs-container .tab-btn.active');
