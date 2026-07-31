@@ -80,9 +80,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 transform: scale(1.12) !important;
                 color: #ffffff !important;
             }
+            @keyframes ptr-spin-anim {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .animate-ptr-spin {
+                animation: ptr-spin-anim 0.8s linear infinite !important;
+            }
         </style>
     `;
     document.head.insertAdjacentHTML('beforeend', styleHTML);
+    initPullToRefresh();
 
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
@@ -1593,4 +1601,113 @@ function closeWalletComingSoonModal() {
     setTimeout(() => {
         modal.style.display = 'none';
     }, 300);
+}
+
+// Global Pull-to-Refresh implementation for Mobile PWA & Touch Devices
+function initPullToRefresh() {
+    if (window.__pullToRefreshInitialized) return;
+    window.__pullToRefreshInitialized = true;
+
+    // Create indicator element
+    const indicatorHTML = `
+        <div id="ptr-indicator" class="fixed top-4 left-1/2 -translate-x-1/2 z-[99999] pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 shadow-2xl transition-all duration-200" style="transform: translateY(-90px) translateX(-50%); opacity: 0; background: rgba(11, 19, 38, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+            <span id="ptr-icon" class="material-symbols-outlined text-primary text-xl transition-transform duration-200">arrow_downward</span>
+            <span id="ptr-text" class="text-xs font-semibold text-on-surface">Puxe para atualizar</span>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', indicatorHTML);
+
+    const indicator = document.getElementById('ptr-indicator');
+    const ptrIcon = document.getElementById('ptr-icon');
+    const ptrText = document.getElementById('ptr-text');
+
+    if (!indicator || !ptrIcon || !ptrText) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    const PULL_THRESHOLD = 70;
+    let triggeredHaptic = false;
+
+    function handleStart(pageY) {
+        if (window.scrollY === 0 && !isRefreshing) {
+            startY = pageY;
+            isPulling = true;
+            triggeredHaptic = false;
+        }
+    }
+
+    function handleMove(pageY) {
+        if (!isPulling || isRefreshing) return;
+        currentY = pageY;
+        const diff = currentY - startY;
+
+        if (diff > 0 && window.scrollY === 0) {
+            const pullDistance = Math.min(diff * 0.45, 95);
+            indicator.style.transform = `translateY(${pullDistance - 60}px) translateX(-50%)`;
+            indicator.style.opacity = Math.min(pullDistance / PULL_THRESHOLD, 1);
+
+            if (pullDistance >= PULL_THRESHOLD) {
+                ptrIcon.style.transform = 'rotate(180deg)';
+                ptrText.textContent = 'Solte para atualizar';
+                if (!triggeredHaptic) {
+                    if (navigator.vibrate) navigator.vibrate(15);
+                    triggeredHaptic = true;
+                }
+            } else {
+                ptrIcon.style.transform = 'rotate(0deg)';
+                ptrText.textContent = 'Puxe para atualizar';
+            }
+        }
+    }
+
+    async function handleEnd() {
+        if (!isPulling || isRefreshing) return;
+        isPulling = false;
+
+        const diff = currentY - startY;
+        const pullDistance = Math.min(diff * 0.45, 95);
+
+        if (pullDistance >= PULL_THRESHOLD && window.scrollY === 0) {
+            isRefreshing = true;
+            indicator.style.transform = 'translateY(16px) translateX(-50%)';
+            indicator.style.opacity = '1';
+            ptrIcon.style.transform = 'rotate(0deg)';
+            ptrIcon.textContent = 'sync';
+            ptrIcon.classList.add('animate-ptr-spin');
+            ptrText.textContent = 'Atualizando...';
+
+            try {
+                if (typeof window.loadAndRenderReservations === 'function') {
+                    await window.loadAndRenderReservations(true);
+                } else if (typeof window.loadDashboardData === 'function') {
+                    await window.loadDashboardData(true);
+                } else if (typeof window.loadMasterData === 'function') {
+                    await window.loadMasterData(true);
+                } else if (typeof window.loadFinanceData === 'function') {
+                    await window.loadFinanceData(true);
+                }
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 350);
+            } catch (err) {
+                console.error('Erro ao atualizar via Pull-to-Refresh:', err);
+                window.location.reload();
+            }
+        } else {
+            indicator.style.transform = 'translateY(-90px) translateX(-50%)';
+            indicator.style.opacity = '0';
+            ptrIcon.style.transform = 'rotate(0deg)';
+        }
+
+        startY = 0;
+        currentY = 0;
+    }
+
+    // Touch event listeners
+    window.addEventListener('touchstart', (e) => handleStart(e.touches[0].pageY), { passive: true });
+    window.addEventListener('touchmove', (e) => handleMove(e.touches[0].pageY), { passive: true });
+    window.addEventListener('touchend', handleEnd);
 }
