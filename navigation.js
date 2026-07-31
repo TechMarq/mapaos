@@ -28,6 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inject glass-input styles dynamically to guarantee dark premium aesthetics across all pages
     const styleHTML = `
         <style>
+            html {
+                background-color: #0b1326 !important;
+                background: #0b1326 !important;
+                color-scheme: dark !important;
+            }
+            body {
+                background-color: #0b1326 !important;
+                background: radial-gradient(circle at top right, #171f33, #0b1326) !important;
+                color: #dae2fd !important;
+                min-height: 100vh;
+            }
+
             .glass-input {
                 background: rgba(255, 255, 255, 0.06) !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -836,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // TopAppBar Template
     const topAppBarHTML = `
-        <header class="fixed top-4 left-4 right-4 rounded-lg bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-xl shadow-black/20 z-50 flex justify-between items-center px-gutter h-16 w-[calc(100%-32px)] md:w-[calc(100%-80px)] mx-auto md:top-10 md:left-10 md:right-10 transition-transform">
+        <header class="fixed top-4 left-4 right-4 rounded-lg bg-[#131b2e]/90 backdrop-blur-2xl border border-white/10 shadow-xl shadow-black/40 z-50 flex justify-between items-center px-gutter h-16 w-[calc(100%-32px)] md:w-[calc(100%-80px)] mx-auto md:top-10 md:left-10 md:right-10 transition-transform">
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-btn">
                     <img src="img/mapaos-logo-sf.svg" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
@@ -905,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // BottomNavBar Template (Mobile Only)
     const bottomNavBarHTML = `
-        <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(96%,460px)] h-20 px-3 flex justify-between items-center z-50 bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-full" id="mobile-nav-container">
+        <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(96%,460px)] h-20 px-3 flex justify-between items-center z-50 bg-[#131b2e]/90 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 rounded-full" id="mobile-nav-container">
             <div id="mobile-nav-indicator" class="absolute lens-bubble rounded-full transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
             <!-- 1. Dashboard -->
             <a href="index.html" id="mobile-dashboard" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
@@ -1631,19 +1643,23 @@ function initPullToRefresh() {
     let triggeredHaptic = false;
 
     function handleStart(pageY) {
-        if (window.scrollY === 0 && !isRefreshing) {
+        if (window.scrollY <= 0 && !isRefreshing) {
             startY = pageY;
             isPulling = true;
             triggeredHaptic = false;
         }
     }
 
-    function handleMove(pageY) {
+    function handleMove(e) {
         if (!isPulling || isRefreshing) return;
+        const pageY = e.touches ? e.touches[0].pageY : e.pageY;
         currentY = pageY;
         const diff = currentY - startY;
 
-        if (diff > 0 && window.scrollY === 0) {
+        if (diff > 0 && window.scrollY <= 0) {
+            // Cancel iOS WebKit native rubber-band canvas pull down (prevents white gap at top!)
+            if (e.cancelable) e.preventDefault();
+            
             const pullDistance = Math.min(diff * 0.45, 95);
             indicator.style.transform = `translateY(${pullDistance - 60}px) translateX(-50%)`;
             indicator.style.opacity = Math.min(pullDistance / PULL_THRESHOLD, 1);
@@ -1669,7 +1685,7 @@ function initPullToRefresh() {
         const diff = currentY - startY;
         const pullDistance = Math.min(diff * 0.45, 95);
 
-        if (pullDistance >= PULL_THRESHOLD && window.scrollY === 0) {
+        if (pullDistance >= PULL_THRESHOLD && window.scrollY <= 0) {
             isRefreshing = true;
             indicator.style.transform = 'translateY(16px) translateX(-50%)';
             indicator.style.opacity = '1';
@@ -1706,8 +1722,8 @@ function initPullToRefresh() {
         currentY = 0;
     }
 
-    // Touch event listeners
+    // Touch event listeners (passive: false allows e.preventDefault() to block native iOS white overscroll)
     window.addEventListener('touchstart', (e) => handleStart(e.touches[0].pageY), { passive: true });
-    window.addEventListener('touchmove', (e) => handleMove(e.touches[0].pageY), { passive: true });
+    window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
 }
