@@ -521,14 +521,29 @@
                 }
             }
 
-            // 3. Search Filter (Safe checks for null/undefined strings)
+            // 3. Search Filter (Safe checks for null/undefined strings & formatted numbers without dots)
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
-                filtered = filtered.filter(item => 
-                    (item.client_name && item.client_name.toLowerCase().includes(query)) || 
-                    (item.os_number && item.os_number.toLowerCase().includes(query)) ||
-                    (item.reserva_number && item.reserva_number.toLowerCase().includes(query))
-                );
+                const cleanQuery = query.replace(/\D/g, '');
+                filtered = filtered.filter(item => {
+                    const clientMatch = item.client_name && item.client_name.toLowerCase().includes(query);
+                    const osMatch = item.os_number && item.os_number.toLowerCase().includes(query);
+                    const resMatch = item.reserva_number && item.reserva_number.toLowerCase().includes(query);
+                    const driverMatch = item.driver && item.driver.toLowerCase().includes(query);
+                    const plateMatch = item.plate && item.plate.toLowerCase().includes(query);
+                    const notesMatch = item.notes && item.notes.toLowerCase().includes(query);
+
+                    let cleanMatch = false;
+                    if (cleanQuery.length > 0) {
+                        const cleanOs = item.os_number ? item.os_number.toString().replace(/\D/g, '') : '';
+                        const cleanRes = item.reserva_number ? item.reserva_number.toString().replace(/\D/g, '') : '';
+                        if ((cleanOs && cleanOs.includes(cleanQuery)) || (cleanRes && cleanRes.includes(cleanQuery))) {
+                            cleanMatch = true;
+                        }
+                    }
+
+                    return clientMatch || osMatch || resMatch || driverMatch || plateMatch || notesMatch || cleanMatch;
+                });
             }
 
             // 4. Sort Filter (Crescente / Decrescente por Data e Horário)
