@@ -66,6 +66,45 @@ function isUserAccessExpired() {
     return false;
 }
 
+// ============================================================
+// PLAN SYSTEM — Normal vs Pro
+// ============================================================
+
+/**
+ * Returns true if the logged-in user has a Pro (or Master) plan.
+ * Master always has Pro access. Otherwise checks user.plan === 'pro'.
+ */
+function isUserPro() {
+    try {
+        const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (loggedUserRaw) {
+            const user = JSON.parse(loggedUserRaw);
+            if (!user) return false;
+            if (user.role === 'Master') return true; // Masters always have full access
+            return user.plan === 'pro';
+        }
+    } catch (e) {
+        console.error("Error checking user plan:", e);
+    }
+    return false;
+}
+
+/**
+ * If the user does NOT have Pro, fires the global Pro Upgrade modal and returns false.
+ * If the user has Pro, returns true (caller may proceed).
+ * @param {string} featureName - Human-readable feature name for the modal.
+ */
+function requireProPlan(featureName) {
+    if (isUserPro()) return true;
+    if (typeof openProUpgradeModal === 'function') {
+        openProUpgradeModal(featureName);
+    } else {
+        alert(`🔒 "${featureName}" é uma funcionalidade exclusiva do Plano Pro.\nEntre em contato com o administrador para fazer o upgrade.`);
+    }
+    return false;
+}
+
+
 // Fetch reservations with optional date filter (isolated by user unless role is Master)
 async function dbGetReservations(options = {}) {
     if (!supabaseClientInstance) return [];

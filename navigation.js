@@ -99,6 +99,80 @@ document.addEventListener('DOMContentLoaded', () => {
             .animate-ptr-spin {
                 animation: ptr-spin-anim 0.8s linear infinite !important;
             }
+
+            /* ── Pro Plan Badge ─────────────────────────── */
+            .pro-plan-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 2px;
+                padding: 1px 6px;
+                border-radius: 999px;
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                background: linear-gradient(135deg, #f59e0b, #d97706);
+                color: #1a0a00;
+                box-shadow: 0 0 8px rgba(245,158,11,0.5);
+                border: 1px solid rgba(251,191,36,0.6);
+                vertical-align: middle;
+                margin-left: 4px;
+            }
+
+            /* ── Pro Nav Lock Item ─────────────────────── */
+            .nav-pro-locked {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            .nav-pro-locked:hover {
+                opacity: 0.65;
+            }
+
+            /* ── Pro Upgrade Modal ─────────────────────── */
+            #pro-upgrade-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 99990;
+                background: rgba(6,14,32,0.88);
+                backdrop-filter: blur(16px);
+                justify-content: center;
+                align-items: center;
+                padding: 16px;
+            }
+            #pro-upgrade-modal.open {
+                display: flex;
+            }
+            .pro-modal-card {
+                width: 100%;
+                max-width: 420px;
+                background: linear-gradient(160deg, #1a1040 0%, #0d1a38 60%, #091224 100%);
+                border: 1px solid rgba(245,158,11,0.3);
+                border-radius: 24px;
+                padding: 32px 28px;
+                box-shadow: 0 0 60px rgba(245,158,11,0.15), 0 32px 64px rgba(0,0,0,0.6);
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .pro-modal-card::before {
+                content: '';
+                position: absolute;
+                top: -80px; right: -80px;
+                width: 240px; height: 240px;
+                background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%);
+                pointer-events: none;
+                border-radius: 50%;
+            }
+            .pro-feature-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                text-align: left;
+                padding: 8px 0;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+            .pro-feature-item:last-child { border-bottom: none; }
         </style>
     `;
     document.head.insertAdjacentHTML('beforeend', styleHTML);
@@ -668,11 +742,79 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
 
+    // Inject Speed Dial Floating Menu HTML & Dynamic Styles
+    const speedDialHTML = `
+        <style>
+            #speed-dial-container .speed-dial-btn {
+                transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+                will-change: transform, opacity;
+            }
+            /* Closed State: Collapsed behind the central '+' button */
+            #speed-dial-container.sd-closed #sd-btn-fuel {
+                transform: translate(65px, 45px) scale(0);
+                opacity: 0;
+            }
+            #speed-dial-container.sd-closed #sd-btn-reservation {
+                transform: translate(0px, 50px) scale(0);
+                opacity: 0;
+            }
+            #speed-dial-container.sd-closed #sd-btn-maint {
+                transform: translate(-65px, 45px) scale(0);
+                opacity: 0;
+            }
+            /* Open State: Popped out into position */
+            #speed-dial-container.sd-open #sd-btn-fuel {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+                transition-delay: 0ms;
+            }
+            #speed-dial-container.sd-open #sd-btn-reservation {
+                transform: translate(0, -16px) scale(1);
+                opacity: 1;
+                transition-delay: 40ms;
+            }
+            #speed-dial-container.sd-open #sd-btn-maint {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+                transition-delay: 80ms;
+            }
+        </style>
+
+        <div id="speed-dial-backdrop" class="fixed inset-0 z-[9990] bg-[#060e20]/75 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"></div>
+
+        <div id="speed-dial-container" class="sd-closed fixed bottom-28 left-1/2 -translate-x-1/2 z-[9995] pointer-events-none transition-all duration-300 flex items-center justify-center gap-4 sm:gap-6">
+            <!-- 1. Abastecimento (Esquerda) -->
+            <button id="sd-btn-fuel" class="speed-dial-btn flex flex-col items-center gap-1 group pointer-events-auto active:scale-90">
+                <div class="w-12 h-12 rounded-full bg-[#131b2e] border border-secondary-container/40 text-secondary-container flex items-center justify-center shadow-xl shadow-black/60 group-hover:bg-secondary-container group-hover:text-[#003828] transition-all">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">local_gas_station</span>
+                </div>
+                <span class="text-[10px] font-bold text-on-surface bg-[#131b2e]/95 border border-white/10 px-2 py-0.5 rounded-md shadow-md whitespace-nowrap">Abastecimento</span>
+            </button>
+
+            <!-- 2. Nova Reserva (Centro / Mais Alto) -->
+            <button id="sd-btn-reservation" class="speed-dial-btn flex flex-col items-center gap-1 group pointer-events-auto active:scale-90">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary flex items-center justify-center shadow-2xl shadow-primary/40 group-hover:scale-105 transition-all border border-white/30">
+                    <span class="material-symbols-outlined text-2xl font-bold" style="font-variation-settings:'FILL' 1">bookmark_add</span>
+                </div>
+                <span class="text-[10px] font-bold text-primary bg-[#131b2e]/95 border border-primary/30 px-2.5 py-0.5 rounded-md shadow-md whitespace-nowrap">Nova Reserva</span>
+            </button>
+
+            <!-- 3. Manutenção (Direita) -->
+            <button id="sd-btn-maint" class="speed-dial-btn flex flex-col items-center gap-1 group pointer-events-auto active:scale-90">
+                <div class="w-12 h-12 rounded-full bg-[#131b2e] border border-amber-400/40 text-amber-400 flex items-center justify-center shadow-xl shadow-black/60 group-hover:bg-amber-400 group-hover:text-[#410002] transition-all">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">build</span>
+                </div>
+                <span class="text-[10px] font-bold text-on-surface bg-[#131b2e]/95 border border-white/10 px-2 py-0.5 rounded-md shadow-md whitespace-nowrap">Manutenção</span>
+            </button>
+        </div>
+    `;
+
     document.body.insertAdjacentHTML('beforeend', loaderHTML);
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     document.body.insertAdjacentHTML('beforeend', iosInstallModalHTML);
     document.body.insertAdjacentHTML('beforeend', vehicleComingSoonModalHTML);
     document.body.insertAdjacentHTML('beforeend', walletComingSoonModalHTML);
+    document.body.insertAdjacentHTML('beforeend', speedDialHTML);
 
     const loader = document.getElementById('global-loader');
     const modal = document.getElementById('reservation-modal');
@@ -853,8 +995,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-btn">
                     <img src="img/mapaos-logo-sf.svg" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
                     <div class="flex flex-col justify-center">
-                        <div class="whitespace-nowrap text-sm sm:text-base md:text-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim leading-none truncate max-w-[100px] min-[375px]:max-w-[140px] min-[425px]:max-w-[180px] sm:max-w-none">
+                        <div class="whitespace-nowrap text-sm sm:text-base md:text-lg font-bold tracking-tight text-primary dark:text-primary-fixed-dim leading-none truncate max-w-[100px] min-[375px]:max-w-[140px] min-[425px]:max-w-[180px] sm:max-w-none flex items-center">
                             ${loggedUserName}
+                            ${(typeof isUserPro === 'function' && isUserPro()) ? '<span class="pro-plan-badge">PRO</span>' : ''}
                         </div>
                         ${expiryBadgeHTML}
                     </div>
@@ -877,18 +1020,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="material-symbols-outlined mb-1">list_alt</span>
                     Reservas
                 </a>
-                <button onclick="openVehicleComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/40 hover:text-on-surface-variant/60 cursor-pointer relative" id="desktop-veiculo" title="Controle do Veículo (Bloqueado / Em Breve)">
-                    <span class="material-symbols-outlined mb-1 text-on-surface-variant/40">directions_car</span>
+                <a href="veiculo.html" onclick="if(typeof isUserPro === 'function' && !isUserPro()){ event.preventDefault(); openProUpgradeModal('Controle Veicular'); }" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 relative" id="desktop-veiculo">
+                    <span class="material-symbols-outlined mb-1">directions_car</span>
+                    <!-- Red Vehicle Alert Badge (Desktop) -->
+                    <span id="desktop-vehicle-alert-dot" class="hidden absolute top-0 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse" title="Manutenção ou Alerta Pendente"></span>
                     <span class="flex items-center gap-0.5">
                         Veículo
-                        <span class="material-symbols-outlined text-[10px] text-on-surface-variant/40">lock</span>
+                        ${(typeof isUserPro === 'function' && !isUserPro()) ? '<span class="material-symbols-outlined text-[10px] text-amber-400">lock</span>' : ''}
                     </span>
-                </button>
-                <button onclick="openWalletComingSoonModal()" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/40 hover:text-on-surface-variant/60 cursor-pointer relative" id="desktop-carteira" title="Documentos / Carteira (Bloqueado / Em Breve)">
-                    <span class="material-symbols-outlined mb-1 text-on-surface-variant/40">account_balance_wallet</span>
+                </a>
+                <button onclick="openProUpgradeModal('Carteira de Documentos')" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/50 hover:text-on-surface-variant/80 cursor-pointer relative" id="desktop-carteira" title="Documentos / Carteira (Exclusivo Pro)">
+                    <span class="material-symbols-outlined mb-1">account_balance_wallet</span>
                     <span class="flex items-center gap-0.5">
                         Carteira
-                        <span class="material-symbols-outlined text-[10px] text-on-surface-variant/40">lock</span>
+                        <span class="material-symbols-outlined text-[10px] text-amber-400">lock</span>
                     </span>
                 </button>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="financeiro.html" id="desktop-financeiro">
@@ -927,21 +1072,23 @@ document.addEventListener('DOMContentLoaded', () => {
             <a href="historico_reserva.html" id="mobile-reservas" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
                 <span class="material-symbols-outlined text-lg">list_alt</span>
             </a>
-            <!-- 3. Controle Veículo (Em Breve / Bloqueado) -->
-            <button onclick="openVehicleComingSoonModal()" id="mobile-veiculo" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant/40 relative opacity-60" title="Controle do Veículo (Bloqueado)">
+            <!-- 3. Controle Veículo -->
+            <a href="veiculo.html" onclick="if(typeof isUserPro === 'function' && !isUserPro()){ event.preventDefault(); openProUpgradeModal('Controle Veicular'); }" id="mobile-veiculo" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 relative" title="Controle do Veículo">
                 <span class="material-symbols-outlined text-lg">directions_car</span>
-                <span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-on-surface-variant/60">lock</span>
-            </button>
+                <!-- Red Vehicle Alert Badge (Mobile) -->
+                <span id="mobile-vehicle-alert-dot" class="hidden absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse" title="Manutenção ou Alerta Pendente"></span>
+                ${(typeof isUserPro === 'function' && !isUserPro()) ? '<span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-amber-400">lock</span>' : ''}
+            </a>
 
             <!-- 4. CENTRO: Botão Adicionar "+" Grande e Destacado -->
             <button id="mobile-add-btn" class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-xl shadow-primary/40 active:scale-95 transition-transform -translate-y-4 z-20 shrink-0 border border-white/20">
                 <span class="material-symbols-outlined text-2xl font-extrabold">add</span>
             </button>
 
-            <!-- 5. Carteira Documentos (Em Breve / Bloqueado) -->
-            <button onclick="openWalletComingSoonModal()" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant/40 relative opacity-60" title="Carteira de Documentos (Bloqueado)">
+            <!-- 5. Carteira Documentos (Exclusivo Pro) -->
+            <button onclick="openProUpgradeModal('Carteira de Documentos')" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant/40 relative opacity-60" title="Carteira de Documentos (Exclusivo Pro)">
                 <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
-                <span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-on-surface-variant/60">lock</span>
+                <span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-amber-400">lock</span>
             </button>
             <!-- 6. Financeiro -->
             <a href="financeiro.html" id="mobile-financeiro" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
@@ -965,6 +1112,73 @@ document.addEventListener('DOMContentLoaded', () => {
         bottomBarContainer.innerHTML = bottomNavBarHTML;
     }
 
+    // ── Inject Pro Upgrade Modal into body ──────────────────────────────
+    if (!document.getElementById('pro-upgrade-modal')) {
+        const proModalEl = document.createElement('div');
+        proModalEl.id = 'pro-upgrade-modal';
+        proModalEl.setAttribute('role', 'dialog');
+        proModalEl.setAttribute('aria-modal', 'true');
+        proModalEl.innerHTML = `
+            <div class="pro-modal-card">
+                <!-- Glow Icon -->
+                <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 0 40px rgba(245,158,11,0.5);">
+                    <span class="material-symbols-outlined" style="font-size:36px;color:#fff;font-variation-settings:'FILL' 1;">workspace_premium</span>
+                </div>
+
+                <!-- Title -->
+                <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="font-size:22px;font-weight:800;color:#fff;">Plano</span>
+                    <span class="pro-plan-badge" style="font-size:11px;padding:3px 10px;">PRO</span>
+                </div>
+                <p id="pro-modal-feature-name" style="font-size:13px;color:rgba(245,158,11,0.9);font-weight:600;margin-bottom:20px;"></p>
+                <p style="font-size:13px;color:#c1c6d7;line-height:1.6;margin-bottom:24px;">
+                    Esta funcionalidade é exclusiva do <strong style="color:#f59e0b;">Plano Pro</strong>. Faça o upgrade para desbloquear acesso completo.
+                </p>
+
+                <!-- Features List -->
+                <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:24px;text-align:left;">
+                    <div class="pro-feature-item">
+                        <span class="material-symbols-outlined" style="color:#f59e0b;font-size:20px;font-variation-settings:'FILL' 1;flex-shrink:0;">directions_car</span>
+                        <div>
+                            <p style="font-size:13px;font-weight:600;color:#dae2fd;">Controle Veicular</p>
+                            <p style="font-size:11px;color:#8b90a0;">Abastecimento, manutenção e alertas inteligentes</p>
+                        </div>
+                    </div>
+                    <div class="pro-feature-item">
+                        <span class="material-symbols-outlined" style="color:#f59e0b;font-size:20px;font-variation-settings:'FILL' 1;flex-shrink:0;">account_balance_wallet</span>
+                        <div>
+                            <p style="font-size:13px;font-weight:600;color:#dae2fd;">Carteira de Documentos</p>
+                            <p style="font-size:11px;color:#8b90a0;">CNH, CRLV, seguros e documentos digitais</p>
+                        </div>
+                    </div>
+                    <div class="pro-feature-item">
+                        <span class="material-symbols-outlined" style="color:#f59e0b;font-size:20px;font-variation-settings:'FILL' 1;flex-shrink:0;">psychology</span>
+                        <div>
+                            <p style="font-size:13px;font-weight:600;color:#dae2fd;">Análise Inteligente</p>
+                            <p style="font-size:11px;color:#8b90a0;">Insights e relatórios avançados com IA</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <button id="pro-modal-request-btn"
+                        style="width:100%;padding:13px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a0a00;font-weight:800;font-size:14px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.02em;"
+                        onclick="requestProUpgradeWhatsApp()">
+                        <span class="material-symbols-outlined" style="font-size:18px;">star</span>
+                        Solicitar Upgrade Pro no WhatsApp
+                    </button>
+                    <button onclick="closeProUpgradeModal()"
+                        style="width:100%;padding:11px;border-radius:14px;background:rgba(255,255,255,0.06);color:#c1c6d7;font-weight:600;font-size:13px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;">
+                        Agora não
+                    </button>
+                </div>
+            </div>
+        `;
+        proModalEl.addEventListener('click', (e) => { if (e.target === proModalEl) closeProUpgradeModal(); });
+        document.body.appendChild(proModalEl);
+    }
+
     // Wire Modal open/close events
     const closeBtn = document.getElementById('close-reservation-modal');
     if (closeBtn) {
@@ -983,6 +1197,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mAddBtn = document.getElementById('mobile-add-btn');
     const dAddBtn = document.getElementById('desktop-add-btn');
+
+    // Speed Dial Menu Toggle Functions
+    const speedDialBackdrop = document.getElementById('speed-dial-backdrop');
+    const speedDialContainer = document.getElementById('speed-dial-container');
+    let isSpeedDialOpen = false;
+
+    function openSpeedDial() {
+        if (!speedDialContainer || !speedDialBackdrop) return;
+        isSpeedDialOpen = true;
+        speedDialBackdrop.style.display = 'block';
+        speedDialContainer.style.display = 'flex';
+        speedDialBackdrop.offsetHeight;
+        
+        speedDialBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+        speedDialContainer.classList.remove('sd-closed');
+        speedDialContainer.classList.add('sd-open');
+
+        // Rotate '+' icon smoothly
+        const mIcon = mAddBtn ? mAddBtn.querySelector('.material-symbols-outlined') : null;
+        if (mIcon) {
+            mIcon.style.transition = 'transform 0.3s ease';
+            mIcon.style.transform = 'rotate(135deg)';
+        }
+    }
+
+    function closeSpeedDial() {
+        if (!speedDialContainer || !speedDialBackdrop) return;
+        isSpeedDialOpen = false;
+        speedDialBackdrop.classList.add('opacity-0', 'pointer-events-none');
+        speedDialContainer.classList.remove('sd-open');
+        speedDialContainer.classList.add('sd-closed');
+
+        const mIcon = mAddBtn ? mAddBtn.querySelector('.material-symbols-outlined') : null;
+        if (mIcon) mIcon.style.transform = 'rotate(0deg)';
+
+        setTimeout(() => {
+            if (!isSpeedDialOpen) {
+                speedDialBackdrop.style.display = 'none';
+                speedDialContainer.style.display = 'none';
+            }
+        }, 350);
+    }
+
+    function toggleSpeedDial(e) {
+        if (e) e.preventDefault();
+        if (isSpeedDialOpen) {
+            closeSpeedDial();
+        } else {
+            openSpeedDial();
+        }
+    }
+
+    if (speedDialBackdrop) {
+        speedDialBackdrop.addEventListener('click', closeSpeedDial);
+    }
+
+    // Speed Dial Action Buttons: 1. Abastecimento | 2. Nova Reserva | 3. Manutenção
+    const sdFuel = document.getElementById('sd-btn-fuel');
+    const sdRes = document.getElementById('sd-btn-reservation');
+    const sdMaint = document.getElementById('sd-btn-maint');
+
+    if (sdFuel) {
+        sdFuel.addEventListener('click', () => {
+            closeSpeedDial();
+            if (window.location.pathname.endsWith('veiculo.html')) {
+                if (typeof vcSwitchView === 'function') vcSwitchView('vc-fuel-form');
+            } else {
+                window.location.href = 'veiculo.html?action=fuel';
+            }
+        });
+    }
+
+    if (sdRes) {
+        sdRes.addEventListener('click', () => {
+            closeSpeedDial();
+            openModal();
+        });
+    }
+
+    if (sdMaint) {
+        sdMaint.addEventListener('click', () => {
+            closeSpeedDial();
+            if (window.location.pathname.endsWith('veiculo.html')) {
+                if (typeof vcSwitchView === 'function') vcSwitchView('vc-maint-form');
+            } else {
+                window.location.href = 'veiculo.html?action=maint';
+            }
+        });
+    }
 
     if (isBlocked) {
         if (mAddBtn) {
@@ -1005,10 +1308,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } else {
         if (mAddBtn) {
-            mAddBtn.addEventListener('click', openModal);
+            mAddBtn.addEventListener('click', toggleSpeedDial);
         }
         if (dAddBtn) {
-            dAddBtn.addEventListener('click', openModal);
+            dAddBtn.addEventListener('click', toggleSpeedDial);
         }
     }
 
@@ -1073,6 +1376,8 @@ document.addEventListener('DOMContentLoaded', () => {
         activeId = 'dashboard';
     } else if (pageName === 'historico_reserva.html') {
         activeId = 'reservas';
+    } else if (pageName === 'veiculo.html') {
+        activeId = 'veiculo';
     } else if (pageName === 'financeiro.html') {
         activeId = 'financeiro';
     } else if (pageName === 'config.html') {
@@ -1726,4 +2031,145 @@ function initPullToRefresh() {
     window.addEventListener('touchstart', (e) => handleStart(e.touches[0].pageY), { passive: true });
     window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
+}
+
+// ============================================================
+// GLOBAL VEHICLE ALERT CHECKER (Red Notification Dot)
+// ============================================================
+async function checkVehiclePendingAlerts() {
+    try {
+        const uid = typeof getLoggedUserId === 'function' ? getLoggedUserId() : null;
+        if (!uid || typeof supabaseClientInstance === 'undefined' || !supabaseClientInstance) return;
+
+        // Fetch vehicles & maintenance logs for current user
+        const [resVeh, resMaint] = await Promise.all([
+            supabaseClientInstance.from('vehicles').select('id, km_actual').eq('user_id', uid),
+            supabaseClientInstance.from('maintenance_logs').select('*').eq('user_id', uid)
+        ]);
+
+        const vehicles = resVeh.data || [];
+        const maints = resMaint.data || [];
+        if (vehicles.length === 0 || maints.length === 0) return;
+
+        // Get local dismissed warranties
+        let dismissedSet = new Set();
+        try {
+            dismissedSet = new Set(JSON.parse(localStorage.getItem('MAPAOS_DISMISSED_WARRANTIES') || '[]'));
+        } catch(e) {}
+
+        const now = new Date();
+        let hasAlert = false;
+
+        for (const veh of vehicles) {
+            const vehMaints = maints.filter(m => String(m.vehicle_id || m.vehicleId) === String(veh.id));
+            for (const m of vehMaints) {
+                const nextKm = m.next_km ?? m.next;
+                const nextDate = m.next_date || m.nextDate;
+
+                // 1. KM-based maintenance: overdue OR <= 2000 km remaining
+                if (nextKm !== undefined && nextKm !== null) {
+                    const rem = Number(nextKm) - Number(veh.km_actual || 0);
+                    if (rem <= 2000) {
+                        hasAlert = true;
+                        break;
+                    }
+                }
+
+                // 2. Date-based maintenance: overdue ONLY
+                if (!nextKm && nextDate) {
+                    const diffDays = Math.ceil((new Date(nextDate) - now) / 86400000);
+                    if (diffDays <= 0) {
+                        hasAlert = true;
+                        break;
+                    }
+                }
+
+                // 3. Warranty: expired OR <= 20 days remaining, AND NOT dismissed
+                const hasWarranty = m.has_warranty ?? m.hasWarranty ?? false;
+                const warrantyMonths = Number(m.warranty_months || m.warrantyMonths || 0);
+                const isDismissed = m.warranty_dismissed ?? m.warrantyDismissed ?? dismissedSet.has(String(m.id));
+                const logDate = m.date || m.created_at;
+
+                if (hasWarranty && !isDismissed && warrantyMonths > 0 && logDate) {
+                    const expDate = new Date(logDate);
+                    expDate.setMonth(expDate.getMonth() + warrantyMonths);
+                    const diffDays = Math.ceil((expDate - now) / 86400000);
+                    if (diffDays <= 20) {
+                        hasAlert = true;
+                        break;
+                    }
+                }
+            }
+            if (hasAlert) break;
+        }
+
+        // Toggle red alert dots on desktop & mobile navigation
+        const desktopDot = document.getElementById('desktop-vehicle-alert-dot');
+        const mobileDot = document.getElementById('mobile-vehicle-alert-dot');
+
+        if (hasAlert) {
+            if (desktopDot) desktopDot.classList.remove('hidden');
+            if (mobileDot) mobileDot.classList.remove('hidden');
+        } else {
+            if (desktopDot) desktopDot.classList.add('hidden');
+            if (mobileDot) mobileDot.classList.add('hidden');
+        }
+    } catch (e) {
+        console.warn('[checkVehiclePendingAlerts]', e);
+    }
+}
+
+// Trigger alert check when DOM & Supabase are ready
+document.addEventListener('DOMContentLoaded', () => {
+    const checkTimer = setInterval(() => {
+        if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+            clearInterval(checkTimer);
+            checkVehiclePendingAlerts();
+        }
+    }, 200);
+    setTimeout(() => clearInterval(checkTimer), 5000);
+});
+
+// ============================================================
+// PRO UPGRADE MODAL HELPERS
+// ============================================================
+function openProUpgradeModal(featureName = '') {
+    const modal = document.getElementById('pro-upgrade-modal');
+    const featureText = document.getElementById('pro-modal-feature-name');
+    if (featureText) {
+        featureText.textContent = featureName ? `Recurso: ${featureName}` : '';
+    }
+    if (modal) {
+        modal.classList.add('open');
+    }
+}
+
+function closeProUpgradeModal() {
+    const modal = document.getElementById('pro-upgrade-modal');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+}
+
+function requestProUpgradeWhatsApp() {
+    let userName = 'Usuário';
+    let userEmail = '';
+    try {
+        const raw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (raw) {
+            const user = JSON.parse(raw);
+            if (user) {
+                userName = user.name || userName;
+                userEmail = user.email ? ` (${user.email})` : '';
+            }
+        }
+    } catch(e) {}
+
+    const featureText = document.getElementById('pro-modal-feature-name')?.textContent || '';
+    const msg = `Olá! Sou *${userName}*${userEmail} e gostaria de solicitar o upgrade para o *Plano PRO* do Mapa.OS para liberar o ${featureText || 'acesso completo'}.`;
+    const encodedMsg = encodeURIComponent(msg);
+    const waUrl = `https://wa.me/5524992716045?text=${encodedMsg}`;
+    
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    closeProUpgradeModal();
 }

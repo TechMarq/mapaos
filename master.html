@@ -578,6 +578,7 @@
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-bold text-on-surface text-sm truncate">${user.name}</span>
                                     ${badgeFor(user.status)}
+                                    ${(user.plan === 'pro') ? '<span class="badge" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.2));color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-weight:800;">★ PRO</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#8b90a0;border:1px solid rgba(255,255,255,0.1);">NORMAL</span>'}
                                 </div>
                                 <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email}</span>
                                 <span class="text-[10px] text-on-surface-variant/60 flex items-center gap-1.5 flex-wrap">
@@ -596,7 +597,13 @@
                                 <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/50">Vencimento:</span>
                                 <span class="font-semibold text-xs mt-0.5">${expiryLabel(user)}</span>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex items-center gap-2">
+                                ${user.role !== 'Master' ? `
+                                <select onchange="doChangePlan('${user.id}', this.value)" class="bg-white/5 border border-white/10 text-xs rounded-lg px-2 py-1 text-on-surface focus:outline-none focus:border-amber-400 font-semibold" title="Alterar Plano do Usuário">
+                                    <option value="normal" ${(!user.plan || user.plan === 'normal') ? 'selected' : ''} style="background:#131b2e;color:#dae2fd;">Normal</option>
+                                    <option value="pro" ${user.plan === 'pro' ? 'selected' : ''} style="background:#131b2e;color:#f59e0b;font-weight:bold;">Plan PRO ★</option>
+                                </select>
+                                ` : ''}
                                 ${actionsFor(user)}
                             </div>
                         </div>
@@ -700,6 +707,23 @@
                 showToast('Erro ao renovar acesso.', true);
             }
         }
+
+        window.doChangePlan = async function(id, newPlan) {
+            try {
+                const { error } = await supabaseClientInstance.from('profiles').update({ plan: newPlan }).eq('id', id);
+                if (!error) {
+                    const u = allUsers.find(x => x.id === id);
+                    if (u) u.plan = newPlan;
+                    renderUsers();
+                    showToast(`Plano alterado para ${newPlan === 'pro' ? 'PRO ★' : 'Normal'} com sucesso!`);
+                } else {
+                    showToast('Erro ao atualizar plano no banco.', true);
+                }
+            } catch (e) {
+                console.error('doChangePlan error:', e);
+                showToast('Erro de conexão ao alterar plano.', true);
+            }
+        };
 
         window.doFreeze = async function(id) {
             showConfirm('Deseja realmente CONGELAR o acesso deste usuário? O tempo restante dele será salvo.', async () => {
