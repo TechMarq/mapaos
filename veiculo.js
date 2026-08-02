@@ -163,6 +163,13 @@ function showVcLoader(show) {
 // VIEW MANAGEMENT
 // ============================================================
 function vcSwitchView(viewId) {
+    // Prevent navigating to forms if no vehicle exists
+    if ((viewId === 'vc-fuel-form' || viewId === 'vc-maint-form') && (!vState.vehicles || vState.vehicles.length === 0)) {
+        alert('Nenhum veículo cadastrado. Por favor, cadastre um veículo antes de registrar um abastecimento ou manutenção.');
+        vcOpenVehicleModal();
+        return;
+    }
+
     vState.currentView = viewId;
     document.querySelectorAll('.vc-view').forEach(v => v.classList.remove('active'));
     const target = document.getElementById(viewId);
@@ -1085,6 +1092,12 @@ function vcRenderHistory() {
 // ============================================================
 async function vcSubmitFuel(e) {
     e.preventDefault();
+    if (!vState.activeVehicleId || !vState.vehicles || vState.vehicles.length === 0) {
+        alert('Operação negada: É necessário cadastrar um veículo antes de lançar abastecimentos.');
+        vcOpenVehicleModal();
+        return;
+    }
+
     const btn = e.target.querySelector('button[type="submit"]');
     const oriText = btn.textContent;
     btn.textContent = 'Salvando...';
@@ -1175,6 +1188,146 @@ function vcEditFuel(id) {
     if (btn) btn.innerHTML = '<span class="material-symbols-outlined text-lg">save</span> Atualizar Abastecimento';
 }
 
+// ============================================================
+// OCR RECEIPT SCANNER ENGINE (Tesseract.js)
+// ============================================================
+async function vcHandleOcrImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const container = document.getElementById('vc-ocr-progress-container');
+    const statusText = document.getElementById('vc-ocr-status-text');
+    const percentText = document.getElementById('vc-ocr-percent-text');
+    const progressBar = document.getElementById('vc-ocr-progress-bar');
+
+    if (container) container.classList.remove('hidden');
+    if (progressBar) progressBar.style.width = '0%';
+    if (percentText) percentText.textContent = '0%';
+
+    try {
+        if (typeof Tesseract === 'undefined') {
+            throw new Error('Biblioteca Tesseract.js não foi carregada.');
+        }
+
+        const worker = await Tesseract.createWorker('por');
+
+        const { data: { text } } = await worker.recognize(file, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    const pct = Math.round((m.progress || 0) * 100);
+                    if (progressBar) progressBar.style.width = `${pct}%`;
+                    if (percentText) percentText.textContent = `${pct}%`;
+                    if (statusText) statusText.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">sync</span> Processando imagem (${pct}%)...`;
+                } else if (statusText) {
+                    statusText.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">sync</span> Inicializando leitor...`;
+                }
+            }
+        });
+
+        await worker.terminate();
+
+        console.log('[OCR Result Raw Text]:\n', text);
+        const extracted = vcExtractFuelDataFromText(text);
+
+        // Populate fields
+        let filledCount = 0;
+
+        if (extracted.total) {
+            const el = document.getElementById('vc-fuel-total');
+            if (el) { el.value = extracted.total; el.classList.add('ring-2', 'ring-secondary-container'); setTimeout(() => el.classList.remove('ring-2', 'ring-secondary-container'), 3000); }
+            filledCount++;
+        }
+        if (extracted.liters) {
+            const el = document.getElementById('vc-fuel-liters');
+            if (el) { el.value = extracted.liters; el.classList.add('ring-2', 'ring-secondary-container'); setTimeout(() => el.classList.remove('ring-2', 'ring-secondary-container'), 3000); }
+            filledCount++;
+        }
+        if (extracted.type) {
+            const el = document.getElementById('vc-fuel-type');
+            if (el) { el.value = extracted.type; }
+            filledCount++;
+        }
+        if (extracted.station) {
+            const el = document.getElementById('vc-fuel-station');
+            if (el) { el.value = extracted.station; }
+            filledCount++;
+        }
+        if (extracted.km) {
+            const el = document.getElementById('vc-fuel-km');
+            if (el) { el.value = extracted.km; }
+            filledCount++;
+        }
+
+        if (statusText) {
+            statusText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> ${filledCount > 0 ? `${filledCount} dados identificados e preenchidos!` : 'Texto lido, mas confira os valores abaixo.'}`;
+        }
+    } catch (err) {
+        console.error('[OCR Error]:', err);
+        alert('Não foi possível ler todos os dados da foto automaticamente. Preencha os campos manualmente.');
+        if (statusText) statusText.innerHTML = `<span class="material-symbols-outlined text-sm text-tertiary">error</span> Erro na leitura`;
+    } finally {
+        event.target.value = '';
+        setTimeout(() => {
+            if (container) container.classList.add('hidden');
+        }, 5000);
+    }
+}
+
+/**
+ * Intelligent RegEx extractor for Fuel Receipt text
+ */
+function vcExtractFuelDataFromText(rawText) {
+    const text = rawText.toUpperCase();
+    const result = { total: null, liters: null, type: null, station: null, km: null };
+
+    // 1. Total Price (R$)
+    // Matches patterns like "TOTAL R$ 150,00", "TOTAL: 150.00", "VALOR R$ 200,50", "R$ 180,00"
+    const totalMatch = text.match(/(?:TOTAL|VALOR|PAGO|R\$)\s*[:=]?\s*R?\$?\s*(\d+[.,]\d{2})/i) || text.match(/R\$\s*(\d+[.,]\d{2})/i);
+    if (totalMatch) {
+        result.total = parseFloat(totalMatch[1].replace(',', '.'));
+    }
+
+    // 2. Liters (L)
+    // Matches patterns like "LITROS 25.50", "QTD: 30,00", "VOL: 20,5L", "25,50 L"
+    const litersMatch = text.match(/(?:LITROS?|QTD|VOL(?:UME)?|QTD\.)\s*[:=]?\s*(\d+[.,]\d{2,3})/i) || text.match(/(\d+[.,]\d{2,3})\s*(?:L|LTS?|LITROS?)/i);
+    if (litersMatch) {
+        result.liters = parseFloat(litersMatch[1].replace(',', '.'));
+    }
+
+    // 3. Fuel Type
+    if (text.includes('GASOLINA') || text.includes('GAS')) {
+        if (text.includes('ADITIVADA') || text.includes('ADIT')) result.type = 'gasolina_aditivada';
+        else result.type = 'gasolina';
+    } else if (text.includes('ETANOL') || text.includes('ALCOOL') || text.includes('ÁLCOOL')) {
+        result.type = 'etanol';
+    } else if (text.includes('DIESEL')) {
+        result.type = 'diesel';
+    } else if (text.includes('GNV') || text.includes('GAS NATURAL')) {
+        result.type = 'gnv';
+    }
+
+    // 4. Station Name
+    const stationKeywords = ['POSTO', 'SHELL', 'IPIRANGA', 'PETROBRAS', 'BR', 'ALE', 'AUTO POSTO'];
+    for (const kw of stationKeywords) {
+        if (text.includes(kw)) {
+            const lines = text.split('\n');
+            const matchingLine = lines.find(l => l.includes(kw));
+            if (matchingLine) {
+                result.station = matchingLine.trim().substring(0, 30);
+                break;
+            }
+        }
+    }
+
+    // 5. KM (if available in receipt text)
+    const kmMatch = text.match(/(?:KM|ODOMETRO|ODÔMETRO)\s*[:=]?\s*(\d{2,7})/i);
+    if (kmMatch) {
+        result.km = parseInt(kmMatch[1]);
+    }
+
+    return result;
+}
+
 async function vcDeleteFuel(id) {
     if (!confirm('Excluir este abastecimento?')) return;
     const { error } = await vcDb.fuel.delete(id);
@@ -1220,6 +1373,12 @@ function vcToggleMaintIntervalFields() {
 
 async function vcSubmitMaint(e) {
     e.preventDefault();
+    if (!vState.activeVehicleId || !vState.vehicles || vState.vehicles.length === 0) {
+        alert('Operação negada: É necessário cadastrar um veículo antes de lançar manutenções.');
+        vcOpenVehicleModal();
+        return;
+    }
+
     const btn = e.target.querySelector('button[type="submit"]');
     const oriText = btn.textContent;
     btn.textContent = 'Salvando...';

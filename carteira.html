@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <meta name="theme-color" content="#0b1326">
+    <meta name="background-color" content="#0b1326">
+    <meta name="msapplication-navbutton-color" content="#0b1326">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/svg+xml" href="img/mapaos-logo-sf.svg?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/mapaos-logo-sf.svg?v=2">
+    <link rel="manifest" href="manifest.json">
+    <title>Mapa.OS - Carteira de Documentos</title>
+    <script src="alerts.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#adc6ff",
+                        "primary-container": "#4b8eff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-primary": "#002e69",
+                        "secondary": "#44f5be",
+                        "secondary-container": "#00d8a4",
+                        "tertiary": "#ffb4ab",
+                        "error": "#ffb4ab",
+                        "surface": "#0b1326",
+                        "surface-variant": "#2d3449",
+                        "surface-container": "#171f33",
+                        "surface-container-high": "#222a3d",
+                        "surface-container-low": "#131b2e",
+                        "on-surface": "#dae2fd",
+                        "on-surface-variant": "#c1c6d7",
+                        "outline": "#8b90a0",
+                        "background": "#0b1326"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b1326; color: #dae2fd; min-height: 100vh; }
+        .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #dae2fd; transition: all 0.2s ease; }
+        .glass-input:focus { outline: none; border-color: #adc6ff; box-shadow: 0 0 0 2px rgba(173,198,255,0.1); }
+        
+        .preset-btn {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+        }
+        .preset-btn:hover, .preset-btn.active {
+            background: rgba(75,142,255,0.15);
+            border-color: rgba(75,142,255,0.4);
+            color: #adc6ff;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR (Injected by navigation.js) -->
+<div id="top-app-bar"></div>
+
+<main class="relative z-10 pb-40 pt-28 px-4 md:px-8 max-w-3xl mx-auto">
+
+    <!-- Header Section -->
+    <div class="flex items-center justify-between gap-4 mb-6">
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="text-xl md:text-2xl font-bold text-on-surface">Carteira de Documentos</h1>
+                <span class="pro-plan-badge" style="font-size:10px;padding:2px 8px;">PRO</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1 flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs text-emerald-400">verified_user</span>
+                Salvo no seu celular • Acesso 100% offline sem internet
+            </p>
+        </div>
+
+        <button onclick="openAddDocModal()" class="h-11 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center gap-2 active:scale-95 transition-all shadow-lg shadow-primary/20 shrink-0">
+            <span class="material-symbols-outlined text-lg">add</span>
+            <span class="hidden sm:inline">Adicionar Documento</span>
+            <span class="sm:hidden">Novo</span>
+        </button>
+    </div>
+
+    <!-- Quick Shortcuts Bar -->
+    <div class="glass-card rounded-2xl p-4 mb-6">
+        <p class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Atalhos Rápido de Documentos</p>
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <button onclick="quickAddModal('CRLV Digital', 'CRLV')" class="preset-btn rounded-xl p-2.5 flex flex-col items-center gap-1.5 active:scale-95 text-center">
+                <span class="material-symbols-outlined text-xl text-emerald-400">directions_car</span>
+                <span class="text-[11px] font-bold">CRLV</span>
+            </button>
+            <button onclick="quickAddModal('Carteira de Habilitação', 'CNH')" class="preset-btn rounded-xl p-2.5 flex flex-col items-center gap-1.5 active:scale-95 text-center">
+                <span class="material-symbols-outlined text-xl text-primary">badge</span>
+                <span class="text-[11px] font-bold">CNH</span>
+            </button>
+            <button onclick="quickAddModal('Laudo CSV / GNV', 'CSV')" class="preset-btn rounded-xl p-2.5 flex flex-col items-center gap-1.5 active:scale-95 text-center">
+                <span class="material-symbols-outlined text-xl text-amber-400">verified</span>
+                <span class="text-[11px] font-bold">CSV</span>
+            </button>
+            <button onclick="quickAddModal('Apólice de Seguro', 'Seguro')" class="preset-btn rounded-xl p-2.5 flex flex-col items-center gap-1.5 active:scale-95 text-center">
+                <span class="material-symbols-outlined text-xl text-purple-400">shield</span>
+                <span class="text-[11px] font-bold">Seguro</span>
+            </button>
+            <button onclick="quickAddModal('Nota Fiscal / Recibo', 'Nota Fiscal')" class="preset-btn rounded-xl p-2.5 flex flex-col items-center gap-1.5 active:scale-95 text-center">
+                <span class="material-symbols-outlined text-xl text-sky-400">receipt_long</span>
+                <span class="text-[11px] font-bold">Nota Fiscal</span>
+            </button>
+            <button onclick="quickAddModal('', 'Outro')" class="preset-btn rounded-xl p-2.5 flex flex-col items-center gap-1.5 active:scale-95 text-center">
+                <span class="material-symbols-outlined text-xl text-on-surface-variant">folder_open</span>
+                <span class="text-[11px] font-bold">Outro</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Document List Container -->
+    <div id="doc-list" class="flex flex-col gap-3">
+        <!-- Rendered via JS -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="doc-empty" class="hidden glass-card rounded-2xl p-8 text-center flex flex-col items-center gap-3">
+        <div class="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant">
+            <span class="material-symbols-outlined text-3xl">folder_off</span>
+        </div>
+        <div>
+            <h3 class="font-bold text-on-surface text-base">Nenhum documento salvo</h3>
+            <p class="text-xs text-on-surface-variant mt-1 max-w-xs mx-auto">Adicione fotos ou PDFs do seu CRLV, CNH ou seguros para tê-los sempre à mão mesmo sem internet.</p>
+        </div>
+        <button onclick="openAddDocModal()" class="mt-2 h-10 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-primary text-xs font-bold transition-all border border-white/10 active:scale-95">
+            + Adicionar Documento
+        </button>
+    </div>
+
+</main>
+
+<!-- BOTTOM BAR (Injected by navigation.js) -->
+<div id="bottom-nav-bar"></div>
+
+<!-- MODAL: Adicionar Documento -->
+<div id="add-doc-modal" class="hidden fixed inset-0 z-[9900] bg-[#060e20]/85 backdrop-blur-md flex justify-center items-center p-4">
+    <div class="glass-card w-full max-w-md rounded-2xl p-6 border border-white/15 shadow-2xl relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-on-surface text-base flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">upload_file</span>
+                Salvar Documento
+            </h3>
+            <button onclick="closeAddDocModal()" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-white/10">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <form onsubmit="saveDocSubmit(event)" class="flex flex-col gap-4">
+            <!-- Preset Type Selector -->
+            <div>
+                <label class="text-xs text-on-surface-variant font-semibold block mb-1.5">Tipo de Documento</label>
+                <select id="doc-type-select" onchange="onTypeSelectChange(this.value)" class="glass-input w-full h-11 px-3 rounded-xl text-xs text-on-surface">
+                    <option value="CRLV" style="background:#131b2e">📄 CRLV Digital</option>
+                    <option value="CNH" style="background:#131b2e">🪪 CNH (Habilitação)</option>
+                    <option value="CSV" style="background:#131b2e">📋 Laudo CSV / GNV</option>
+                    <option value="Seguro" style="background:#131b2e">🛡️ Apólice de Seguro</option>
+                    <option value="Nota Fiscal" style="background:#131b2e">🧾 Nota Fiscal / Recibo</option>
+                    <option value="Outro" style="background:#131b2e">📁 Outro Documento</option>
+                </select>
+            </div>
+
+            <!-- Title -->
+            <div>
+                <label class="text-xs text-on-surface-variant font-semibold block mb-1.5">Título do Documento</label>
+                <input id="doc-title-input" required type="text" class="glass-input w-full h-11 px-3 rounded-xl text-xs text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: CNH do Motorista, CRLV 2026...">
+            </div>
+
+            <!-- File Input -->
+            <div>
+                <label class="text-xs text-on-surface-variant font-semibold block mb-1.5">Arquivo (PDF ou Foto)</label>
+                <input id="doc-file-input" required type="file" accept="image/*,application/pdf" class="glass-input w-full p-2 rounded-xl text-xs text-on-surface file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer">
+                <p class="text-[10px] text-on-surface-variant/60 mt-1">Formatos aceitos: PDF, JPG, PNG, WEBP (Fica salvo no celular)</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="closeAddDocModal()" class="flex-1 h-11 rounded-xl bg-white/5 hover:bg-white/10 text-on-surface-variant text-xs font-semibold border border-white/10">Cancelar</button>
+                <button type="submit" id="btn-save-doc" class="flex-1 h-11 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">save</span>
+                    <span>Salvar no Celular</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Visualizador de Documento -->
+<div id="view-doc-modal" class="hidden fixed inset-0 z-[9950] bg-[#060e20]/95 backdrop-blur-md flex flex-col p-4">
+    <div class="flex items-center justify-between pb-3 border-b border-white/10 max-w-4xl w-full mx-auto">
+        <div class="flex items-center gap-2 min-w-0">
+            <span id="view-doc-icon" class="material-symbols-outlined text-primary text-xl shrink-0">description</span>
+            <h3 id="view-doc-title" class="font-bold text-on-surface text-sm truncate">Documento</h3>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="view-doc-download" class="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15 text-primary text-xs font-bold flex items-center gap-1 transition-all border border-white/10">
+                <span class="material-symbols-outlined text-base">download</span> Baixar
+            </button>
+            <button onclick="closeViewDocModal()" class="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/15 text-on-surface flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+    </div>
+    <div class="flex-1 max-w-4xl w-full mx-auto my-3 overflow-hidden rounded-xl bg-black/40 border border-white/10 flex items-center justify-center relative" id="view-doc-container">
+        <!-- Rendered dynamically (img or iframe) -->
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.env.js"></script>
+<script src="supabase.js"></script>
+<script src="navigation.js?v=4"></script>
+
+<script>
+// ============================================================
+// INDEXED DB ENGINE (Local Device Storage)
+// ============================================================
+const DB_NAME = 'MapaOS_Carteira_DB';
+const DB_VERSION = 1;
+const STORE_NAME = 'documents';
+let dbInstance = null;
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        if (dbInstance) return resolve(dbInstance);
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+        };
+        req.onsuccess = (e) => {
+            dbInstance = e.target.result;
+            resolve(dbInstance);
+        };
+        req.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function getAllDocsLocal() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveDocLocal(docObj) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.put(docObj);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function deleteDocLocal(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+// ============================================================
+// UI LOGIC
+// ============================================================
+let activeViewDoc = null;
+
+async function renderDocs() {
+    const container = document.getElementById('doc-list');
+    const emptyState = document.getElementById('doc-empty');
+    if (!container) return;
+
+    try {
+        const docs = await getAllDocsLocal();
+        docs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (docs.length === 0) {
+            container.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        emptyState.classList.add('hidden');
+
+        const iconsMap = {
+            'CRLV': { icon: 'directions_car', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
+            'CNH': { icon: 'badge', color: 'text-primary bg-primary/10 border-primary/20' },
+            'CSV': { icon: 'verified', color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
+            'Seguro': { icon: 'shield', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+            'Nota Fiscal': { icon: 'receipt_long', color: 'text-sky-400 bg-sky-400/10 border-sky-400/20' },
+            'Outro': { icon: 'folder_open', color: 'text-on-surface-variant bg-white/5 border-white/10' }
+        };
+
+        container.innerHTML = docs.map(d => {
+            const styleInfo = iconsMap[d.type] || iconsMap['Outro'];
+            const dateStr = new Date(d.createdAt).toLocaleDateString('pt-BR');
+            const sizeKb = (d.size / 1024).toFixed(0);
+
+            return `
+                <div class="glass-card rounded-2xl p-4 flex items-center justify-between gap-3 border-l-4 border-l-primary hover:bg-white/10 transition-all">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-11 h-11 rounded-xl ${styleInfo.color} border flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-2xl">${styleInfo.icon}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-on-surface text-sm truncate">${d.title}</h4>
+                            <p class="text-[11px] text-on-surface-variant/70 flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span>${d.type}</span>
+                                <span>•</span>
+                                <span>${dateStr}</span>
+                                <span>•</span>
+                                <span>${sizeKb} KB</span>
+                                <span>•</span>
+                                <span class="uppercase text-[9px] font-bold text-primary px-1.5 py-0.2 rounded bg-primary/10 border border-primary/20">${d.mimeType.includes('pdf') ? 'PDF' : 'IMAGEM'}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button onclick="viewDoc('${d.id}')" class="h-9 px-3 rounded-lg bg-primary/15 hover:bg-primary/25 text-primary text-xs font-bold flex items-center gap-1 transition-all border border-primary/25 active:scale-95" title="Visualizar">
+                            <span class="material-symbols-outlined text-base">visibility</span>
+                            <span class="hidden sm:inline">Ver</span>
+                        </button>
+                        <button onclick="removeDoc('${d.id}')" class="p-2 text-tertiary hover:bg-tertiary/10 rounded-lg transition-all" title="Excluir">
+                            <span class="material-symbols-outlined text-base">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) {
+        console.error('Error rendering docs:', e);
+    }
+}
+
+function openAddDocModal() {
+    document.getElementById('add-doc-modal').classList.remove('hidden');
+}
+
+function closeAddDocModal() {
+    document.getElementById('add-doc-modal').classList.add('hidden');
+}
+
+function quickAddModal(title, type) {
+    document.getElementById('doc-type-select').value = type;
+    document.getElementById('doc-title-input').value = title;
+    openAddDocModal();
+}
+
+function onTypeSelectChange(type) {
+    const titleInput = document.getElementById('doc-title-input');
+    const defaultTitles = {
+        'CRLV': 'CRLV Digital',
+        'CNH': 'Carteira de Habilitação',
+        'CSV': 'Laudo CSV / GNV',
+        'Seguro': 'Apólice de Seguro',
+        'Nota Fiscal': 'Nota Fiscal / Recibo'
+    };
+    if (defaultTitles[type] && !titleInput.value) {
+        titleInput.value = defaultTitles[type];
+    }
+}
+
+async function saveDocSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-doc');
+    const fileInput = document.getElementById('doc-file-input');
+    const file = fileInput.files[0];
+    if (!file) { alert('Selecione um arquivo.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Gravando no celular...';
+
+    try {
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            const base64Data = evt.target.result;
+            const docObj = {
+                id: 'doc_' + Date.now(),
+                title: document.getElementById('doc-title-input').value || 'Documento Sem Título',
+                type: document.getElementById('doc-type-select').value || 'Outro',
+                mimeType: file.type || 'application/octet-stream',
+                size: file.size,
+                data: base64Data,
+                createdAt: new Date().toISOString()
+            };
+
+            await saveDocLocal(docObj);
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined text-base">save</span><span>Salvar no Celular</span>';
+            closeAddDocModal();
+            document.getElementById('doc-title-input').value = '';
+            fileInput.value = '';
+            renderDocs();
+        };
+        reader.readAsDataURL(file);
+    } catch(err) {
+        alert('Erro ao gravar arquivo no celular: ' + err.message);
+        btn.disabled = false;
+    }
+}
+
+async function viewDoc(id) {
+    const docs = await getAllDocsLocal();
+    const doc = docs.find(d => d.id === id);
+    if (!doc) return;
+
+    activeViewDoc = doc;
+    document.getElementById('view-doc-title').textContent = doc.title;
+    const container = document.getElementById('view-doc-container');
+    const downloadBtn = document.getElementById('view-doc-download');
+
+    if (doc.mimeType.includes('pdf')) {
+        container.innerHTML = `<iframe src="${doc.data}" class="w-full h-full border-none"></iframe>`;
+    } else {
+        container.innerHTML = `<img src="${doc.data}" class="max-w-full max-h-full object-contain mx-auto rounded-lg">`;
+    }
+
+    downloadBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href = doc.data;
+        a.download = `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.mimeType.includes('pdf') ? 'pdf' : 'png'}`;
+        a.click();
+    };
+
+    document.getElementById('view-doc-modal').classList.remove('hidden');
+}
+
+function closeViewDocModal() {
+    document.getElementById('view-doc-modal').classList.add('hidden');
+    document.getElementById('view-doc-container').innerHTML = '';
+}
+
+async function removeDoc(id) {
+    if (!confirm('Deseja excluir este documento da sua carteira local?')) return;
+    await deleteDocLocal(id);
+    renderDocs();
+}
+
+// Pro Plan Guard & Init
+document.addEventListener('DOMContentLoaded', () => {
+    const timer = setInterval(() => {
+        if (typeof requireProPlan === 'function') {
+            clearInterval(timer);
+            if (!requireProPlan('Carteira de Documentos')) {
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            } else {
+                renderDocs();
+            }
+        }
+    }, 150);
+    setTimeout(() => { clearInterval(timer); renderDocs(); }, 3000);
+});
+</script>
+
+</body>
+</html>

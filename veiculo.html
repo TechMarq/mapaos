@@ -464,7 +464,42 @@
                 </div>
                 <div>
                     <h2 class="font-bold text-on-surface text-base">Registrar Abastecimento</h2>
-                    <p class="text-xs text-on-surface-variant">Preencha os dados do abastecimento</p>
+                    <p class="text-xs text-on-surface-variant">Preencha os dados manualmente ou escaneie o comprovante</p>
+                </div>
+            </div>
+
+            <!-- OCR Camera Scanner Button & Status Bar -->
+            <div class="mb-5 p-3.5 rounded-xl bg-gradient-to-r from-secondary-container/10 via-primary/10 to-transparent border border-secondary-container/30 flex flex-col gap-2">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary-container text-xl animate-pulse">photo_camera</span>
+                        <div>
+                            <p class="text-xs font-bold text-on-surface">Escaneamento por Foto (OCR)</p>
+                            <p class="text-[10px] text-on-surface-variant">Tire foto da nota/bomba para preencher automático</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('vc-ocr-file-input').click()" 
+                        class="h-9 px-3.5 rounded-xl bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-xs flex items-center gap-1.5 border border-secondary-container/40 transition-all active:scale-95 shrink-0">
+                        <span class="material-symbols-outlined text-base">camera_alt</span>
+                        <span>Escanear</span>
+                    </button>
+                </div>
+
+                <!-- Hidden file input with camera capture -->
+                <input type="file" id="vc-ocr-file-input" accept="image/*" capture="environment" class="hidden" onchange="vcHandleOcrImageSelect(event)">
+
+                <!-- OCR Progress Indicator -->
+                <div id="vc-ocr-progress-container" class="hidden flex flex-col gap-1.5 pt-2 border-t border-white/10">
+                    <div class="flex justify-between items-center text-[11px] font-semibold text-secondary-container">
+                        <span id="vc-ocr-status-text" class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm animate-spin">sync</span>
+                            Lendo nota fiscal...
+                        </span>
+                        <span id="vc-ocr-percent-text">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div id="vc-ocr-progress-bar" class="h-full bg-secondary-container rounded-full transition-all duration-300" style="width:0%"></div>
+                    </div>
                 </div>
             </div>
 
@@ -795,10 +830,11 @@
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
 <script src="navigation.js"></script>
-<script src="veiculo.js?v=132"></script>
+<script src="veiculo.js?v=134"></script>
 
 <script>
 // ── Glassmorphic Lens Bubble Navigation ──────────────────────────────

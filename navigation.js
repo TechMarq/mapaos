@@ -1029,13 +1029,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${(typeof isUserPro === 'function' && !isUserPro()) ? '<span class="material-symbols-outlined text-[10px] text-amber-400">lock</span>' : ''}
                     </span>
                 </a>
-                <button onclick="openProUpgradeModal('Carteira de Documentos')" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 text-on-surface-variant/50 hover:text-on-surface-variant/80 cursor-pointer relative" id="desktop-carteira" title="Documentos / Carteira (Exclusivo Pro)">
+                <a href="carteira.html" onclick="if(typeof isUserPro === 'function' && !isUserPro()){ event.preventDefault(); openProUpgradeModal('Carteira de Documentos'); }" class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300 relative" id="desktop-carteira" title="Documentos / Carteira">
                     <span class="material-symbols-outlined mb-1">account_balance_wallet</span>
                     <span class="flex items-center gap-0.5">
                         Carteira
-                        <span class="material-symbols-outlined text-[10px] text-amber-400">lock</span>
+                        ${(typeof isUserPro === 'function' && !isUserPro()) ? '<span class="material-symbols-outlined text-[10px] text-amber-400">lock</span>' : ''}
                     </span>
-                </button>
+                </a>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="financeiro.html" id="desktop-financeiro">
                     <span class="material-symbols-outlined mb-1">payments</span>
                     Financeiro
@@ -1086,10 +1086,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
 
             <!-- 5. Carteira Documentos (Exclusivo Pro) -->
-            <button onclick="openProUpgradeModal('Carteira de Documentos')" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant/40 relative opacity-60" title="Carteira de Documentos (Exclusivo Pro)">
+            <a href="carteira.html" onclick="if(typeof isUserPro === 'function' && !isUserPro()){ event.preventDefault(); openProUpgradeModal('Carteira de Documentos'); }" id="mobile-carteira" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 text-on-surface-variant relative" title="Carteira de Documentos">
                 <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
-                <span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-amber-400">lock</span>
-            </button>
+                ${(typeof isUserPro === 'function' && !isUserPro()) ? '<span class="material-symbols-outlined absolute -top-1 -right-1 text-[10px] text-amber-400">lock</span>' : ''}
+            </a>
             <!-- 6. Financeiro -->
             <a href="financeiro.html" id="mobile-financeiro" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
                 <span class="material-symbols-outlined text-lg">payments</span>

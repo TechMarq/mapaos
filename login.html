@@ -231,6 +231,22 @@
                     <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Bem-vindo</h2>
                     <p class="text-on-surface-variant text-body-md">Acesse sua conta para continuar.</p>
                 </div>
+
+                <!-- Pending Status Banner (Orange) -->
+                <div id="login-pending-banner" class="hidden p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs flex flex-col gap-2 transition-all">
+                    <div class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1">hourglass_top</span>
+                        <div class="flex-1">
+                            <p class="font-bold text-amber-200">Conta em análise</p>
+                            <p class="text-[11px] text-amber-300/90 mt-0.5 leading-relaxed">Sua conta foi criada e está aguardando aprovação por um administrador.</p>
+                        </div>
+                    </div>
+                    <a id="pending-wa-link" href="https://wa.me/5524992716045?text=Ol%C3%A1!%20Criei%20minha%20conta%20no%20Mapa.OS%20e%20gostaria%20de%20solicitar%20a%20aprova%C3%A7%C3%A3o%20do%20meu%20acesso." target="_blank" rel="noopener noreferrer" 
+                        class="h-8 px-3 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all border border-amber-500/40 active:scale-95 text-center">
+                        <span class="material-symbols-outlined text-sm">chat</span>
+                        <span>Falar com Suporte (WhatsApp)</span>
+                    </a>
+                </div>
                 <!-- Form -->
                 <form class="flex flex-col gap-stack-gap-md" onsubmit="event.preventDefault();">
                     <!-- Email Field -->
@@ -435,7 +451,7 @@
             const y = e.clientY / window.innerHeight;
 
             // Subtle parallax effect for background blobs
-            const blobs = document.querySelectorAll('.blur-[160px], .blur-[120px]');
+            const blobs = document.querySelectorAll('.blur-3xl, .blur-2xl');
             blobs.forEach((blob, i) => {
                 const speed = (i + 1) * 20;
                 const shiftX = (x - 0.5) * speed;
@@ -502,15 +518,23 @@
                 dbLoginUser(email, password).then(result => {
                     setTimeout(() => {
                         loginBtn.innerHTML = originalContent;
+                        const pendingBanner = document.getElementById('login-pending-banner');
+                        const waLink = document.getElementById('pending-wa-link');
+
                         if (!result || !result.success) {
                             alert(result ? result.error : 'Erro ao conectar com o banco de dados. Verifique sua conexão.');
                         } else if (result.user.status === 'Pendente') {
-                            alert('Sua conta está em análise por um administrador master. Aguarde a aprovação do acesso.');
+                            if (pendingBanner) pendingBanner.classList.remove('hidden');
+                            if (waLink && result.user.name) {
+                                const msg = `Olá! Sou *${result.user.name}* (${result.user.email}) e criei minha conta no Mapa.OS. Minha conta está em análise e gostaria de solicitar a aprovação do meu acesso.`;
+                                waLink.href = `https://wa.me/5524992716045?text=${encodeURIComponent(msg)}`;
+                            }
                         } else if (result.user.role === 'Master') {
-                            // Redirect Master to control panel
+                            if (pendingBanner) pendingBanner.classList.add('hidden');
                             if (loader) loader.classList.remove('opacity-0', 'pointer-events-none');
                             setTimeout(() => { window.location.href = 'master.html'; }, 1500);
                         } else {
+                            if (pendingBanner) pendingBanner.classList.add('hidden');
                             if (loader) {
                                 loader.classList.remove('opacity-0', 'pointer-events-none');
                             }
@@ -552,14 +576,21 @@
                     email: emailVal,
                     phone: phoneVal,
                     password: passwordVal
-                }).then((user) => {
+                }).then((result) => {
                     setTimeout(() => {
                         registerBtn.innerHTML = originalContent;
-                        if (user) {
-                            alert('Cadastro realizado com sucesso! Sua conta entrou em análise e aguarda liberação.');
+                        if (result && !result.error) {
                             switchCard('login-card');
+                            const pendingBanner = document.getElementById('login-pending-banner');
+                            const waLink = document.getElementById('pending-wa-link');
+                            if (pendingBanner) pendingBanner.classList.remove('hidden');
+                            if (waLink) {
+                                const msg = `Olá! Sou *${nameVal}* (${emailVal}) e acabei de me cadastrar no Mapa.OS. Gostaria de solicitar a aprovação do meu acesso.`;
+                                waLink.href = `https://wa.me/5524992716045?text=${encodeURIComponent(msg)}`;
+                            }
                         } else {
-                            alert('Erro ao realizar o cadastro. Certifique-se de que a tabela "profiles" foi criada no console do Supabase usando o script SQL.');
+                            const errText = (result && result.error) ? result.error : 'Erro ao realizar o cadastro. Tente novamente.';
+                            alert(errText);
                         }
                     }, 1500);
                 });

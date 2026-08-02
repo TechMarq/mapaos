@@ -538,7 +538,11 @@ async function dbRegisterUser(profile) {
 
     } catch (err) {
         console.error('Supabase registration error:', err);
-        return null;
+        const errMsg = err.message || (typeof err === 'string' ? err : 'Erro no servidor de autenticação');
+        if (errMsg.includes('User already registered') || errMsg.includes('already registered')) {
+            return { error: 'Este e-mail já está cadastrado no sistema. Tente fazer login ou recupere sua senha.' };
+        }
+        return { error: errMsg };
     }
 }
 
