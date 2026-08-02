@@ -470,20 +470,22 @@
                 </div>
 
                 <div class="flex items-center gap-1.5">
-                    <!-- Barcode/QR Code Scanner Button -->
+                    <!-- Barcode/QR Code Scanner Button (BETA) -->
                     <button type="button" onclick="vcTriggerBarcodeScanner()" 
-                        class="h-8 px-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-bold text-[11px] flex items-center gap-1 border border-primary/40 transition-all active:scale-95 shrink-0"
-                        title="Escanear Código de Barras / QR Code da Nota Fiscal">
-                        <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
+                        class="h-8 px-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-bold text-[10px] flex items-center gap-1 border border-primary/40 transition-all active:scale-95 shrink-0 relative"
+                        title="[Recurso Beta] Escanear Código de Barras / QR Code">
+                        <span class="material-symbols-outlined text-xs">qr_code_scanner</span>
                         <span>Cód. Barras</span>
+                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase tracking-wider border border-amber-400/30">BETA</span>
                     </button>
 
-                    <!-- OCR Photo Scanner Button -->
+                    <!-- OCR Photo Scanner Button (BETA) -->
                     <button type="button" onclick="document.getElementById('vc-ocr-file-input').click()" 
-                        class="h-8 px-2.5 rounded-lg bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-[11px] flex items-center gap-1 border border-secondary-container/40 transition-all active:scale-95 shrink-0"
-                        title="Escanear Foto da Nota/Bomba (OCR)">
-                        <span class="material-symbols-outlined text-sm">camera_alt</span>
+                        class="h-8 px-2 rounded-lg bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-[10px] flex items-center gap-1 border border-secondary-container/40 transition-all active:scale-95 shrink-0 relative"
+                        title="[Recurso Beta] Escanear Foto da Nota/Bomba (OCR)">
+                        <span class="material-symbols-outlined text-xs">camera_alt</span>
                         <span>OCR Foto</span>
+                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase tracking-wider border border-amber-400/30">BETA</span>
                     </button>
                 </div>
             </div>
@@ -808,7 +810,7 @@
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
 <script src="navigation.js"></script>
-<script src="veiculo.js?v=140"></script>
+<script src="veiculo.js?v=141"></script>
 
 <script>
 // ── Glassmorphic Lens Bubble Navigation ──────────────────────────────

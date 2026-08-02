@@ -1266,7 +1266,7 @@ async function vcHandleOcrImageSelect(event) {
         }
 
         if (statusText) {
-            statusText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> ${filledCount > 0 ? `${filledCount} dados identificados e preenchidos!` : 'Texto lido, mas confira os valores abaixo.'}`;
+            statusText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> [BETA] ${filledCount > 0 ? `${filledCount} dados identificados. Confira os valores!` : 'Leitura em testes. Confira os valores.'}`;
         }
     } catch (err) {
         console.error('[OCR Error]:', err);
