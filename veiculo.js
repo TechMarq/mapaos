@@ -1211,12 +1211,12 @@ async function vcHandleOcrImageSelect(event) {
 
         if (statusText) statusText.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">sync</span> Otimizando foto...`;
 
-        // 1. Resize & Compress image via Canvas (Reduces 10MB phone camera photos to ~1000px in ~50ms)
-        const compressedBlob = await vcCompressImageForOcr(file, 1000);
+        // 1. Resize & Compress image via Canvas (1800px provides crisp detail for small receipt text like "13.53 M3")
+        const compressedBlob = await vcCompressImageForOcr(file, 1800);
 
         if (statusText) statusText.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">sync</span> Carregando motor OCR...`;
 
-        // 2. Run Tesseract Worker with eng+por (or lightweight mode)
+        // 2. Run Tesseract Worker
         const worker = await Tesseract.createWorker('por', 1, {
             logger: m => {
                 if (m.status === 'recognizing text') {
@@ -1281,30 +1281,30 @@ async function vcHandleOcrImageSelect(event) {
 }
 
 /**
- * Intelligent RegEx extractor for Fuel Receipt text
+ * Robust RegEx extractor for Fuel Receipt text
  */
 function vcExtractFuelDataFromText(rawText) {
     const text = rawText.toUpperCase();
     const result = { total: null, liters: null, type: null, station: null, km: null };
 
     // 1. Total Price (R$)
-    // Looks for "VALOR TOTAL R$ 53,58", "SUBTOTAL R$ 53,98", "TOTAL 53,58", "R$ 53,58"
-    const totalMatch = text.match(/(?:VALOR\s*TOTAL|TOTAL\s*R\$|TOTAL)\s*[:=]?\s*R?\$?\s*(\d+[.,]\d{2})/i) 
-                    || text.match(/R\$\s*(\d+[.,]\d{2})/i);
+    // Looks specifically for "VALOR TOTAL R$ 53,58" or "VALOR TOTAL R$ 53.58" avoiding tax percentages like 0,75 (1,39%)
+    const totalMatch = text.match(/VALOR\s*TOTAL\s*R?\$?\s*(\d+[.,]\d{2})/i)
+                    || text.match(/TOTAL\s*R\$?\s*(\d+[.,]\d{2})/i)
+                    || text.match(/SUBTOTAL\s*R\$?\s*(\d+[.,]\d{2})/i);
     if (totalMatch) {
         result.total = parseFloat(totalMatch[1].replace(',', '.'));
     }
 
-    // 2. Liters / Quantity / M3 (Captures "Qtde 13.53", "13.53 UN M3", "13,53 L")
-    const litersMatch = text.match(/(?:QTDE?|QUANTIDADE|LITROS?|VOL(?:UME)?|QTD\.)\s*[:=]?\s*(\d+[.,]\d{1,3})/i) 
-                     || text.match(/(\d+[.,]\d{1,3})\s*(?:M3|UN|L|LTS?|LITROS?)/i);
+    // 2. Liters / Quantity / M3 (Matches "13.53 M3" or "QTDE 13.53" or "13.53 UN")
+    const litersMatch = text.match(/(\d+[.,]\d{2,3})\s*(?:M3|UN|L|LTS?|LITROS?)/i)
+                     || text.match(/(?:QTDE?|QTD|VOL(?:UME)?)\.?\s*[:=]?\s*(\d+[.,]\d{2,3})/i);
     if (litersMatch) {
         result.liters = parseFloat(litersMatch[1].replace(',', '.'));
     }
 
     // 3. Fuel Type (GNV, Gasolina Comum, Gasolina Aditivada, Etanol, Diesel)
-    // Primary check for GNV / M3
-    if (text.includes('GNV') || text.includes('GAS NATURAL') || text.includes('M3')) {
+    if (text.includes('GNV') || text.includes('GAS NATURAL') || text.includes('M3') || text.includes('220101005')) {
         result.type = 'GNV';
     } else if (text.includes('ADITIVADA') || text.includes('ADIT')) {
         result.type = 'Gasolina Aditivada';
@@ -1316,22 +1316,19 @@ function vcExtractFuelDataFromText(rawText) {
         result.type = 'Gasolina Comum';
     }
 
-    // 4. Station Name (Clean header line)
-    // Example: "RODOGAS POSTO PRESIDENTE LTDA"
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+    // 4. Station Name (Clean header line ignoring noise like H$SETSEASAA)
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
     for (const l of lines.slice(0, 5)) {
-        if (l.includes('POSTO') || l.includes('LTDA') || l.includes('SHELL') || l.includes('IPIRANGA') || l.includes('PETROBRAS') || l.includes('AUTO')) {
-            result.station = l.replace(/[\[\]]/g, '').trim().substring(0, 35);
+        if ((l.includes('POSTO') || l.includes('LTDA') || l.includes('SHELL') || l.includes('IPIRANGA') || l.includes('PETROBRAS') || l.includes('AUTO') || l.includes('RODOGAS'))
+            && !l.includes('FEDERAL') && !l.includes('MUNICIPAL')) {
+            result.station = l.replace(/[^A-Z0-9\s]/g, '').trim().substring(0, 35);
             break;
         }
     }
-    if (!result.station && lines.length > 0) {
-        result.station = lines[0].replace(/[\[\]]/g, '').trim().substring(0, 35);
-    }
 
     // 5. KM (Matches "KM: 111965", "KM 111965", "ODOMETRO")
-    const kmMatch = text.match(/(?:KM|ODOMETRO|ODÔMETRO)\s*[:=]?\s*(\d{2,7})/i) 
-                 || text.match(/-\s*KM\s*[:=]?\s*(\d{2,7})/i);
+    const kmMatch = text.match(/(?:KM|ODOMETRO|ODÔMETRO)\s*[:=]?\s*(\d{4,7})/i) 
+                 || text.match(/-\s*KM\s*[:=]?\s*(\d{4,7})/i);
     if (kmMatch) {
         result.km = parseInt(kmMatch[1]);
     }
