@@ -458,34 +458,35 @@
          ============================================================ -->
     <div id="vc-fuel-form" class="vc-view">
         <div class="glass-card rounded-2xl p-4 mb-3">
-            <div class="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-white/10">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-secondary-container/15 border border-secondary-container/25 flex items-center justify-center">
+            <!-- Header Title + Beta Action Buttons -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-white/10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-secondary-container/15 border border-secondary-container/25 flex items-center justify-center shrink-0">
                         <span class="material-symbols-outlined text-secondary-container text-lg" style="font-variation-settings:'FILL' 1">local_gas_station</span>
                     </div>
                     <div>
                         <h2 class="font-bold text-on-surface text-sm leading-tight">Registrar Abastecimento</h2>
-                        <p class="text-[10px] text-on-surface-variant">Preencha os dados abaixo</p>
+                        <p class="text-[10px] text-on-surface-variant">Preencha manualmente ou use os recursos em teste</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 self-end sm:self-auto">
                     <!-- Barcode/QR Code Scanner Button (BETA) -->
                     <button type="button" onclick="vcTriggerBarcodeScanner()" 
-                        class="h-8 px-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-bold text-[10px] flex items-center gap-1 border border-primary/40 transition-all active:scale-95 shrink-0 relative"
+                        class="h-7 px-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-bold text-[10px] flex items-center gap-1 border border-primary/40 transition-all active:scale-95 shrink-0"
                         title="[Recurso Beta] Escanear Código de Barras / QR Code">
                         <span class="material-symbols-outlined text-xs">qr_code_scanner</span>
                         <span>Cód. Barras</span>
-                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase tracking-wider border border-amber-400/30">BETA</span>
+                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[7px] font-black tracking-wider border border-amber-400/30">BETA</span>
                     </button>
 
                     <!-- OCR Photo Scanner Button (BETA) -->
                     <button type="button" onclick="document.getElementById('vc-ocr-file-input').click()" 
-                        class="h-8 px-2 rounded-lg bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-[10px] flex items-center gap-1 border border-secondary-container/40 transition-all active:scale-95 shrink-0 relative"
+                        class="h-7 px-2 rounded-lg bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-[10px] flex items-center gap-1 border border-secondary-container/40 transition-all active:scale-95 shrink-0"
                         title="[Recurso Beta] Escanear Foto da Nota/Bomba (OCR)">
                         <span class="material-symbols-outlined text-xs">camera_alt</span>
                         <span>OCR Foto</span>
-                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase tracking-wider border border-amber-400/30">BETA</span>
+                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[7px] font-black tracking-wider border border-amber-400/30">BETA</span>
                     </button>
                 </div>
             </div>
@@ -810,7 +811,7 @@
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
 <script src="navigation.js"></script>
-<script src="veiculo.js?v=141"></script>
+<script src="veiculo.js?v=142"></script>
 
 <script>
 // ── Glassmorphic Lens Bubble Navigation ──────────────────────────────

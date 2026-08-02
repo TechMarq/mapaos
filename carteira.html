@@ -72,7 +72,7 @@
 <!-- TOP BAR (Injected by navigation.js) -->
 <div id="top-app-bar"></div>
 
-<main class="relative z-10 pb-40 pt-28 px-4 md:px-8 max-w-3xl mx-auto">
+<main class="relative z-10 pb-56 pt-28 px-4 md:px-8 max-w-3xl mx-auto">
 
     <!-- Header Section -->
     <div class="flex items-center justify-between gap-4 mb-6">
@@ -202,26 +202,56 @@
 </div>
 
 <!-- MODAL: Visualizador de Documento -->
-<div id="view-doc-modal" class="hidden fixed inset-0 z-[9950] bg-[#060e20]/95 backdrop-blur-md flex flex-col p-4">
-    <div class="flex items-center justify-between pb-3 border-b border-white/10 max-w-4xl w-full mx-auto">
+<div id="view-doc-modal" class="hidden fixed inset-0 z-[9950] bg-[#060e20]/95 backdrop-blur-md flex flex-col p-3 sm:p-4">
+    <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/10 max-w-5xl w-full mx-auto">
         <div class="flex items-center gap-2 min-w-0">
             <span id="view-doc-icon" class="material-symbols-outlined text-primary text-xl shrink-0">description</span>
-            <h3 id="view-doc-title" class="font-bold text-on-surface text-sm truncate">Documento</h3>
+            <h3 id="view-doc-title" class="font-bold text-on-surface text-sm truncate max-w-[180px] sm:max-w-xs">Documento</h3>
         </div>
+
+        <!-- Zoom & Page Controls Bar -->
+        <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+            <!-- PDF Page Navigator (Hidden for Images) -->
+            <div id="pdf-page-controls" class="hidden flex items-center gap-1 pr-2 border-r border-white/10">
+                <button type="button" onclick="changePdfPage(-1)" class="w-7 h-7 rounded-lg hover:bg-white/10 text-on-surface flex items-center justify-center active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-base">navigate_before</span>
+                </button>
+                <span id="pdf-page-indicator" class="text-[11px] font-bold text-on-surface px-1">1 / 1</span>
+                <button type="button" onclick="changePdfPage(1)" class="w-7 h-7 rounded-lg hover:bg-white/10 text-on-surface flex items-center justify-center active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-base">navigate_next</span>
+                </button>
+            </div>
+
+            <!-- Zoom Controls -->
+            <button type="button" onclick="changeDocZoom(-0.25)" class="w-7 h-7 rounded-lg hover:bg-white/10 text-on-surface flex items-center justify-center active:scale-95 transition-all" title="Diminuir Zoom">
+                <span class="material-symbols-outlined text-base">zoom_out</span>
+            </button>
+            <span id="doc-zoom-level" class="text-[11px] font-bold text-on-surface-variant w-10 text-center">100%</span>
+            <button type="button" onclick="changeDocZoom(0.25)" class="w-7 h-7 rounded-lg hover:bg-white/10 text-on-surface flex items-center justify-center active:scale-95 transition-all" title="Aumentar Zoom">
+                <span class="material-symbols-outlined text-base">zoom_in</span>
+            </button>
+            <button type="button" onclick="resetDocZoom()" class="w-7 h-7 rounded-lg hover:bg-white/10 text-on-surface-variant flex items-center justify-center active:scale-95 transition-all" title="Resetar Zoom">
+                <span class="material-symbols-outlined text-base">restart_alt</span>
+            </button>
+        </div>
+
         <div class="flex items-center gap-2">
-            <button id="view-doc-download" class="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15 text-primary text-xs font-bold flex items-center gap-1 transition-all border border-white/10">
+            <button id="view-doc-download" class="h-8 px-3 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary text-xs font-bold flex items-center gap-1 transition-all border border-primary/30 active:scale-95">
                 <span class="material-symbols-outlined text-base">download</span> Baixar
             </button>
-            <button onclick="closeViewDocModal()" class="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/15 text-on-surface flex items-center justify-center">
+            <button onclick="closeViewDocModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-on-surface flex items-center justify-center active:scale-95">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
         </div>
     </div>
-    <div class="flex-1 max-w-4xl w-full mx-auto my-3 overflow-hidden rounded-xl bg-black/40 border border-white/10 flex items-center justify-center relative" id="view-doc-container">
-        <!-- Rendered dynamically (img or iframe) -->
+
+    <!-- Scrollable & Zoomable Document Container -->
+    <div class="flex-1 max-w-5xl w-full mx-auto my-2 overflow-auto rounded-xl bg-black/50 border border-white/10 flex items-center justify-center relative touch-pan-x touch-pan-y" id="view-doc-container">
+        <!-- Rendered dynamically via PDF.js Canvas or Zoomable Img -->
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
@@ -426,21 +456,38 @@ async function saveDocSubmit(e) {
     }
 }
 
+// ============================================================
+// DOCUMENT VIEWER ENGINE (PDF.js + Multi-page + Zoom)
+// ============================================================
+let activeViewDoc = null;
+let currentZoom = 1.0;
+let currentPdfDoc = null;
+let currentPdfPage = 1;
+let totalPdfPages = 1;
+
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
+
 async function viewDoc(id) {
     const docs = await getAllDocsLocal();
     const doc = docs.find(d => d.id === id);
     if (!doc) return;
 
     activeViewDoc = doc;
+    currentZoom = 1.0;
+    currentPdfDoc = null;
+    currentPdfPage = 1;
+    totalPdfPages = 1;
+
     document.getElementById('view-doc-title').textContent = doc.title;
+    document.getElementById('doc-zoom-level').textContent = '100%';
     const container = document.getElementById('view-doc-container');
     const downloadBtn = document.getElementById('view-doc-download');
+    const pageControls = document.getElementById('pdf-page-controls');
 
-    if (doc.mimeType.includes('pdf')) {
-        container.innerHTML = `<iframe src="${doc.data}" class="w-full h-full border-none"></iframe>`;
-    } else {
-        container.innerHTML = `<img src="${doc.data}" class="max-w-full max-h-full object-contain mx-auto rounded-lg">`;
-    }
+    if (pageControls) pageControls.classList.add('hidden');
+    container.innerHTML = '<div class="text-xs text-on-surface-variant animate-pulse p-4">Carregando documento...</div>';
 
     downloadBtn.onclick = () => {
         const a = document.createElement('a');
@@ -450,11 +497,104 @@ async function viewDoc(id) {
     };
 
     document.getElementById('view-doc-modal').classList.remove('hidden');
+
+    if (doc.mimeType.includes('pdf')) {
+        try {
+            if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js não foi carregado');
+
+            // Convert base64 dataURL to ArrayBuffer
+            const base64Str = doc.data.split(',')[1] || doc.data;
+            const binaryStr = atob(base64Str);
+            const len = binaryStr.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+            }
+
+            currentPdfDoc = await pdfjsLib.getDocument({ data: bytes.buffer }).promise;
+            totalPdfPages = currentPdfDoc.numPages;
+
+            if (pageControls && totalPdfPages > 1) {
+                pageControls.classList.remove('hidden');
+                document.getElementById('pdf-page-indicator').textContent = `1 / ${totalPdfPages}`;
+            }
+
+            await renderPdfPage(1);
+        } catch (err) {
+            console.warn('[PDF.js fallback to iframe]:', err);
+            container.innerHTML = `<iframe src="${doc.data}" class="w-full h-full border-none"></iframe>`;
+        }
+    } else {
+        container.innerHTML = `
+            <div id="img-wrapper" class="w-full h-full flex items-center justify-center overflow-auto p-2">
+                <img id="doc-active-image" src="${doc.data}" class="max-w-full max-h-full object-contain mx-auto rounded-lg transition-transform duration-200" style="transform: scale(1); transform-origin: center center;">
+            </div>
+        `;
+    }
+}
+
+async function renderPdfPage(pageNum) {
+    if (!currentPdfDoc) return;
+    const container = document.getElementById('view-doc-container');
+    container.innerHTML = '';
+
+    const page = await currentPdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: currentZoom * 1.5 });
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'max-w-none rounded-lg shadow-2xl my-auto transition-transform duration-200';
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    container.appendChild(canvas);
+
+    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+    const pageIndicator = document.getElementById('pdf-page-indicator');
+    if (pageIndicator) pageIndicator.textContent = `${pageNum} / ${totalPdfPages}`;
+}
+
+function changePdfPage(delta) {
+    if (!currentPdfDoc) return;
+    const newPage = currentPdfPage + delta;
+    if (newPage >= 1 && newPage <= totalPdfPages) {
+        currentPdfPage = newPage;
+        renderPdfPage(currentPdfPage);
+    }
+}
+
+function changeDocZoom(delta) {
+    currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 4.0);
+    document.getElementById('doc-zoom-level').textContent = `${Math.round(currentZoom * 100)}%`;
+
+    if (activeViewDoc && activeViewDoc.mimeType.includes('pdf') && currentPdfDoc) {
+        renderPdfPage(currentPdfPage);
+    } else {
+        const img = document.getElementById('doc-active-image');
+        if (img) {
+            img.style.transform = `scale(${currentZoom})`;
+        }
+    }
+}
+
+function resetDocZoom() {
+    currentZoom = 1.0;
+    document.getElementById('doc-zoom-level').textContent = '100%';
+    if (activeViewDoc && activeViewDoc.mimeType.includes('pdf') && currentPdfDoc) {
+        renderPdfPage(currentPdfPage);
+    } else {
+        const img = document.getElementById('doc-active-image');
+        if (img) {
+            img.style.transform = `scale(1)`;
+        }
+    }
 }
 
 function closeViewDocModal() {
     document.getElementById('view-doc-modal').classList.add('hidden');
     document.getElementById('view-doc-container').innerHTML = '';
+    currentPdfDoc = null;
 }
 
 async function removeDoc(id) {
