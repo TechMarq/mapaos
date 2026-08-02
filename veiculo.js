@@ -1295,24 +1295,25 @@ function vcExtractFuelDataFromText(rawText) {
         result.total = parseFloat(totalMatch[1].replace(',', '.'));
     }
 
-    // 2. Liters / Quantity (Qtde 13.53 ou 13,53)
-    // DANFE pattern: "Qtde 13.53 UN M3" or "Qtd 13,53" or "LITROS 13,53"
-    const litersMatch = text.match(/(?:QTDE?|QUANTIDADE|LITROS?|VOL(?:UME)?|QTD\.)\s*[:=]?\s*(\d+[.,]\d{2,3})/i) 
-                     || text.match(/(\d+[.,]\d{2,3})\s*(?:M3|L|LTS?|LITROS?)/i);
+    // 2. Liters / Quantity / M3 (Captures "Qtde 13.53", "13.53 UN M3", "13,53 L")
+    const litersMatch = text.match(/(?:QTDE?|QUANTIDADE|LITROS?|VOL(?:UME)?|QTD\.)\s*[:=]?\s*(\d+[.,]\d{1,3})/i) 
+                     || text.match(/(\d+[.,]\d{1,3})\s*(?:M3|UN|L|LTS?|LITROS?)/i);
     if (litersMatch) {
         result.liters = parseFloat(litersMatch[1].replace(',', '.'));
     }
 
-    // 3. Fuel Type (GNV, Gasolina, Etanol, Diesel)
+    // 3. Fuel Type (GNV, Gasolina Comum, Gasolina Aditivada, Etanol, Diesel)
+    // Primary check for GNV / M3
     if (text.includes('GNV') || text.includes('GAS NATURAL') || text.includes('M3')) {
         result.type = 'GNV';
-    } else if (text.includes('GASOLINA') || text.includes('GAS')) {
-        if (text.includes('ADITIVADA') || text.includes('ADIT')) result.type = 'Gasolina Aditivada';
-        else result.type = 'Gasolina Comum';
+    } else if (text.includes('ADITIVADA') || text.includes('ADIT')) {
+        result.type = 'Gasolina Aditivada';
     } else if (text.includes('ETANOL') || text.includes('ALCOOL') || text.includes('ÁLCOOL')) {
         result.type = 'Etanol';
     } else if (text.includes('DIESEL')) {
         result.type = 'Diesel';
+    } else if (text.includes('GASOLINA') || text.includes('GAS')) {
+        result.type = 'Gasolina Comum';
     }
 
     // 4. Station Name (Clean header line)
@@ -1395,7 +1396,17 @@ async function vcTriggerBarcodeScanner() {
         }
 
         html5QrCodeScannerInstance = new Html5Qrcode("vc-barcode-reader");
-        const config = { fps: 15, qrbox: { width: 250, height: 180 } };
+        const config = { 
+            fps: 20, 
+            qrbox: { width: 300, height: 150 },
+            formatsToSupport: [ 
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.CODE_39
+            ]
+        };
 
         await html5QrCodeScannerInstance.start(
             { facingMode: "environment" },
