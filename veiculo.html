@@ -469,11 +469,37 @@
                     </div>
                 </div>
 
-                <button type="button" onclick="document.getElementById('vc-ocr-file-input').click()" 
-                    class="h-8 px-2.5 rounded-lg bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-[11px] flex items-center gap-1 border border-secondary-container/40 transition-all active:scale-95 shrink-0">
-                    <span class="material-symbols-outlined text-sm">camera_alt</span>
-                    <span>OCR Foto</span>
-                </button>
+                <div class="flex items-center gap-1.5">
+                    <!-- Barcode/QR Code Scanner Button -->
+                    <button type="button" onclick="vcTriggerBarcodeScanner()" 
+                        class="h-8 px-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-bold text-[11px] flex items-center gap-1 border border-primary/40 transition-all active:scale-95 shrink-0"
+                        title="Escanear Código de Barras / QR Code da Nota Fiscal">
+                        <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
+                        <span>Cód. Barras</span>
+                    </button>
+
+                    <!-- OCR Photo Scanner Button -->
+                    <button type="button" onclick="document.getElementById('vc-ocr-file-input').click()" 
+                        class="h-8 px-2.5 rounded-lg bg-secondary-container/20 hover:bg-secondary-container/30 text-secondary-container font-bold text-[11px] flex items-center gap-1 border border-secondary-container/40 transition-all active:scale-95 shrink-0"
+                        title="Escanear Foto da Nota/Bomba (OCR)">
+                        <span class="material-symbols-outlined text-sm">camera_alt</span>
+                        <span>OCR Foto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hidden Barcode Camera Scanner Modal Container -->
+            <div id="vc-barcode-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+                <div class="glass-card w-full max-w-sm rounded-2xl p-4 border border-white/20 flex flex-col items-center gap-3 relative">
+                    <button type="button" onclick="vcCloseBarcodeScanner()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">close</span>
+                    </button>
+                    <div class="text-center">
+                        <p class="text-sm font-bold text-on-surface">Escanear Código de Barras DANFE</p>
+                        <p class="text-[11px] text-on-surface-variant">Aponte a câmera para o código de barras ou QR Code da nota fiscal</p>
+                    </div>
+                    <div id="vc-barcode-reader" class="w-full h-64 rounded-xl overflow-hidden bg-black/50 border border-primary/30"></div>
+                </div>
             </div>
 
             <!-- OCR Progress Bar (Compact) -->
@@ -778,10 +804,11 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
 <script src="navigation.js"></script>
-<script src="veiculo.js?v=137"></script>
+<script src="veiculo.js?v=138"></script>
 
 <script>
 // ── Glassmorphic Lens Bubble Navigation ──────────────────────────────

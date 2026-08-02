@@ -1288,46 +1288,49 @@ function vcExtractFuelDataFromText(rawText) {
     const result = { total: null, liters: null, type: null, station: null, km: null };
 
     // 1. Total Price (R$)
-    // Matches patterns like "TOTAL R$ 150,00", "TOTAL: 150.00", "VALOR R$ 200,50", "R$ 180,00"
-    const totalMatch = text.match(/(?:TOTAL|VALOR|PAGO|R\$)\s*[:=]?\s*R?\$?\s*(\d+[.,]\d{2})/i) || text.match(/R\$\s*(\d+[.,]\d{2})/i);
+    // Looks for "VALOR TOTAL R$ 53,58", "SUBTOTAL R$ 53,98", "TOTAL 53,58", "R$ 53,58"
+    const totalMatch = text.match(/(?:VALOR\s*TOTAL|TOTAL\s*R\$|TOTAL)\s*[:=]?\s*R?\$?\s*(\d+[.,]\d{2})/i) 
+                    || text.match(/R\$\s*(\d+[.,]\d{2})/i);
     if (totalMatch) {
         result.total = parseFloat(totalMatch[1].replace(',', '.'));
     }
 
-    // 2. Liters (L)
-    // Matches patterns like "LITROS 25.50", "QTD: 30,00", "VOL: 20,5L", "25,50 L"
-    const litersMatch = text.match(/(?:LITROS?|QTD|VOL(?:UME)?|QTD\.)\s*[:=]?\s*(\d+[.,]\d{2,3})/i) || text.match(/(\d+[.,]\d{2,3})\s*(?:L|LTS?|LITROS?)/i);
+    // 2. Liters / Quantity (Qtde 13.53 ou 13,53)
+    // DANFE pattern: "Qtde 13.53 UN M3" or "Qtd 13,53" or "LITROS 13,53"
+    const litersMatch = text.match(/(?:QTDE?|QUANTIDADE|LITROS?|VOL(?:UME)?|QTD\.)\s*[:=]?\s*(\d+[.,]\d{2,3})/i) 
+                     || text.match(/(\d+[.,]\d{2,3})\s*(?:M3|L|LTS?|LITROS?)/i);
     if (litersMatch) {
         result.liters = parseFloat(litersMatch[1].replace(',', '.'));
     }
 
-    // 3. Fuel Type
-    if (text.includes('GASOLINA') || text.includes('GAS')) {
-        if (text.includes('ADITIVADA') || text.includes('ADIT')) result.type = 'gasolina_aditivada';
-        else result.type = 'gasolina';
+    // 3. Fuel Type (GNV, Gasolina, Etanol, Diesel)
+    if (text.includes('GNV') || text.includes('GAS NATURAL') || text.includes('M3')) {
+        result.type = 'GNV';
+    } else if (text.includes('GASOLINA') || text.includes('GAS')) {
+        if (text.includes('ADITIVADA') || text.includes('ADIT')) result.type = 'Gasolina Aditivada';
+        else result.type = 'Gasolina Comum';
     } else if (text.includes('ETANOL') || text.includes('ALCOOL') || text.includes('ÁLCOOL')) {
-        result.type = 'etanol';
+        result.type = 'Etanol';
     } else if (text.includes('DIESEL')) {
-        result.type = 'diesel';
-    } else if (text.includes('GNV') || text.includes('GAS NATURAL')) {
-        result.type = 'gnv';
+        result.type = 'Diesel';
     }
 
-    // 4. Station Name
-    const stationKeywords = ['POSTO', 'SHELL', 'IPIRANGA', 'PETROBRAS', 'BR', 'ALE', 'AUTO POSTO'];
-    for (const kw of stationKeywords) {
-        if (text.includes(kw)) {
-            const lines = text.split('\n');
-            const matchingLine = lines.find(l => l.includes(kw));
-            if (matchingLine) {
-                result.station = matchingLine.trim().substring(0, 30);
-                break;
-            }
+    // 4. Station Name (Clean header line)
+    // Example: "RODOGAS POSTO PRESIDENTE LTDA"
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+    for (const l of lines.slice(0, 5)) {
+        if (l.includes('POSTO') || l.includes('LTDA') || l.includes('SHELL') || l.includes('IPIRANGA') || l.includes('PETROBRAS') || l.includes('AUTO')) {
+            result.station = l.replace(/[\[\]]/g, '').trim().substring(0, 35);
+            break;
         }
     }
+    if (!result.station && lines.length > 0) {
+        result.station = lines[0].replace(/[\[\]]/g, '').trim().substring(0, 35);
+    }
 
-    // 5. KM (if available in receipt text)
-    const kmMatch = text.match(/(?:KM|ODOMETRO|ODÔMETRO)\s*[:=]?\s*(\d{2,7})/i);
+    // 5. KM (Matches "KM: 111965", "KM 111965", "ODOMETRO")
+    const kmMatch = text.match(/(?:KM|ODOMETRO|ODÔMETRO)\s*[:=]?\s*(\d{2,7})/i) 
+                 || text.match(/-\s*KM\s*[:=]?\s*(\d{2,7})/i);
     if (kmMatch) {
         result.km = parseInt(kmMatch[1]);
     }
@@ -1371,6 +1374,98 @@ function vcCompressImageForOcr(file, maxDimension = 1000) {
         img.onerror = () => resolve(file);
         img.src = url;
     });
+}
+
+// ============================================================
+// BARCODE / QR CODE SCANNER ENGINE (Html5Qrcode)
+// ============================================================
+let html5QrCodeScannerInstance = null;
+
+async function vcTriggerBarcodeScanner() {
+    const modal = document.getElementById('vc-barcode-modal');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+
+    try {
+        if (typeof Html5Qrcode === 'undefined') {
+            alert('Leitor de Código de Barras não foi carregado.');
+            vcCloseBarcodeScanner();
+            return;
+        }
+
+        html5QrCodeScannerInstance = new Html5Qrcode("vc-barcode-reader");
+        const config = { fps: 15, qrbox: { width: 250, height: 180 } };
+
+        await html5QrCodeScannerInstance.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText, decodedResult) => {
+                console.log('[Barcode Scanned Raw]:', decodedText);
+                vcProcessScannedBarcode(decodedText);
+                vcCloseBarcodeScanner();
+            },
+            (errorMessage) => {
+                // scanning errors, ignore
+            }
+        );
+    } catch (err) {
+        console.error('[Barcode Camera Error]:', err);
+        alert('Não foi possível acessar a câmera para ler o código de barras. Verifique a permissão do seu navegador.');
+        vcCloseBarcodeScanner();
+    }
+}
+
+async function vcCloseBarcodeScanner() {
+    const modal = document.getElementById('vc-barcode-modal');
+    if (modal) modal.classList.add('hidden');
+
+    if (html5QrCodeScannerInstance) {
+        try {
+            await html5QrCodeScannerInstance.stop();
+            html5QrCodeScannerInstance.clear();
+        } catch (e) { }
+        html5QrCodeScannerInstance = null;
+    }
+}
+
+/**
+ * Parses DANFE Access Key (44 digits) or QR Code URL
+ */
+function vcProcessScannedBarcode(scannedText) {
+    let key = '';
+
+    // If it's a SEFAZ QR Code URL (e.g., http://www.nfe.fazenda.gov.br/portal/consultarNFe.aspx?p=332608314585160001085500100005051491027744742)
+    const urlMatch = scannedText.match(/(?:p=|chave=)(\d{44})/i);
+    if (urlMatch) {
+        key = urlMatch[1];
+    } else {
+        // Direct 44-digit numeric barcode
+        const rawDigits = scannedText.replace(/\D/g, '');
+        if (rawDigits.length >= 44) {
+            key = rawDigits.substring(0, 44);
+        }
+    }
+
+    if (!key) {
+        alert('Código de barras lido: ' + scannedText.substring(0, 40) + '...\nNão foi possível extrair a chave DANFE de 44 dígitos.');
+        return;
+    }
+
+    console.log('[DANFE Key Extracted]:', key);
+    // Decode DANFE Key structure:
+    // Digits 0..2: UF (33 = RJ)
+    // Digits 2..6: AAMM (2608 = Ano 2026, Mês 08)
+    // Digits 6..20: CNPJ Emitente (31.458.516/0001-06)
+
+    const year = '20' + key.substring(2, 4);
+    const month = key.substring(4, 6);
+    const dateFormatted = `${year}-${month}-01`;
+
+    const elDate = document.getElementById('vc-fuel-date');
+    if (elDate) elDate.value = dateFormatted;
+
+    alert(`✅ Código DANFE lido com sucesso!\nChave: ${key}\nData estimada: ${month}/${year}`);
 }
 
 async function vcDeleteFuel(id) {
