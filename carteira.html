@@ -8,6 +8,7 @@
     <meta name="background-color" content="#0b1326">
     <meta name="msapplication-navbutton-color" content="#0b1326">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/svg+xml" href="img/mapaos-logo-sf.svg?v=2">
     <link rel="apple-touch-icon" sizes="180x180" href="img/mapaos-logo-sf.svg?v=2">
@@ -146,9 +147,6 @@
 
 </main>
 
-<!-- BOTTOM BAR (Injected by navigation.js) -->
-<div id="bottom-nav-bar"></div>
-
 <!-- MODAL: Adicionar Documento -->
 <div id="add-doc-modal" class="hidden fixed inset-0 z-[9900] bg-[#060e20]/85 backdrop-blur-md flex justify-center items-center p-4">
     <div class="glass-card w-full max-w-md rounded-2xl p-6 border border-white/15 shadow-2xl relative">
@@ -251,20 +249,58 @@
     </div>
 </div>
 
+<!-- BOTTOM NAV BAR (Injected by navigation.js) -->
+<div id="bottom-nav-bar"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
-<script src="navigation.js?v=4"></script>
+<script src="navigation.js?v=10"></script>
 
 <script>
+// ============================================================
+// GLOBAL UI MODAL FUNCTIONS
+// ============================================================
+window.openAddDocModal = function() {
+    const el = document.getElementById('add-doc-modal');
+    if (el) el.classList.remove('hidden');
+};
+
+window.closeAddDocModal = function() {
+    const el = document.getElementById('add-doc-modal');
+    if (el) el.classList.add('hidden');
+};
+
+window.quickAddModal = function(title, type) {
+    const typeSelect = document.getElementById('doc-type-select');
+    const titleInput = document.getElementById('doc-title-input');
+    if (typeSelect) typeSelect.value = type;
+    if (titleInput) titleInput.value = title;
+    window.openAddDocModal();
+};
+
+window.onTypeSelectChange = function(type) {
+    const titleInput = document.getElementById('doc-title-input');
+    const defaultTitles = {
+        'CRLV': 'CRLV Digital',
+        'CNH': 'Carteira de Habilitação',
+        'CSV': 'Laudo CSV / GNV',
+        'Seguro': 'Apólice de Seguro',
+        'Nota Fiscal': 'Nota Fiscal / Recibo'
+    };
+    if (defaultTitles[type] && titleInput && !titleInput.value) {
+        titleInput.value = defaultTitles[type];
+    }
+};
+
 // ============================================================
 // INDEXED DB ENGINE (Local Device Storage)
 // ============================================================
 const DB_NAME = 'MapaOS_Carteira_DB';
 const DB_VERSION = 1;
 const STORE_NAME = 'documents';
-let dbInstance = null;
+var dbInstance = window.dbInstance || null;
 
 function openDB() {
     return new Promise((resolve, reject) => {
@@ -320,8 +356,6 @@ async function deleteDocLocal(id) {
 // ============================================================
 // UI LOGIC
 // ============================================================
-let activeViewDoc = null;
-
 async function renderDocs() {
     const container = document.getElementById('doc-list');
     const emptyState = document.getElementById('doc-empty');
@@ -389,33 +423,7 @@ async function renderDocs() {
     }
 }
 
-function openAddDocModal() {
-    document.getElementById('add-doc-modal').classList.remove('hidden');
-}
 
-function closeAddDocModal() {
-    document.getElementById('add-doc-modal').classList.add('hidden');
-}
-
-function quickAddModal(title, type) {
-    document.getElementById('doc-type-select').value = type;
-    document.getElementById('doc-title-input').value = title;
-    openAddDocModal();
-}
-
-function onTypeSelectChange(type) {
-    const titleInput = document.getElementById('doc-title-input');
-    const defaultTitles = {
-        'CRLV': 'CRLV Digital',
-        'CNH': 'Carteira de Habilitação',
-        'CSV': 'Laudo CSV / GNV',
-        'Seguro': 'Apólice de Seguro',
-        'Nota Fiscal': 'Nota Fiscal / Recibo'
-    };
-    if (defaultTitles[type] && !titleInput.value) {
-        titleInput.value = defaultTitles[type];
-    }
-}
 
 async function saveDocSubmit(e) {
     e.preventDefault();
@@ -459,11 +467,11 @@ async function saveDocSubmit(e) {
 // ============================================================
 // DOCUMENT VIEWER ENGINE (PDF.js + Multi-page + Zoom)
 // ============================================================
-let activeViewDoc = null;
-let currentZoom = 1.0;
-let currentPdfDoc = null;
-let currentPdfPage = 1;
-let totalPdfPages = 1;
+var activeViewDoc = window.activeViewDoc || null;
+var currentZoom = window.currentZoom || 1.0;
+var currentPdfDoc = window.currentPdfDoc || null;
+var currentPdfPage = window.currentPdfPage || 1;
+var totalPdfPages = window.totalPdfPages || 1;
 
 if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';

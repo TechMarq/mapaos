@@ -40,6 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 min-height: 100vh;
             }
 
+            #top-app-bar {
+                min-height: 64px;
+            }
+            #bottom-nav-bar {
+                min-height: 80px;
+            }
+
             .glass-input {
                 background: rgba(255, 255, 255, 0.06) !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -58,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 backdrop-filter: blur(12px) saturate(1.8) !important;
                 -webkit-backdrop-filter: blur(12px) saturate(1.8) !important;
                 border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+                pointer-events: none !important;
+                will-change: transform, left, width, top, height !important;
                 box-shadow: 
                     inset 0 4px 6px rgba(255, 255, 255, 0.25),
                     inset -3px -3px 8px rgba(167, 139, 250, 0.5), /* Roxo pastel claro */
@@ -499,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inject Reservation Modal HTML with custom fields
     const modalHTML = `
-        <div id="reservation-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div id="reservation-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
             <div class="glass-card w-[90%] max-w-[500px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
                 <div class="flex justify-between items-start">
                     <div>
@@ -1011,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <!-- Desktop Menu -->
             <div class="hidden md:flex gap-6 items-center relative" id="desktop-menu-container">
-                <div id="desktop-nav-indicator" class="absolute lens-bubble rounded-xl transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
+                <div id="desktop-nav-indicator" class="absolute lens-bubble rounded-xl z-0 pointer-events-none opacity-0" style="will-change: transform, left, width, top, height;"></div>
                 <a class="nav-desktop-item font-label-sm text-label-sm flex flex-col items-center transition-colors duration-300" href="index.html" id="desktop-dashboard">
                     <span class="material-symbols-outlined mb-1">dashboard</span>
                     Painel
@@ -1063,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // BottomNavBar Template (Mobile Only)
     const bottomNavBarHTML = `
         <nav class="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(96%,460px)] h-20 px-3 flex justify-between items-center z-50 bg-[#131b2e]/90 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 rounded-full" id="mobile-nav-container">
-            <div id="mobile-nav-indicator" class="absolute lens-bubble rounded-full transition-all duration-300 ease-out z-0" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
+            <div id="mobile-nav-indicator" class="absolute lens-bubble rounded-full z-0 pointer-events-none opacity-0" style="will-change: transform, left, width, top, height;"></div>
             <!-- 1. Dashboard -->
             <a href="index.html" id="mobile-dashboard" class="nav-mobile-item flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300">
                 <span class="material-symbols-outlined text-lg">dashboard</span>
@@ -1315,41 +1324,138 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Intercept clicks on links for smooth fade transition
+    // Page fade-in on load — only fades main content, nav bar stays visible
+    const mainEl = document.querySelector('main') || document.querySelector('#page-content');
+    if (mainEl) {
+        mainEl.style.opacity = '0';
+        mainEl.style.transition = 'opacity 180ms ease';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                mainEl.style.opacity = '1';
+            });
+        });
+    }
+
+    // Glassmorphic Lens Bubble Positioning & Elastic Jelly Animation Logic
+    function updateLensBubble(type, activeEl, animate = false) {
+        if (!activeEl) return;
+        const isDesktop = type === 'desktop';
+        const containerId = isDesktop ? 'desktop-menu-container' : 'mobile-nav-container';
+        const indicatorId = isDesktop ? 'desktop-nav-indicator' : 'mobile-nav-indicator';
+
+        const container = document.getElementById(containerId);
+        const indicator = document.getElementById(indicatorId);
+        if (!container || !indicator) return;
+
+        const rect = activeEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        // If layout or fonts haven't finished rendering, retry on next animation frame
+        if (rect.width === 0 || rect.height === 0 || containerRect.width === 0) {
+            requestAnimationFrame(() => updateLensBubble(type, activeEl, animate));
+            return;
+        }
+
+        let targetLeft, targetTop, targetWidth, targetHeight;
+
+        if (isDesktop) {
+            targetLeft = rect.left - containerRect.left;
+            targetTop = rect.top - containerRect.top;
+            targetWidth = rect.width;
+            targetHeight = rect.height;
+        } else {
+            const BUBBLE_SIZE = rect.width || 32;
+            targetLeft = rect.left - containerRect.left;
+            targetTop = (containerRect.height - BUBBLE_SIZE) / 2;
+            targetWidth = BUBBLE_SIZE;
+            targetHeight = BUBBLE_SIZE;
+        }
+
+        const storageKey = isDesktop ? 'MAPAOS_DESKTOP_BUBBLE_LAST' : 'MAPAOS_MOBILE_BUBBLE_LAST';
+        const lastPosJSON = sessionStorage.getItem(storageKey);
+        let lastLeft = null;
+        if (lastPosJSON) {
+            try {
+                const parsed = JSON.parse(lastPosJSON);
+                if (typeof parsed.left === 'number') lastLeft = parsed.left;
+            } catch(e) {}
+        }
+
+        const currentLeft = indicator.dataset.lastLeft ? parseFloat(indicator.dataset.lastLeft) : lastLeft;
+
+        if (animate && currentLeft !== null && Math.abs(targetLeft - currentLeft) > 3) {
+            // Position at current location instantly without transition before sliding
+            indicator.style.transition = 'none';
+            indicator.style.left = `${currentLeft}px`;
+            indicator.style.top = `${targetTop}px`;
+            indicator.style.width = `${targetWidth}px`;
+            indicator.style.height = `${targetHeight}px`;
+            indicator.style.opacity = '1';
+
+            void indicator.offsetWidth; // force reflow
+
+            indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
+            indicator.style.transform = `scaleX(1.18) scaleY(0.82)`;
+            indicator.style.transition = `left 260ms cubic-bezier(0.34, 1.4, 0.64, 1), top 260ms ease, width 260ms ease, height 260ms ease, transform 200ms ease, opacity 150ms ease`;
+            indicator.style.left = `${targetLeft}px`;
+        } else {
+            // Instant snap to active tab on initial page load (NO slide from 0,0 outside screen)
+            indicator.style.transition = 'none';
+            indicator.style.transform = 'scaleX(1) scaleY(1)';
+            indicator.style.left = `${targetLeft}px`;
+            indicator.style.top = `${targetTop}px`;
+            indicator.style.width = `${targetWidth}px`;
+            indicator.style.height = `${targetHeight}px`;
+            indicator.style.opacity = '1';
+        }
+
+        indicator.dataset.lastLeft = targetLeft;
+        sessionStorage.setItem(storageKey, JSON.stringify({ left: targetLeft }));
+
+        clearTimeout(indicator.timeoutId);
+        indicator.timeoutId = setTimeout(() => {
+            indicator.style.transform = 'scaleX(1) scaleY(1)';
+        }, 240);
+    }
+
+    // Intercept nav-bar link clicks for instant bubble feedback and smooth fade-out before page change
     document.querySelectorAll('a[href]').forEach(link => {
         link.addEventListener('click', (e) => {
             const href = link.getAttribute('href');
             if (href === 'login.html') {
                 localStorage.removeItem('MAPAOS_LOGGED_USER');
             }
-            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-                const isNavDesktop = link.classList.contains('nav-desktop-item');
-                const isNavMobile = link.classList.contains('nav-mobile-item');
+            const isNavItem = link.classList.contains('nav-desktop-item') || link.classList.contains('nav-mobile-item');
+            if (isNavItem && href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                e.preventDefault();
 
-                if (isNavDesktop || isNavMobile) {
-                    e.preventDefault();
-                    
-                    document.querySelectorAll('.nav-desktop-item, .nav-mobile-item').forEach(el => {
-                        el.classList.remove('scale-110', 'text-primary');
-                        el.classList.add('text-on-surface-variant');
-                    });
-                    
-                    link.classList.remove('text-on-surface-variant');
-                    link.classList.add('scale-110', 'text-primary');
-                    
-                    if (isNavDesktop) {
-                        updateDesktopNavIndicator(link);
-                    } else {
-                        updateMobileNavIndicator(link);
-                    }
-                    
-                    setTimeout(() => {
-                        window.location.href = href;
-                    }, 280);
-                } else {
-                    e.preventDefault();
-                    window.location.href = href;
+                const isDesktop = link.classList.contains('nav-desktop-item');
+                const type = isDesktop ? 'desktop' : 'mobile';
+                const activeSelector = isDesktop ? '.nav-desktop-item' : '.nav-mobile-item';
+
+                document.querySelectorAll(activeSelector).forEach(el => {
+                    el.classList.remove('text-primary', 'scale-110');
+                    el.classList.add('text-on-surface-variant');
+                    const icon = el.querySelector('.material-symbols-outlined');
+                    if (icon) icon.style.fontVariationSettings = "'FILL' 0";
+                });
+
+                link.classList.remove('text-on-surface-variant');
+                link.classList.add('text-primary');
+                if (isDesktop) link.classList.add('scale-110');
+                const icon = link.querySelector('.material-symbols-outlined');
+                if (icon) icon.style.fontVariationSettings = "'FILL' 1";
+
+                updateLensBubble(type, link, true);
+
+                const fadeEl = document.querySelector('main') || document.querySelector('#page-content');
+                if (fadeEl) {
+                    fadeEl.style.transition = 'opacity 120ms ease';
+                    fadeEl.style.opacity = '0';
                 }
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 130);
             }
         });
     });
@@ -1370,22 +1476,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Set Active Classes
+    // Set Active Classes and Position Lens Bubbles
+    const currentUrlPath = window.location.pathname.toLowerCase();
     let activeId = '';
-    if (pageName === 'index.html') {
-        activeId = 'dashboard';
-    } else if (pageName === 'historico_reserva.html') {
+
+    if (currentUrlPath.includes('historico_reserva')) {
         activeId = 'reservas';
-    } else if (pageName === 'veiculo.html') {
+    } else if (currentUrlPath.includes('veiculo')) {
         activeId = 'veiculo';
-    } else if (pageName === 'financeiro.html') {
+    } else if (currentUrlPath.includes('carteira')) {
+        activeId = 'carteira';
+    } else if (currentUrlPath.includes('financeiro')) {
         activeId = 'financeiro';
-    } else if (pageName === 'config.html') {
+    } else if (currentUrlPath.includes('config')) {
         activeId = 'ajustes';
+    } else {
+        activeId = 'dashboard';
     }
 
     if (activeId) {
-        // Desktop Active
         const activeDesktop = document.getElementById(`desktop-${activeId}`);
         if (activeDesktop) {
             activeDesktop.classList.remove('text-on-surface-variant');
@@ -1395,29 +1504,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon.style.fontVariationSettings = "'FILL' 1";
             }
         }
-        // Desktop Inactive styles for others
         document.querySelectorAll('.nav-desktop-item').forEach(item => {
             if (item.id !== `desktop-${activeId}` && item.getAttribute('href') !== 'login.html') {
                 item.classList.add('text-on-surface-variant');
             }
         });
 
-        // Mobile Active
         const activeMobile = document.getElementById(`mobile-${activeId}`);
         if (activeMobile) {
             activeMobile.classList.remove('text-on-surface-variant');
-            activeMobile.classList.add('text-primary', 'scale-110');
+            activeMobile.classList.add('text-primary');
             const icon = activeMobile.querySelector('.material-symbols-outlined');
             if (icon) {
                 icon.style.fontVariationSettings = "'FILL' 1";
             }
         }
-        // Mobile Inactive styles for others
         document.querySelectorAll('.nav-mobile-item').forEach(item => {
             if (item.id !== `mobile-${activeId}` && item.getAttribute('href') !== 'login.html') {
                 item.classList.add('text-on-surface-variant');
             }
         });
+
+        // Initialize lens bubble position synchronously & after paint
+        const positionBubbles = (animateMode = false) => {
+            if (activeDesktop) updateLensBubble('desktop', activeDesktop, animateMode);
+            if (activeMobile) updateLensBubble('mobile', activeMobile, animateMode);
+        };
+
+        positionBubbles(false);
+        requestAnimationFrame(() => positionBubbles(false));
+        window.addEventListener('resize', () => positionBubbles(false));
     }
 
     // Input Masking and Formatting
@@ -1646,57 +1762,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ─── Sliding Bubbles Helpers ──────────────────────────────────────────
     function updateDesktopNavIndicator(activeBtn) {
-        const indicator = document.getElementById('desktop-nav-indicator');
-        if (!indicator) return;
-        const rect = activeBtn.getBoundingClientRect();
-        const containerRect = activeBtn.parentElement.getBoundingClientRect();
-        
-        const currentLeft = parseFloat(indicator.dataset.lastLeft) || 0;
-        const targetLeft = rect.left - containerRect.left;
-        const dist = Math.abs(targetLeft - currentLeft);
-        
-        if (dist > 5) {
-            indicator.style.transform = `scaleX(1.15) scaleY(0.85)`;
-            indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
-        }
-
-        indicator.style.left = `${targetLeft}px`;
-        indicator.style.width = `${rect.width}px`;
-        indicator.style.height = `${rect.height}px`;
-        indicator.style.top = `${rect.top - containerRect.top}px`;
-        indicator.dataset.lastLeft = targetLeft;
-        
-        clearTimeout(indicator.timeoutId);
-        indicator.timeoutId = setTimeout(() => {
-            indicator.style.transform = 'scaleX(1) scaleY(1)';
-        }, 250);
+        updateLensBubble('desktop', activeBtn, true);
     }
 
     function updateMobileNavIndicator(activeBtn) {
-        const indicator = document.getElementById('mobile-nav-indicator');
-        if (!indicator) return;
-        const rect = activeBtn.getBoundingClientRect();
-        const containerRect = activeBtn.parentElement.getBoundingClientRect();
-        
-        const currentLeft = parseFloat(indicator.dataset.lastLeft) || 0;
-        const targetLeft = rect.left - containerRect.left;
-        const dist = Math.abs(targetLeft - currentLeft);
-        
-        if (dist > 5) {
-            indicator.style.transform = `scaleX(1.15) scaleY(0.85)`;
-            indicator.style.transformOrigin = targetLeft > currentLeft ? 'left center' : 'right center';
-        }
-
-        indicator.style.left = `${targetLeft}px`;
-        indicator.style.width = `${rect.width}px`;
-        indicator.style.height = `${rect.height}px`;
-        indicator.style.top = `${rect.top - containerRect.top}px`;
-        indicator.dataset.lastLeft = targetLeft;
-        
-        clearTimeout(indicator.timeoutId);
-        indicator.timeoutId = setTimeout(() => {
-            indicator.style.transform = 'scaleX(1) scaleY(1)';
-        }, 250);
+        updateLensBubble('mobile', activeBtn, true);
     }
 
     // ─── PWA Installation Logic ──────────────────────────────────────────
