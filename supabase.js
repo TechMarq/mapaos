@@ -145,23 +145,26 @@ async function dbCreateReservation(reserva) {
     try {
         const userId = getLoggedUserId();
         const resNum = reserva.reserva_number ? reserva.reserva_number.toString().trim() : '';
+        const osNum = reserva.os_number ? reserva.os_number.toString().trim() : '';
         
-        if (!resNum) {
-            alert('Erro: O número da reserva é obrigatório.');
+        if (!resNum && !osNum) {
+            alert('Erro: É necessário informar o Número da Reserva ou o Nº OS / Voucher.');
             return null;
         }
 
-        // Check if reserva_number already exists globally
-        const { data: existing, error: checkError } = await supabaseClientInstance
-            .from('reservations')
-            .select('id')
-            .eq('reserva_number', resNum)
-            .limit(1);
+        // Check if reserva_number already exists globally (if provided)
+        if (resNum) {
+            const { data: existing, error: checkError } = await supabaseClientInstance
+                .from('reservations')
+                .select('id')
+                .eq('reserva_number', resNum)
+                .limit(1);
 
-        if (checkError) throw checkError;
-        if (existing && existing.length > 0) {
-            alert(`Erro: Já existe uma reserva cadastrada com o número "${resNum}".`);
-            return null;
+            if (checkError) throw checkError;
+            if (existing && existing.length > 0) {
+                alert(`Erro: Já existe uma reserva cadastrada com o número "${resNum}".`);
+                return null;
+            }
         }
 
         const { data, error } = await supabaseClientInstance
@@ -212,6 +215,7 @@ async function dbDeleteReservation(reservaId) {
         return true;
     } catch (err) {
         console.error('Supabase delete reservation error:', err);
+        alert('Erro ao excluir reserva: ' + err.message);
         return false;
     }
 }
@@ -227,24 +231,27 @@ async function dbUpdateReservation(reservaId, updates) {
         const userId = getLoggedUserId();
         const isMaster = isLoggedUserMaster();
         const resNum = updates.reserva_number ? updates.reserva_number.toString().trim() : '';
+        const osNum = updates.os_number ? updates.os_number.toString().trim() : '';
 
-        if (!resNum) {
-            alert('Erro: O número da reserva é obrigatório.');
+        if (!resNum && !osNum) {
+            alert('Erro: É necessário informar o Número da Reserva ou o Nº OS / Voucher.');
             return null;
         }
 
-        // Check if another reservation has the same reserva_number
-        const { data: existing, error: checkError } = await supabaseClientInstance
-            .from('reservations')
-            .select('id')
-            .eq('reserva_number', resNum)
-            .neq('id', reservaId)
-            .limit(1);
+        // Check if another reservation has the same reserva_number (if provided)
+        if (resNum) {
+            const { data: existing, error: checkError } = await supabaseClientInstance
+                .from('reservations')
+                .select('id')
+                .eq('reserva_number', resNum)
+                .neq('id', reservaId)
+                .limit(1);
 
-        if (checkError) throw checkError;
-        if (existing && existing.length > 0) {
-            alert(`Erro: Já existe outra reserva cadastrada com o número "${resNum}".`);
-            return null;
+            if (checkError) throw checkError;
+            if (existing && existing.length > 0) {
+                alert(`Erro: Já existe outra reserva cadastrada com o número "${resNum}".`);
+                return null;
+            }
         }
         
         let query = supabaseClientInstance
@@ -347,8 +354,8 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
         if (importErr) throw importErr;
         const importId = importData.id;
 
-        // All matched! Now execute the update operations
-        let reconciledCount = 0;
+        // All matched! Now execute the update operations in parallel for speed
+        const updatePromises = [];
         for (const record of records) {
             const rawRes = record.reserva ? record.reserva.toString().trim() : '';
             if (!rawRes) continue;
@@ -363,25 +370,31 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
                 const plateVal = record.plate ? record.plate.toString().trim() : '';
                 const driverVal = record.driver ? record.driver.toString().trim() : '';
 
-                const { error: updateErr } = await supabaseClientInstance
-                    .from('reservations')
-                    .update({
-                        status: 'Paga',
-                        value: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                        net_value: netVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                        plate: plateVal,
-                        driver: driverVal,
-                        import_id: importId
-                    })
-                    .eq('id', dbMatch.id);
-                
-                if (updateErr) {
-                    console.error('Reconciliation update failed for reservation:', dbMatch.id, updateErr);
-                    throw updateErr;
-                }
-                reconciledCount++;
+                updatePromises.push(
+                    supabaseClientInstance
+                        .from('reservations')
+                        .update({
+                            status: 'Paga',
+                            value: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                            net_value: netVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                            plate: plateVal,
+                            driver: driverVal,
+                            import_id: importId
+                        })
+                        .eq('id', dbMatch.id)
+                        .then(({ error: updateErr }) => {
+                            if (updateErr) {
+                                console.error('Reconciliation update failed for reservation:', dbMatch.id, updateErr);
+                                throw updateErr;
+                            }
+                        })
+                );
             }
         }
+
+        // Wait for all updates to complete simultaneously
+        await Promise.all(updatePromises);
+        const reconciledCount = updatePromises.length;
 
         return { success: true, count: reconciledCount };
     } catch (err) {
@@ -474,12 +487,11 @@ async function dbLoginUser(email, password) {
                 .update({ last_login: nowIso })
                 .eq('id', userId);
             if (updateErr) {
+                // Non-critical: log internally only, do not disturb the user with a popup
                 console.error('Erro ao atualizar last_login:', updateErr);
-                alert('Erro do Supabase ao salvar login: ' + updateErr.message);
             }
         } catch (e) {
             console.error('Erro ao atualizar last_login:', e);
-            alert('Falha crítica ao salvar login: ' + e.message);
         }
 
         profile.last_login = nowIso;
@@ -562,30 +574,13 @@ async function dbGetPendingUsers() {
     }
 }
 
-// Approve a user profile (sets expires_at = now + 30 days)
-async function dbApproveUser(userId) {
+// Grant user access: set status to Aprovado and set expires_at to now + days (default 30)
+// This replaces dbApproveUser and dbRenewUser (both kept as aliases for backwards compatibility)
+async function dbGrantUserAccess(userId, days = 30) {
     if (!supabaseClientInstance) return false;
     try {
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30);
-        const { error } = await supabaseClientInstance
-            .from('profiles')
-            .update({ status: 'Aprovado', expires_at: expiresAt.toISOString() })
-            .eq('id', userId);
-        if (error) throw error;
-        return true;
-    } catch (err) {
-        console.error('Supabase approve profile error:', err);
-        return false;
-    }
-}
-
-// Renew a user profile access (+30 days from today)
-async function dbRenewUser(userId) {
-    if (!supabaseClientInstance) return false;
-    try {
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30);
+        expiresAt.setDate(expiresAt.getDate() + days);
         const { error } = await supabaseClientInstance
             .from('profiles')
             .update({ status: 'Aprovado', expires_at: expiresAt.toISOString(), frozen_days_remaining: null })
@@ -593,9 +588,19 @@ async function dbRenewUser(userId) {
         if (error) throw error;
         return true;
     } catch (err) {
-        console.error('Supabase renew profile error:', err);
+        console.error('Supabase grant access error:', err);
         return false;
     }
+}
+
+// Approve a user profile (sets expires_at = now + 30 days)
+async function dbApproveUser(userId) {
+    return dbGrantUserAccess(userId, 30);
+}
+
+// Renew a user profile access (+30 days from today)
+async function dbRenewUser(userId) {
+    return dbGrantUserAccess(userId, 30);
 }
 
 // Freeze user access (saves remaining days and sets status to Congelado)

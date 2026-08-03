@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
-                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" required />
+                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" />
                             </div>
                         </div>
                     </div>
@@ -1490,7 +1490,18 @@ document.addEventListener('DOMContentLoaded', () => {
     applyThousandsMask(osInput);
     applyThousandsMask(resInput);
 
-
+    // Dynamic requirement: Nº Reserva is required only when Nº OS / Voucher is empty
+    if (osInput && resInput) {
+        const updateReservaRequired = () => {
+            if (osInput.value.trim() !== '') {
+                resInput.removeAttribute('required');
+            } else {
+                resInput.setAttribute('required', 'required');
+            }
+        };
+        osInput.addEventListener('input', updateReservaRequired);
+        updateReservaRequired();
+    }
 
     // Autocomplete Lookup for Client Input
     const clientSearch = document.getElementById('modal-client-search');
@@ -1574,6 +1585,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Cliente não cadastrado no sistema. Cadastre-o antes de lançar a reserva.', true);
                 } else {
                     alert('Cliente não cadastrado no sistema. Por favor, cadastre o cliente antes de efetuar o lançamento da reserva.');
+                }
+                return;
+            }
+
+            if (!osVal.trim() && !resVal.trim()) {
+                submitBtn.innerHTML = originalContent;
+                if (typeof showToast === 'function') {
+                    showToast('Preencha o Nº Reserva ou o Nº OS / Voucher.', true);
+                } else {
+                    alert('Preencha o Nº Reserva ou o Nº OS / Voucher.');
                 }
                 return;
             }

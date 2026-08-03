@@ -367,7 +367,7 @@
                         <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
                         <div class="relative group">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
-                            <input id="edit-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" required />
+                            <input id="edit-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" />
                         </div>
                     </div>
                 </div>
@@ -636,7 +636,7 @@
                                 <div class="flex flex-col gap-0.5 min-w-0">
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <span class="font-bold text-on-surface text-xs shrink-0">${item.client_name}</span>
-                                        <span class="text-on-surface-variant/60 font-medium shrink-0">OS: #${item.os_number} • Res: #${item.reserva_number}</span>
+                                        <span class="text-on-surface-variant/60 font-medium shrink-0">OS: #${item.os_number || '—'} • Res: #${item.reserva_number || '—'}</span>
                                     </div>
                                     <div class="text-[10px] text-on-surface-variant/70 flex items-center gap-2 flex-wrap">
                                         <span>${item.date} • ${item.time}</span>
@@ -691,7 +691,7 @@
                                     </div>
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-label-sm text-on-surface-variant text-xs opacity-60">OS #${item.os_number} • Reserva: #${item.reserva_number}</span>
+                                            <span class="font-label-sm text-on-surface-variant text-xs opacity-60">OS #${item.os_number || '—'} • Reserva: #${item.reserva_number || '—'}</span>
                                             <span class="px-2 py-0.5 rounded-md ${badgeColor} text-[10px] font-bold uppercase tracking-wider">${item.status}</span>
                                         </div>
                                         <h3 class="font-headline-lg-mobile text-lg text-on-surface">${item.client_name}</h3>
@@ -1330,9 +1330,19 @@
                     timePicker.value = item.time;
                 }
 
-                document.getElementById('edit-os-number').value = item.os_number;
-                document.getElementById('edit-reserva-number').value = item.reserva_number;
+                const editOsEl = document.getElementById('edit-os-number');
+                const editResEl = document.getElementById('edit-reserva-number');
+                editOsEl.value = item.os_number || '';
+                editResEl.value = item.reserva_number || '';
                 document.getElementById('edit-notes').value = item.notes || '';
+
+                if (editOsEl && editResEl) {
+                    if (editOsEl.value.trim() !== '') {
+                        editResEl.removeAttribute('required');
+                    } else {
+                        editResEl.setAttribute('required', 'required');
+                    }
+                }
 
                 editModal.style.display = 'flex';
                 editModal.offsetHeight;
@@ -1418,6 +1428,19 @@
             });
         }
 
+        const editOsInput = document.getElementById('edit-os-number');
+        const editResInput = document.getElementById('edit-reserva-number');
+        if (editOsInput && editResInput) {
+            const updateEditResRequired = () => {
+                if (editOsInput.value.trim() !== '') {
+                    editResInput.removeAttribute('required');
+                } else {
+                    editResInput.setAttribute('required', 'required');
+                }
+            };
+            editOsInput.addEventListener('input', updateEditResRequired);
+        }
+
         if (editModal) {
             editModal.addEventListener('click', (e) => {
                 if (e.target === editModal) {
@@ -1445,6 +1468,11 @@
                 const registeredClientsList = typeof dbGetClients === 'function' ? (await dbGetClients()).map(c => c.name.toUpperCase()) : [];
                 if (registeredClientsList.length > 0 && !registeredClientsList.includes(client.trim().toUpperCase())) {
                     showToast('Cliente não cadastrado no sistema. Cadastre-o antes de alterar a reserva.', true);
+                    return;
+                }
+
+                if (!os.trim() && !reserva.trim()) {
+                    showToast('Preencha o Nº Reserva ou o Nº OS / Voucher.', true);
                     return;
                 }
 
