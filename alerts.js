@@ -4,12 +4,27 @@
  * and provide a matching dark premium aesthetic.
  */
 
+// Helper: Escapes HTML special chars to prevent XSS in innerHTML injections
+function _escHtml(str) {
+    if (typeof str !== 'string') return String(str ?? '');
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 (function() {
     // 1. Redefine window.alert to show a beautiful modal
     window.alert = function(message, title = "Aviso do Sistema") {
         // Remove existing modal if any
         const existing = document.getElementById('custom-alert-modal');
         if (existing) existing.remove();
+
+        // Sanitize inputs to prevent XSS
+        const safeTitle = _escHtml(title);
+        const safeMessage = _escHtml(message);
 
         const modalHTML = `
             <div id="custom-alert-modal" class="fixed inset-0 z-[20000] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md transition-all duration-300">
@@ -19,11 +34,11 @@
                             <span class="material-symbols-outlined text-primary text-2xl">info</span>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-on-surface">${title}</h3>
+                            <h3 class="text-sm font-bold text-on-surface">${safeTitle}</h3>
                             <span class="text-[9px] text-on-surface-variant uppercase tracking-wider">Mensagem</span>
                         </div>
                     </div>
-                    <p class="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line">${message}</p>
+                    <p class="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line">${safeMessage}</p>
                     <button onclick="document.getElementById('custom-alert-modal').remove()" 
                         class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-10 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center text-xs mt-2">
                         OK
@@ -39,6 +54,10 @@
         const existing = document.getElementById('custom-confirm-modal');
         if (existing) existing.remove();
 
+        // Sanitize inputs to prevent XSS
+        const safeTitle = _escHtml(title);
+        const safeMessage = _escHtml(message);
+
         const modalId = 'custom-confirm-modal';
         const modalHTML = `
             <div id="${modalId}" class="fixed inset-0 z-[20000] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md transition-all duration-300">
@@ -48,11 +67,11 @@
                             <span class="material-symbols-outlined text-yellow-400 text-2xl">help_outline</span>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-on-surface">${title}</h3>
+                            <h3 class="text-sm font-bold text-on-surface">${safeTitle}</h3>
                             <span class="text-[9px] text-on-surface-variant uppercase tracking-wider">Confirmação</span>
                         </div>
                     </div>
-                    <p class="text-xs text-on-surface-variant leading-relaxed">${message}</p>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">${safeMessage}</p>
                     <div class="flex gap-2.5 mt-2">
                         <button id="confirm-cancel-btn" 
                             class="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-on-surface text-xs font-bold flex items-center justify-center border border-white/10 active:scale-[0.98] transition-all">

@@ -16,6 +16,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="navigation.js?v=5" defer></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -70,6 +71,10 @@
                         "on-secondary-fixed": "#002116",
                         "on-secondary-fixed-variant": "#00513c"
                     },
+                    "spacing": {
+                        "container-padding-mobile": "20px",
+                        "container-padding-desktop": "40px"
+                    },
                     "borderRadius": {
                         "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"
                     },
@@ -111,8 +116,8 @@
         .glass-input option { background: #131b2e; }
 
         /* Views */
-        .vc-view { display: none; }
-        .vc-view.active { display: block; }
+        .vc-view { display: none; opacity: 0; transition: opacity 0.2s ease-in-out; }
+        .vc-view.active { display: block; opacity: 1; }
 
         /* Bottom nav tab active state */
         .vc-bottom-tab.active { color: #adc6ff; }
@@ -215,7 +220,7 @@
         }
     </style>
 </head>
-<body>
+<body class="text-on-surface font-body-md text-body-md antialiased pb-48 md:pb-12 pt-24 md:pt-28">
 
 <!-- Ambient Glow -->
 <div class="ambient-glow"></div>
@@ -232,7 +237,7 @@
 <!-- ============================================================
      MAIN CONTENT
      ============================================================ -->
-<main class="relative z-10 pb-56 pt-28 px-4 md:px-8 max-w-2xl mx-auto">
+<main class="relative z-10 max-w-4xl mx-auto px-container-padding-mobile md:px-container-padding-desktop">
 
     <!-- ─── VEHICLE HEADER ─────────────────────────────────── -->
     <div class="flex items-center justify-between mb-6">
@@ -811,7 +816,6 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="config.env.js"></script>
 <script src="supabase.js"></script>
-<script src="navigation.js"></script>
 <script src="veiculo.js?v=142"></script>
 
 <script>

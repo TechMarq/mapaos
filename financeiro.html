@@ -18,6 +18,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="navigation.js?v=5" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script id="tailwind-config">
@@ -127,13 +128,13 @@
     </style>
 </head>
 
-<body class="text-on-background min-h-screen pb-32">
+<body class="text-on-surface font-body-md text-body-md antialiased pb-48 md:pb-12 pt-24 md:pt-28">
     <div class="ambient-glow"></div>
     <!-- TopAppBar -->
     <div id="top-app-bar"></div>
 
     <!-- Main Content -->
-    <main class="pt-32 px-container-padding-mobile md:px-container-padding-desktop max-w-5xl mx-auto space-y-6 relative z-10">
+    <main class="max-w-[1200px] mx-auto px-container-padding-mobile md:px-container-padding-desktop space-y-6 relative z-10">
         <!-- Title and Filter Row -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -243,7 +244,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
-    <script src="navigation.js"></script>
     <script>
         let allReservations = [];
         let dateRangeFilter = 'mes'; // Default to current month

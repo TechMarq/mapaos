@@ -24,6 +24,7 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="navigation.js?v=5" defer></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet">
@@ -289,12 +290,12 @@
     </style>
 </head>
 
-<body class="text-on-background min-h-screen pb-32">
+<body class="text-on-surface font-body-md text-body-md antialiased pb-48 md:pb-12 pt-24 md:pt-28">
     <div class="ambient-glow"></div>
     <!-- TopAppBar -->
     <div id="top-app-bar"></div>
     <!-- Main Content -->
-    <main class="pt-32 px-container-padding-mobile md:px-container-padding-desktop max-w-5xl mx-auto space-y-4">
+    <main class="max-w-[1200px] mx-auto px-container-padding-mobile md:px-container-padding-desktop space-y-4">
         <div class="mb-6">
             <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary-fixed-dim mb-1">Ajustes</h2>
             <p class="text-xs text-on-surface-variant">Gerencie seu perfil e preferências de exibição.</p>
@@ -452,7 +453,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
-    <script src="navigation.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const nameInput = document.getElementById('profile-name-input');

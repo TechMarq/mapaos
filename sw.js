@@ -1,13 +1,75 @@
+const CACHE_NAME = 'mapaos-v2';
+const STATIC_ASSETS = [
+  'index.html',
+  'historico_reserva.html',
+  'financeiro.html',
+  'config.html',
+  'veiculo.html',
+  'navigation.js',
+  'supabase.js',
+  'alerts.js',
+  'veiculo.js',
+  'manifest.json',
+  'img/mapaos-logo-sf.svg',
+  'img/mapaos-logo-icon-sf.png'
+];
+
 self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      // Pre-cache static assets (failures are non-fatal)
+      return cache.addAll(STATIC_ASSETS).catch(err => {
+        console.warn('[SW] Some assets failed to pre-cache:', err);
+      });
+    })
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (e) => {
-  // Light pass-through fetch listener to satisfy PWA criteria
+  const url = new URL(e.request.url);
+
+  // Only cache same-origin GET requests (never intercept Supabase/external API calls)
+  if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // Network-first strategy for HTML pages (always fresh content when online)
+  if (e.request.destination === 'document') {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache-first strategy for JS/CSS/images/fonts (serve fast, update in background)
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const networkFetch = fetch(e.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => null);
+
+      return cached || networkFetch;
+    })
+  );
 });
 
 self.addEventListener('push', (e) => {
@@ -52,3 +114,4 @@ self.addEventListener('notificationclick', (e) => {
     })
   );
 });
+

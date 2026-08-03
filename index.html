@@ -21,6 +21,7 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="navigation.js?v=5" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -307,7 +308,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
-    <script src="navigation.js?v=4"></script>
     <script>
         let allReservations = [];
         let dateRangeFilter = 'semana_atual'; // Default: current week
@@ -356,25 +356,29 @@
             }
         });
 
-        // Date Parser helper
+        // Date Parser helper — consistent with historico_reserva.html
         function parseItemDate(dateStr) {
-            if (dateStr && dateStr.includes('/')) {
+            if (!dateStr) return new Date(0);
+            if (dateStr.includes('/')) {
                 const parts = dateStr.split('/');
                 return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+            } else if (dateStr.includes('-')) {
+                return new Date(`${dateStr}T00:00:00`);
             }
             return new Date(0);
         }
 
-        function calculateAndRenderDashboard() {
-            let filtered = allReservations;
+        // Shared date filter helper — applies current dateRangeFilter to any reservation array
+        // Eliminates duplicate filter code between calculateAndRenderDashboard and generateAiInsight
+        function getFilteredReservations(source) {
+            let filtered = source || allReservations;
             let days = 1;
             const today = new Date();
             today.setHours(23, 59, 59, 999);
 
-            // Apply Period Filters
             if (dateRangeFilter === 'semana_atual' || dateRangeFilter === 'semana') {
                 days = 7;
-                const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
+                const currentDay = today.getDay();
                 const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
                 const limitDate = new Date(today);
                 limitDate.setDate(today.getDate() + diffToMonday);
@@ -388,7 +392,7 @@
                 });
             } else if (dateRangeFilter === 'semana_passada') {
                 days = 7;
-                const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
+                const currentDay = today.getDay();
                 const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
                 const limitDate = new Date(today);
                 limitDate.setDate(today.getDate() + diffToMonday - 7);
@@ -430,6 +434,7 @@
                     });
                 }
             } else {
+                // 'Todos' or unknown: span from earliest record to today
                 if (allReservations.length > 0) {
                     const dates = allReservations.map(r => parseItemDate(r.date)).filter(d => d.getTime() > 0);
                     if (dates.length > 0) {
@@ -439,6 +444,12 @@
                     }
                 }
             }
+
+            return { filtered, days };
+}
+
+        function calculateAndRenderDashboard() {
+            const { filtered, days } = getFilteredReservations();
 
             // Calculations for Bento Grid
             const total = filtered.length;
@@ -645,64 +656,8 @@
                 btn.disabled = false;
                 btn.innerHTML = `<span class="material-symbols-outlined text-base">psychology</span> Recalcular Análise`;
 
-                // Calculate insights based on current reservations state
-                let currentFiltered = allReservations;
-                const today = new Date();
-                today.setHours(23, 59, 59, 999);
-
-                // Apply current period filter rules
-                if (dateRangeFilter === 'semana_atual' || dateRangeFilter === 'semana') {
-                    const currentDay = today.getDay();
-                    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-                    const limitDate = new Date(today);
-                    limitDate.setDate(today.getDate() + diffToMonday);
-                    limitDate.setHours(0, 0, 0, 0);
-                    const endOfWeek = new Date(limitDate);
-                    endOfWeek.setDate(limitDate.getDate() + 6);
-                    endOfWeek.setHours(23, 59, 59, 999);
-                    currentFiltered = currentFiltered.filter(item => {
-                        const d = parseItemDate(item.date);
-                        return d >= limitDate && d <= endOfWeek;
-                    });
-                } else if (dateRangeFilter === 'semana_passada') {
-                    const currentDay = today.getDay();
-                    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-                    const limitDate = new Date(today);
-                    limitDate.setDate(today.getDate() + diffToMonday - 7);
-                    limitDate.setHours(0, 0, 0, 0);
-                    const endOfWeek = new Date(limitDate);
-                    endOfWeek.setDate(limitDate.getDate() + 6);
-                    endOfWeek.setHours(23, 59, 59, 999);
-                    currentFiltered = currentFiltered.filter(item => {
-                        const d = parseItemDate(item.date);
-                        return d >= limitDate && d <= endOfWeek;
-                    });
-                } else if (dateRangeFilter === 'mes_atual' || dateRangeFilter === 'mes') {
-                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
-                    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-                    currentFiltered = currentFiltered.filter(item => {
-                        const d = parseItemDate(item.date);
-                        return d >= startOfMonth && d <= endOfMonth;
-                    });
-                } else if (dateRangeFilter === 'mes_passado') {
-                    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0, 0);
-                    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
-                    currentFiltered = currentFiltered.filter(item => {
-                        const d = parseItemDate(item.date);
-                        return d >= startOfLastMonth && d <= endOfLastMonth;
-                    });
-                } else if (dateRangeFilter === 'custom') {
-                    const startVal = document.getElementById('custom-start-date').value;
-                    const endVal = document.getElementById('custom-end-date').value;
-                    if (startVal && endVal) {
-                        const startDate = new Date(startVal + 'T00:00:00');
-                        const endDate = new Date(endVal + 'T23:59:59');
-                        currentFiltered = currentFiltered.filter(item => {
-                            const d = parseItemDate(item.date);
-                            return d >= startDate && d <= endDate;
-                        });
-                    }
-                }
+                // Calculate insights based on current filter
+                const { filtered: currentFiltered } = getFilteredReservations();
 
                 if (currentFiltered.length === 0) {
                     resultBox.innerHTML = `

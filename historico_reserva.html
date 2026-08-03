@@ -18,9 +18,7 @@
     <script src="alerts.js"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet">
+    <script src="navigation.js?v=5" defer></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet">
@@ -145,19 +143,19 @@
     </script>
 </head>
 
-<body class="pb-32">
+<body class="text-on-surface font-body-md text-body-md antialiased pb-48 md:pb-12 pt-24 md:pt-28">
     <!-- Atmospheric Shader Background -->
     <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
 
     </div>
     <!-- Top AppBar (from JSON) -->
     <div id="top-app-bar"></div>
-    <main class="container-padding-mobile pt-24 px-4 md:px-10 max-w-5xl mx-auto">
+    <main class="max-w-[1200px] mx-auto px-container-padding-mobile md:px-container-padding-desktop">
         <!-- Headline Section -->
         <div class="mb-stack-gap-md">
-            <h2
+            <h1
                 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">
-                Histórico de Reservas</h2>
+                Histórico de Reservas</h1>
             <p class="font-body-md text-on-surface-variant/70 mt-1">Gerencie suas ordens de serviço e pagamentos.</p>
         </div>
         <!-- Filters Section -->
@@ -398,7 +396,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="config.env.js"></script>
     <script src="supabase.js"></script>
-    <script src="navigation.js"></script>
     <!-- Micro-interactions Script -->
     <script>
         document.querySelectorAll('.glass-card-hover').forEach(card => {

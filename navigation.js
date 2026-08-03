@@ -24,171 +24,63 @@
     }
 })();
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Inject glass-input styles dynamically to guarantee dark premium aesthetics across all pages
+// Immediate style & layout injection helper to render headers before full DOM parsing completes
+(function _injectLayoutEarly() {
     const styleHTML = `
         <style>
-            html {
-                background-color: #0b1326 !important;
-                background: #0b1326 !important;
-                color-scheme: dark !important;
-            }
-            body {
-                background-color: #0b1326 !important;
-                background: radial-gradient(circle at top right, #171f33, #0b1326) !important;
-                color: #dae2fd !important;
-                min-height: 100vh;
-            }
-
-            #top-app-bar {
-                min-height: 64px;
-            }
-            #bottom-nav-bar {
-                min-height: 80px;
-            }
-
-            .glass-input {
-                background: rgba(255, 255, 255, 0.06) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                color: #dae2fd !important;
-                transition: all 0.2s ease !important;
-            }
-            .glass-input:focus {
-                outline: none !important;
-                border-color: #adc6ff !important;
-                box-shadow: 0 0 0 2px rgba(173,198,255,0.1) !important;
-                background: rgba(255, 255, 255, 0.08) !important;
-            }
-
-            .lens-bubble {
-                background: rgba(255, 255, 255, 0.05) !important;
-                backdrop-filter: blur(12px) saturate(1.8) !important;
-                -webkit-backdrop-filter: blur(12px) saturate(1.8) !important;
-                border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
-                pointer-events: none !important;
-                will-change: transform, left, width, top, height !important;
-                box-shadow: 
-                    inset 0 4px 6px rgba(255, 255, 255, 0.25),
-                    inset -3px -3px 8px rgba(167, 139, 250, 0.5), /* Roxo pastel claro */
-                    inset 3px 3px 8px rgba(110, 231, 183, 0.5),   /* Verde pastel claro */
-                    inset 0 0 10px rgba(173, 198, 255, 0.3),      /* Azul pastel claro */
-                    0 8px 24px rgba(0, 0, 0, 0.5) !important;
-            }
-
-            .nav-desktop-item {
-                position: relative;
-                z-index: 10;
-                padding: 6px 16px;
-                border-radius: 12px;
-                transition: color 0.3s, transform 0.3s !important;
-                transform: scale(1);
-            }
-            .nav-desktop-item.scale-110 {
-                transform: scale(1.1) !important;
-                color: #ffffff !important;
-                text-shadow: 0 0 8px rgba(173, 198, 255, 0.4);
-            }
-
-            .nav-mobile-item {
-                position: relative;
-                z-index: 10;
-                transition: color 0.3s, transform 0.3s, background-color 0.3s !important;
-                transform: scale(1);
-                background: transparent !important;
-                box-shadow: none !important;
-            }
-            .nav-mobile-item.scale-110 {
-                transform: scale(1.12) !important;
-                color: #ffffff !important;
-            }
-            @keyframes ptr-spin-anim {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-            .animate-ptr-spin {
-                animation: ptr-spin-anim 0.8s linear infinite !important;
-            }
-
-            /* ── Pro Plan Badge ─────────────────────────── */
-            .pro-plan-badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 2px;
-                padding: 1px 6px;
-                border-radius: 999px;
-                font-size: 9px;
-                font-weight: 800;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                background: linear-gradient(135deg, #f59e0b, #d97706);
-                color: #1a0a00;
-                box-shadow: 0 0 8px rgba(245,158,11,0.5);
-                border: 1px solid rgba(251,191,36,0.6);
-                vertical-align: middle;
-                margin-left: 4px;
-            }
-
-            /* ── Pro Nav Lock Item ─────────────────────── */
-            .nav-pro-locked {
-                opacity: 0.45;
-                cursor: not-allowed;
-            }
-            .nav-pro-locked:hover {
-                opacity: 0.65;
-            }
-
-            /* ── Pro Upgrade Modal ─────────────────────── */
-            #pro-upgrade-modal {
-                display: none;
-                position: fixed;
-                inset: 0;
-                z-index: 99990;
-                background: rgba(6,14,32,0.88);
-                backdrop-filter: blur(16px);
-                justify-content: center;
-                align-items: center;
-                padding: 16px;
-            }
-            #pro-upgrade-modal.open {
-                display: flex;
-            }
-            .pro-modal-card {
-                width: 100%;
-                max-width: 420px;
-                background: linear-gradient(160deg, #1a1040 0%, #0d1a38 60%, #091224 100%);
-                border: 1px solid rgba(245,158,11,0.3);
-                border-radius: 24px;
-                padding: 32px 28px;
-                box-shadow: 0 0 60px rgba(245,158,11,0.15), 0 32px 64px rgba(0,0,0,0.6);
-                text-align: center;
-                position: relative;
-                overflow: hidden;
-            }
-            .pro-modal-card::before {
-                content: '';
-                position: absolute;
-                top: -80px; right: -80px;
-                width: 240px; height: 240px;
-                background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%);
-                pointer-events: none;
-                border-radius: 50%;
-            }
-            .pro-feature-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                text-align: left;
-                padding: 8px 0;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
-            }
+            html { background-color: #0b1326 !important; background: #0b1326 !important; color-scheme: dark !important; }
+            body { background-color: #0b1326 !important; background: radial-gradient(circle at top right, #171f33, #0b1326) !important; color: #dae2fd !important; min-height: 100vh; }
+            #top-app-bar { min-height: 64px; }
+            #bottom-nav-bar { min-height: 80px; }
+            .glass-input { background: rgba(255, 255, 255, 0.06) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: #dae2fd !important; transition: all 0.2s ease !important; }
+            .glass-input:focus { outline: none !important; border-color: #adc6ff !important; box-shadow: 0 0 0 2px rgba(173,198,255,0.1) !important; background: rgba(255, 255, 255, 0.08) !important; }
+            .lens-bubble { background: rgba(255, 255, 255, 0.05) !important; backdrop-filter: blur(12px) saturate(1.8) !important; -webkit-backdrop-filter: blur(12px) saturate(1.8) !important; border: 1.5px solid rgba(255, 255, 255, 0.18) !important; pointer-events: none !important; will-change: transform, left, width, top, height !important; box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.25), inset -3px -3px 8px rgba(167, 139, 250, 0.5), inset 3px 3px 8px rgba(110, 231, 183, 0.5), inset 0 0 10px rgba(173, 198, 255, 0.3), 0 8px 24px rgba(0, 0, 0, 0.5) !important; }
+            .nav-desktop-item { position: relative; z-index: 10; padding: 6px 16px; border-radius: 12px; transition: color 0.3s, transform 0.3s !important; transform: scale(1); }
+            .nav-desktop-item.scale-110 { transform: scale(1.1) !important; color: #ffffff !important; text-shadow: 0 0 8px rgba(173, 198, 255, 0.4); }
+            .nav-mobile-item { position: relative; z-index: 10; transition: color 0.3s, transform 0.3s, background-color 0.3s !important; transform: scale(1); background: transparent !important; box-shadow: none !important; }
+            .nav-mobile-item.scale-110 { transform: scale(1.12) !important; color: #ffffff !important; }
+            @keyframes ptr-spin-anim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            .animate-ptr-spin { animation: ptr-spin-anim 0.8s linear infinite !important; }
+            .pro-plan-badge { display: inline-flex; align-items: center; gap: 2px; padding: 1px 6px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a0a00; box-shadow: 0 0 8px rgba(245,158,11,0.5); border: 1px solid rgba(251,191,36,0.6); vertical-align: middle; margin-left: 4px; }
+            .nav-pro-locked { opacity: 0.45; cursor: not-allowed; }
+            .nav-pro-locked:hover { opacity: 0.65; }
+            #pro-upgrade-modal { display: none; position: fixed; inset: 0; z-index: 99990; background: rgba(6,14,32,0.88); backdrop-filter: blur(16px); justify-content: center; align-items: center; padding: 16px; }
+            #pro-upgrade-modal.open { display: flex; }
+            .pro-modal-card { width: 100%; max-width: 420px; background: linear-gradient(160deg, #1a1040 0%, #0d1a38 60%, #091224 100%); border: 1px solid rgba(245,158,11,0.3); border-radius: 24px; padding: 32px 28px; box-shadow: 0 0 60px rgba(245,158,11,0.15), 0 32px 64px rgba(0,0,0,0.6); text-align: center; position: relative; overflow: hidden; }
+            .pro-modal-card::before { content: ''; position: absolute; top: -80px; right: -80px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%); pointer-events: none; border-radius: 50%; }
+            .pro-feature-item { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
             .pro-feature-item:last-child { border-bottom: none; }
         </style>
     `;
-    document.head.insertAdjacentHTML('beforeend', styleHTML);
+    if (document.head) {
+        document.head.insertAdjacentHTML('beforeend', styleHTML);
+    }
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
     initPullToRefresh();
 
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
+
+    // Supabase readiness helper — resolves once supabaseClientInstance is available (max 6s)
+    function _waitForSupabase(timeoutMs = 6000) {
+        return new Promise((resolve) => {
+            if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+                return resolve(supabaseClientInstance);
+            }
+            const start = Date.now();
+            const check = setInterval(() => {
+                if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+                    clearInterval(check);
+                    resolve(supabaseClientInstance);
+                } else if (Date.now() - start >= timeoutMs) {
+                    clearInterval(check);
+                    resolve(null); // Timed out — caller must handle null
+                }
+            }, 100);
+        });
+    }
 
     // Update last_login in background if user is logged in (session-throttled to avoid redundant writes)
     try {
@@ -196,27 +88,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loggedUserRaw) {
             const loggedUser = JSON.parse(loggedUserRaw);
             if (loggedUser && loggedUser.id && !sessionStorage.getItem('MAPAOS_LOGIN_RECORDED')) {
-                const checkInterval = setInterval(() => {
-                    if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
-                        clearInterval(checkInterval);
-                        const nowIso = new Date().toISOString();
-                        supabaseClientInstance
-                            .from('profiles')
-                            .update({ last_login: nowIso })
-                            .eq('id', loggedUser.id)
-                            .then(({ error }) => {
-                                if (!error) {
-                                    sessionStorage.setItem('MAPAOS_LOGIN_RECORDED', 'true');
-                                    loggedUser.last_login = nowIso;
-                                    localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(loggedUser));
-                                    console.log('Last login registrado com sucesso.');
-                                } else {
-                                    console.error('Erro ao salvar last_login em background:', error);
-                                }
-                            });
-                    }
-                }, 100);
-                setTimeout(() => clearInterval(checkInterval), 5000);
+                _waitForSupabase().then(client => {
+                    if (!client) return;
+                    const nowIso = new Date().toISOString();
+                    client
+                        .from('profiles')
+                        .update({ last_login: nowIso })
+                        .eq('id', loggedUser.id)
+                        .then(({ error }) => {
+                            if (!error) {
+                                sessionStorage.setItem('MAPAOS_LOGIN_RECORDED', 'true');
+                                loggedUser.last_login = nowIso;
+                                localStorage.setItem('MAPAOS_LOGGED_USER', JSON.stringify(loggedUser));
+                                console.log('Last login registrado com sucesso.');
+                            } else {
+                                console.error('Erro ao salvar last_login em background:', error);
+                            }
+                        });
+                });
             }
         }
     } catch (e) {
@@ -229,28 +118,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const loggedUserRaw = localStorage.getItem('MAPAOS_LOGGED_USER');
             if (!loggedUserRaw) return;
             const loggedUser = JSON.parse(loggedUserRaw);
-            if (loggedUser && loggedUser.role === 'Master') return; // Master creates notifications, doesn't need popups
+            if (loggedUser && loggedUser.role === 'Master') return;
 
-            // Only trigger if user just completed login action
             const justLoggedIn = sessionStorage.getItem('MAPAOS_JUST_LOGGED_IN');
             if (!justLoggedIn) return;
 
-            const notifCheckInterval = setInterval(async () => {
-                if (typeof dbGetActiveNotifications === 'function' && typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
-                    clearInterval(notifCheckInterval);
-                    
-                    // Consume the flag so refreshing the page won't trigger the modal again
-                    sessionStorage.removeItem('MAPAOS_JUST_LOGGED_IN');
+            const client = await _waitForSupabase();
+            if (!client || typeof dbGetActiveNotifications !== 'function') return;
 
-                    const activeNotifs = await dbGetActiveNotifications();
-                    if (!activeNotifs || activeNotifs.length === 0) return;
+            // Consume the flag so refreshing the page won't trigger the modal again
+            sessionStorage.removeItem('MAPAOS_JUST_LOGGED_IN');
 
-                    // Display the latest active notification
-                    const currentNotif = activeNotifs[0];
-                    renderUserNotificationModal(currentNotif);
-                }
-            }, 100);
-            setTimeout(() => clearInterval(notifCheckInterval), 6000);
+            const activeNotifs = await dbGetActiveNotifications();
+            if (!activeNotifs || activeNotifs.length === 0) return;
+
+            renderUserNotificationModal(activeNotifs[0]);
         } catch (err) {
             console.error('Erro ao buscar notificações do usuário:', err);
         }
@@ -439,9 +321,11 @@ document.addEventListener('DOMContentLoaded', () => {
         listContainer.innerHTML = activeNotifs.map(n => {
             const isUnread = !seenIds.includes(n.id);
             const dateStr = n.created_at ? new Date(n.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+            // Sanitize ID to prevent XSS in onclick attribute
+            const safeId = String(n.id).replace(/[^a-zA-Z0-9_-]/g, '');
 
             return `
-                <div onclick="openSingleNotifModal('${n.id}')" class="p-3.5 rounded-xl ${isUnread ? 'bg-[#1e2942] border-primary/40' : 'bg-[#171f33] border-white/10'} border hover:bg-[#253250] transition-all cursor-pointer flex flex-col gap-1.5 relative group shadow-md">
+                <div onclick="openSingleNotifModal('${safeId}')" class="p-3.5 rounded-xl ${isUnread ? 'bg-[#1e2942] border-primary/40' : 'bg-[#171f33] border-white/10'} border hover:bg-[#253250] transition-all cursor-pointer flex flex-col gap-1.5 relative group shadow-md">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-xs text-on-surface truncate pr-2">${n.title}</span>
                         ${isUnread ? '<span class="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 ring-2 ring-red-500/30"></span>' : ''}
@@ -837,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 800);
 
     function fadeOutLoader() {
-        if (loader && !loader.classList.contains('pointer-events-none')) {
+        if (loader && loader.style.display !== 'none') {
             loader.classList.add('opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 loader.style.display = 'none';
@@ -890,7 +774,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             setTimeout(() => {
                 modal.style.display = 'none';
-                document.getElementById('reservation-form').reset();
+                const form = document.getElementById('reservation-form');
+                if (form) form.reset();
                 const dropdown = document.getElementById('client-autocomplete-list');
                 if (dropdown) dropdown.classList.add('hidden');
             }, 300);
@@ -999,7 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // TopAppBar Template
     const topAppBarHTML = `
-        <header class="fixed top-4 left-4 right-4 rounded-lg bg-[#131b2e]/90 backdrop-blur-2xl border border-white/10 shadow-xl shadow-black/40 z-50 flex justify-between items-center px-gutter h-16 w-[calc(100%-32px)] md:w-[calc(100%-80px)] mx-auto md:top-10 md:left-10 md:right-10 transition-transform">
+        <header class="fixed top-4 left-4 right-4 max-w-[1200px] rounded-full bg-[#131b2e]/90 backdrop-blur-2xl border border-white/10 shadow-xl shadow-black/40 z-50 flex justify-between items-center px-4 md:px-6 h-16 mx-auto md:top-6 left-0 right-0 transition-transform">
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-btn">
                     <img src="img/mapaos-logo-sf.svg" alt="Logo Mapa.OS" class="w-8 h-8 object-contain">
@@ -1426,7 +1311,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('MAPAOS_LOGGED_USER');
             }
             const isNavItem = link.classList.contains('nav-desktop-item') || link.classList.contains('nav-mobile-item');
-            if (isNavItem && href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+            // Only intercept internal .html navigation links (avoid external URLs)
+            const isInternalHtml = href && href.endsWith('.html') && !href.startsWith('http') && !href.startsWith('//');
+            if (isNavItem && isInternalHtml) {
                 e.preventDefault();
 
                 const isDesktop = link.classList.contains('nav-desktop-item');
@@ -1447,15 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (icon) icon.style.fontVariationSettings = "'FILL' 1";
 
                 updateLensBubble(type, link, true);
-
-                const fadeEl = document.querySelector('main') || document.querySelector('#page-content');
-                if (fadeEl) {
-                    fadeEl.style.transition = 'opacity 120ms ease';
-                    fadeEl.style.opacity = '0';
-                }
-                setTimeout(() => {
-                    window.location.href = href;
-                }, 130);
+                window.location.href = href;
             }
         });
     });
@@ -1464,7 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (brandBtn) {
         brandBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            fadeInLoaderAndRedirect('index.html');
+            window.location.href = 'index.html';
         });
     }
 
@@ -1472,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (avatarBtn) {
         avatarBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            fadeInLoaderAndRedirect('config.html');
+            window.location.href = 'config.html';
         });
     }
 
@@ -1707,7 +1586,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: dateVal,
                 time: timeVal,
                 notes: notesVal
-            }).then(() => {
+            }).then((result) => {
+                // If result is null, dbCreateReservation already showed an error — restore button and stop
+                if (!result) {
+                    submitBtn.innerHTML = originalContent;
+                    return;
+                }
+
                 setTimeout(() => {
                     closeModal();
                     if (loader) {
@@ -2191,13 +2076,23 @@ async function checkVehiclePendingAlerts() {
 
 // Trigger alert check when DOM & Supabase are ready
 document.addEventListener('DOMContentLoaded', () => {
-    const checkTimer = setInterval(() => {
-        if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
-            clearInterval(checkTimer);
-            checkVehiclePendingAlerts();
+    // Delay slightly to ensure navigation.js DOMContentLoaded handler has already set up _waitForSupabase
+    setTimeout(() => {
+        if (typeof _waitForSupabase === 'function') {
+            _waitForSupabase(5000).then(client => {
+                if (client) checkVehiclePendingAlerts();
+            });
+        } else {
+            // Fallback: simple interval if _waitForSupabase is not yet defined
+            const checkTimer = setInterval(() => {
+                if (typeof supabaseClientInstance !== 'undefined' && supabaseClientInstance) {
+                    clearInterval(checkTimer);
+                    checkVehiclePendingAlerts();
+                }
+            }, 200);
+            setTimeout(() => clearInterval(checkTimer), 5000);
         }
-    }, 200);
-    setTimeout(() => clearInterval(checkTimer), 5000);
+    }, 50);
 });
 
 // ============================================================

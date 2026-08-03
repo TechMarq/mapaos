@@ -55,14 +55,14 @@ const vcDb = {
     fuel: {
         getAll: () => vcDb._run(sb => sb.from('fuel_logs').select('*').eq('user_id', getLoggedUserId()).order('date', { ascending: false })),
         add: (f) => vcDb._run(sb => sb.from('fuel_logs').insert([{ ...f, user_id: getLoggedUserId() }]).select()),
-        update: (id, f) => vcDb._run(sb => sb.from('fuel_logs').update(f).eq('id', id).select()),
-        delete: (id) => vcDb._run(sb => sb.from('fuel_logs').delete().eq('id', id))
+        update: (id, f) => vcDb._run(sb => sb.from('fuel_logs').update(f).eq('id', id).eq('user_id', getLoggedUserId()).select()),
+        delete: (id) => vcDb._run(sb => sb.from('fuel_logs').delete().eq('id', id).eq('user_id', getLoggedUserId()))
     },
     maintenance: {
         getAll: () => vcDb._run(sb => sb.from('maintenance_logs').select('*').eq('user_id', getLoggedUserId()).order('date', { ascending: false })),
         add: (m) => vcDb._run(sb => sb.from('maintenance_logs').insert([{ ...m, user_id: getLoggedUserId() }]).select()),
-        update: (id, m) => vcDb._run(sb => sb.from('maintenance_logs').update(m).eq('id', id).select()),
-        delete: (id) => vcDb._run(sb => sb.from('maintenance_logs').delete().eq('id', id))
+        update: (id, m) => vcDb._run(sb => sb.from('maintenance_logs').update(m).eq('id', id).eq('user_id', getLoggedUserId()).select()),
+        delete: (id) => vcDb._run(sb => sb.from('maintenance_logs').delete().eq('id', id).eq('user_id', getLoggedUserId()))
     }
 };
 
