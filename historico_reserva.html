@@ -1225,8 +1225,15 @@
                         }
                         const netMultiplier = commissionType === 'ganho' ? (commissionRate / 100) : (1 - (commissionRate / 100));
 
-                        // Loop through worksheet rows (skipping headers at row 0)
-                        for (let i = 1; i < rows.length; i++) {
+                        // Helper to check if a row contains spreadsheet headers
+                        const isHeaderCell = (str) => {
+                            if (!str) return false;
+                            const l = str.toString().toLowerCase().trim();
+                            return l.includes('placa') || l.includes('voucher') || l.includes('reserva') || l.includes('cliente') || l.includes('total') || l.includes('o.s.');
+                        };
+
+                        // Loop through worksheet rows (skipping headers)
+                        for (let i = 0; i < rows.length; i++) {
                             const cols = rows[i];
                             if (!cols || cols.length < 8) continue; // sequence: Placa - Motorista - OS - Reserva - Data - Cliente - Hora - Total
 
@@ -1237,6 +1244,11 @@
                             const date = cols[4] ? cols[4].toString().trim() : '';
                             const client = cols[5] ? cols[5].toString().trim() : '';
                             const hour = cols[6] ? cols[6].toString().trim() : '';
+
+                            // Skip header row if encountered anywhere in the spreadsheet
+                            if (isHeaderCell(plate) || isHeaderCell(os) || isHeaderCell(reserva) || isHeaderCell(client)) {
+                                continue;
+                            }
                             
                             const totalStr = cols[7] ? cols[7].toString().trim() : '0';
                             const totalVal = parseCurrency(totalStr);

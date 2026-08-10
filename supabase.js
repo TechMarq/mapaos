@@ -144,13 +144,16 @@ async function dbCreateReservation(reserva) {
     }
     try {
         const userId = getLoggedUserId();
-        const resNum = reserva.reserva_number ? reserva.reserva_number.toString().trim() : '';
-        const osNum = reserva.os_number ? reserva.os_number.toString().trim() : '';
+        const resNumRaw = reserva.reserva_number ? reserva.reserva_number.toString().trim() : '';
+        const osNumRaw = reserva.os_number ? reserva.os_number.toString().trim() : '';
         
-        if (!resNum && !osNum) {
+        if (!resNumRaw && !osNumRaw) {
             alert('Erro: É necessário informar o Número da Reserva ou o Nº OS / Voucher.');
             return null;
         }
+
+        const resNum = resNumRaw || null;
+        const osNum = osNumRaw || null;
 
         // Check if reserva_number already exists globally (if provided)
         if (resNum) {
@@ -171,7 +174,7 @@ async function dbCreateReservation(reserva) {
             .from('reservations')
             .insert([{
                 user_id: userId,
-                os_number: reserva.os_number,
+                os_number: osNum,
                 reserva_number: resNum,
                 client_name: reserva.client_name,
                 date: reserva.date,
@@ -185,7 +188,13 @@ async function dbCreateReservation(reserva) {
         return data[0];
     } catch (err) {
         console.error('Supabase insert error:', err);
-        alert('Erro ao salvar a reserva: ' + err.message);
+        if (err && (err.code === '23505' || (err.message && err.message.includes('unique_reserva_number')))) {
+            alert('Erro: Já existe uma reserva cadastrada no sistema com esse número (Reserva/OS). Por favor, utilize um número diferente.');
+        } else if (err && (err.code === '23502' || (err.message && err.message.includes('not-null constraint')))) {
+            alert('Atenção: A coluna "reserva_number" no Supabase precisa permitir valores nulos. Execute no SQL Editor do Supabase:\n\nALTER TABLE reservations ALTER COLUMN reserva_number DROP NOT NULL;');
+        } else {
+            alert('Erro ao salvar a reserva: ' + err.message);
+        }
         return null;
     }
 }
@@ -230,13 +239,16 @@ async function dbUpdateReservation(reservaId, updates) {
     try {
         const userId = getLoggedUserId();
         const isMaster = isLoggedUserMaster();
-        const resNum = updates.reserva_number ? updates.reserva_number.toString().trim() : '';
-        const osNum = updates.os_number ? updates.os_number.toString().trim() : '';
+        const resNumRaw = updates.reserva_number ? updates.reserva_number.toString().trim() : '';
+        const osNumRaw = updates.os_number ? updates.os_number.toString().trim() : '';
 
-        if (!resNum && !osNum) {
+        if (!resNumRaw && !osNumRaw) {
             alert('Erro: É necessário informar o Número da Reserva ou o Nº OS / Voucher.');
             return null;
         }
+
+        const resNum = resNumRaw || null;
+        const osNum = osNumRaw || null;
 
         // Check if another reservation has the same reserva_number (if provided)
         if (resNum) {
@@ -260,7 +272,7 @@ async function dbUpdateReservation(reservaId, updates) {
                 client_name: updates.client_name,
                 date: updates.date,
                 time: updates.time,
-                os_number: updates.os_number,
+                os_number: osNum,
                 reserva_number: resNum,
                 notes: updates.notes || null
             })
@@ -275,7 +287,13 @@ async function dbUpdateReservation(reservaId, updates) {
         return data[0];
     } catch (err) {
         console.error('Supabase update reservation error:', err);
-        alert('Erro ao atualizar a reserva: ' + err.message);
+        if (err && (err.code === '23505' || (err.message && err.message.includes('unique_reserva_number')))) {
+            alert('Erro: Já existe outra reserva cadastrada no sistema com esse número (Reserva/OS). Por favor, utilize um número diferente.');
+        } else if (err && (err.code === '23502' || (err.message && err.message.includes('not-null constraint')))) {
+            alert('Atenção: A coluna "reserva_number" no Supabase precisa permitir valores nulos. Execute no SQL Editor do Supabase:\n\nALTER TABLE reservations ALTER COLUMN reserva_number DROP NOT NULL;');
+        } else {
+            alert('Erro ao atualizar a reserva: ' + err.message);
+        }
         return null;
     }
 }
@@ -294,7 +312,7 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
         
         let query = supabaseClientInstance
             .from('reservations')
-            .select('reserva_number, id, status');
+            .select('reserva_number, os_number, id, status');
             
         if (userId && !isMaster) {
             query = query.eq('user_id', userId);
@@ -304,29 +322,57 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
         const { data: dbReservations, error: getErr } = await query;
         if (getErr) throw getErr;
 
-        // Map existing reservation numbers (normalized)
+        // Map existing reservation numbers and OS numbers (normalized)
         const dbResMap = new Map();
+        const dbOsMap = new Map();
         dbReservations.forEach(item => {
             if (item.reserva_number) {
-                const cleanedNum = item.reserva_number.toString().replace(/\D/g, '').trim();
-                if (cleanedNum) {
-                    dbResMap.set(cleanedNum, item);
-                }
+                const cleanedRes = item.reserva_number.toString().replace(/\D/g, '').trim() || item.reserva_number.toString().trim().toUpperCase();
+                if (cleanedRes) dbResMap.set(cleanedRes, item);
+            }
+            if (item.os_number) {
+                const cleanedOs = item.os_number.toString().replace(/\D/g, '').trim() || item.os_number.toString().trim().toUpperCase();
+                if (cleanedOs) dbOsMap.set(cleanedOs, item);
             }
         });
 
-        // Pre-validate all spreadsheet rows: check if Reserva exists in database
+        const isHeaderWord = (str) => {
+            if (!str) return false;
+            const l = str.toString().trim().toLowerCase();
+            return (
+                l === 'reserva' ||
+                l === 'reservas' ||
+                l.includes('voucher') ||
+                l.includes('o.s.') ||
+                l === 'os' ||
+                l === 'placa' ||
+                l === 'motorista' ||
+                l === 'cliente' ||
+                l === 'total' ||
+                l === 'hora' ||
+                l === 'data'
+            );
+        };
+
+        // Pre-validate all spreadsheet rows: check if Reserva (or OS/Voucher if Reserva is empty) exists in database
         const missingReservations = [];
         for (const record of records) {
             const rawRes = record.reserva ? record.reserva.toString().trim() : '';
-            if (!rawRes) continue; // Skip empty cells
+            const rawOs = record.os ? record.os.toString().trim() : '';
+            
+            // Skip header rows or labels
+            if (isHeaderWord(rawRes) || isHeaderWord(rawOs)) continue;
 
-            const cleanedRes = rawRes.replace(/\D/g, '').trim();
-            // Skip actual header row or other text fields containing no digits
-            if (!cleanedRes || rawRes.toLowerCase() === 'reserva') continue;
+            // If Reserva field is empty, fallback to OS/Voucher number
+            const rawTarget = rawRes || rawOs;
+            if (!rawTarget) continue; // Skip empty rows
 
-            if (!dbResMap.has(cleanedRes)) {
-                missingReservations.push(rawRes);
+            const cleanedTarget = rawTarget.replace(/\D/g, '').trim() || rawTarget.toUpperCase();
+            if (!cleanedTarget || isHeaderWord(cleanedTarget)) continue;
+
+            const match = dbResMap.get(cleanedTarget) || dbOsMap.get(cleanedTarget);
+            if (!match) {
+                missingReservations.push(rawTarget);
             }
         }
 
@@ -358,12 +404,17 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
         const updatePromises = [];
         for (const record of records) {
             const rawRes = record.reserva ? record.reserva.toString().trim() : '';
-            if (!rawRes) continue;
+            const rawOs = record.os ? record.os.toString().trim() : '';
+            
+            if (isHeaderWord(rawRes) || isHeaderWord(rawOs)) continue;
 
-            const cleanedRes = rawRes.replace(/\D/g, '').trim();
-            if (!cleanedRes || rawRes.toLowerCase() === 'reserva') continue;
+            const rawTarget = rawRes || rawOs;
+            if (!rawTarget) continue;
 
-            const dbMatch = dbResMap.get(cleanedRes);
+            const cleanedTarget = rawTarget.replace(/\D/g, '').trim() || rawTarget.toUpperCase();
+            if (!cleanedTarget || isHeaderWord(cleanedTarget)) continue;
+
+            const dbMatch = dbResMap.get(cleanedTarget) || dbOsMap.get(cleanedTarget);
             if (dbMatch) {
                 const totalVal = record.total || 0;
                 const netVal = record.netValue || 0;
