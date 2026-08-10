@@ -476,11 +476,20 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1.5 self-end sm:self-auto">
-                    <!-- Barcode/QR Code Scanner Button (BETA) -->
-                    <button type="button" onclick="vcTriggerBarcodeScanner()" 
+                <div class="flex items-center gap-1.5 self-end sm:self-auto flex-wrap justify-end">
+                    <!-- QR Code Scanner Button (BETA) -->
+                    <button type="button" onclick="vcTriggerBarcodeScanner('qr')" 
+                        class="h-7 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold text-[10px] flex items-center gap-1 border border-emerald-500/40 transition-all active:scale-95 shrink-0"
+                        title="[Recurso Beta] Escanear QR Code da Nota Fiscal (NFC-e)">
+                        <span class="material-symbols-outlined text-xs">qr_code_2</span>
+                        <span>QR Code</span>
+                        <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[7px] font-black tracking-wider border border-amber-400/30">BETA</span>
+                    </button>
+
+                    <!-- Barcode Scanner Button (BETA) -->
+                    <button type="button" onclick="vcTriggerBarcodeScanner('barcode')" 
                         class="h-7 px-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-bold text-[10px] flex items-center gap-1 border border-primary/40 transition-all active:scale-95 shrink-0"
-                        title="[Recurso Beta] Escanear Código de Barras / QR Code">
+                        title="[Recurso Beta] Escanear Código de Barras DANFE">
                         <span class="material-symbols-outlined text-xs">qr_code_scanner</span>
                         <span>Cód. Barras</span>
                         <span class="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[7px] font-black tracking-wider border border-amber-400/30">BETA</span>
@@ -504,8 +513,8 @@
                         <span class="material-symbols-outlined text-base">close</span>
                     </button>
                     <div class="text-center">
-                        <p class="text-sm font-bold text-on-surface">Escanear Código de Barras DANFE</p>
-                        <p class="text-[11px] text-on-surface-variant">Aponte a câmera para o código de barras ou QR Code da nota fiscal</p>
+                        <p id="vc-scanner-modal-title" class="text-sm font-bold text-on-surface">Escanear QR Code / Código de Barras</p>
+                        <p id="vc-scanner-modal-sub" class="text-[11px] text-on-surface-variant">Aponte a câmera para o QR Code ou código de barras da nota fiscal</p>
                     </div>
                     <div id="vc-barcode-reader" class="w-full h-64 rounded-xl overflow-hidden bg-black/50 border border-primary/30"></div>
                 </div>

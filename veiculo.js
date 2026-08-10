@@ -1379,15 +1379,29 @@ function vcCompressImageForOcr(file, maxDimension = 1000) {
 // ============================================================
 let html5QrCodeScannerInstance = null;
 
-async function vcTriggerBarcodeScanner() {
+async function vcTriggerBarcodeScanner(mode = 'all') {
     const modal = document.getElementById('vc-barcode-modal');
     if (!modal) return;
+
+    const titleEl = document.getElementById('vc-scanner-modal-title');
+    const subEl = document.getElementById('vc-scanner-modal-sub');
+
+    if (mode === 'qr') {
+        if (titleEl) titleEl.textContent = 'Escanear QR Code NFC-e';
+        if (subEl) subEl.textContent = 'Aponte a câmera para o QR Code da nota fiscal';
+    } else if (mode === 'barcode') {
+        if (titleEl) titleEl.textContent = 'Escanear Código de Barras DANFE';
+        if (subEl) subEl.textContent = 'Aponte a câmera para o código de barras da nota';
+    } else {
+        if (titleEl) titleEl.textContent = 'Escanear QR Code / Código de Barras';
+        if (subEl) subEl.textContent = 'Aponte a câmera para a nota fiscal';
+    }
 
     modal.classList.remove('hidden');
 
     try {
         if (typeof Html5Qrcode === 'undefined') {
-            alert('Leitor de Código de Barras não foi carregado.');
+            alert('Leitor de Código de Barras/QR Code não foi carregado.');
             vcCloseBarcodeScanner();
             return;
         }
@@ -1395,8 +1409,8 @@ async function vcTriggerBarcodeScanner() {
         html5QrCodeScannerInstance = new Html5Qrcode("vc-barcode-reader");
         const config = { 
             fps: 20, 
-            qrbox: { width: 300, height: 150 },
-            formatsToSupport: [ 
+            qrbox: mode === 'qr' ? { width: 250, height: 250 } : { width: 300, height: 150 },
+            formatsToSupport: mode === 'qr' ? [ Html5QrcodeSupportedFormats.QR_CODE ] : [ 
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.ITF,
                 Html5QrcodeSupportedFormats.QR_CODE,
@@ -1409,7 +1423,7 @@ async function vcTriggerBarcodeScanner() {
             { facingMode: "environment" },
             config,
             (decodedText, decodedResult) => {
-                console.log('[Barcode Scanned Raw]:', decodedText);
+                console.log('[Barcode/QR Scanned Raw]:', decodedText);
                 vcProcessScannedBarcode(decodedText);
                 vcCloseBarcodeScanner();
             },
@@ -1418,8 +1432,8 @@ async function vcTriggerBarcodeScanner() {
             }
         );
     } catch (err) {
-        console.error('[Barcode Camera Error]:', err);
-        alert('Não foi possível acessar a câmera para ler o código de barras. Verifique a permissão do seu navegador.');
+        console.error('[Barcode/QR Camera Error]:', err);
+        alert('Não foi possível acessar a câmera para escanear. Verifique as permissões do seu navegador.');
         vcCloseBarcodeScanner();
     }
 }
@@ -1438,17 +1452,19 @@ async function vcCloseBarcodeScanner() {
 }
 
 /**
- * Parses DANFE Access Key (44 digits) or QR Code URL
+ * Parses DANFE Access Key (44 digits) or QR Code URL (NFC-e / Sefaz)
  */
 function vcProcessScannedBarcode(scannedText) {
     let key = '';
 
-    // If it's a SEFAZ QR Code URL (e.g., http://www.nfe.fazenda.gov.br/portal/consultarNFe.aspx?p=332608314585160001085500100005051491027744742)
-    const urlMatch = scannedText.match(/(?:p=|chave=)(\d{44})/i);
+    // Check for SEFAZ QR Code URL (e.g. http://.../consultarNFe.aspx?p=332608314585160001085500100005051491027744742 ou p=33260831458516000108|2|...)
+    const urlMatch = scannedText.match(/(?:p=|chave=|chNFe=)(\d{44})/i) 
+                  || scannedText.match(/(\d{44})/);
+                  
     if (urlMatch) {
         key = urlMatch[1];
     } else {
-        // Direct 44-digit numeric barcode
+        // Direct numeric barcode or piped format in QR Code (e.g. 33260831458516000108...)
         const rawDigits = scannedText.replace(/\D/g, '');
         if (rawDigits.length >= 44) {
             key = rawDigits.substring(0, 44);
@@ -1456,24 +1472,29 @@ function vcProcessScannedBarcode(scannedText) {
     }
 
     if (!key) {
-        alert('Código de barras lido: ' + scannedText.substring(0, 40) + '...\nNão foi possível extrair a chave DANFE de 44 dígitos.');
+        alert('Texto/Código lido: ' + scannedText.substring(0, 50) + '...\nNão foi possível extrair a chave de 44 dígitos da nota fiscal.');
         return;
     }
 
-    console.log('[DANFE Key Extracted]:', key);
+    console.log('[DANFE / NFC-e Key Extracted]:', key);
+
     // Decode DANFE Key structure:
     // Digits 0..2: UF (33 = RJ)
-    // Digits 2..6: AAMM (2608 = Ano 2026, Mês 08)
-    // Digits 6..20: CNPJ Emitente (31.458.516/0001-06)
+    // Digits 2..6: AAMM (e.g. 2608 = Ano 2026, Mês 08)
+    // Digits 6..20: CNPJ Emitente
 
     const year = '20' + key.substring(2, 4);
     const month = key.substring(4, 6);
-    const dateFormatted = `${year}-${month}-01`;
+    
+    // Set date if month and year are valid
+    if (parseInt(month) >= 1 && parseInt(month) <= 12) {
+        const elDate = document.getElementById('vc-fuel-date');
+        if (elDate && !elDate.value) {
+            elDate.value = `${year}-${month}-01`;
+        }
+    }
 
-    const elDate = document.getElementById('vc-fuel-date');
-    if (elDate) elDate.value = dateFormatted;
-
-    alert(`✅ Código DANFE lido com sucesso!\nChave: ${key}\nData estimada: ${month}/${year}`);
+    alert(`✅ Nota Fiscal / QR Code lido com sucesso!\nChave NFe/NFC-e: ${key}\nPeríodo da nota: ${month}/${year}`);
 }
 
 async function vcDeleteFuel(id) {
