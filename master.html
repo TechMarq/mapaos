@@ -219,21 +219,32 @@
             </div>
 
             <!-- Search and Sort Row for Users -->
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-4">
-                <div class="glass-card flex items-center px-4 py-2.5 rounded-xl border-white/10 w-full sm:w-80">
-                    <span class="material-symbols-outlined text-on-surface-variant mr-2" style="font-size: 18px;">search</span>
+            <div class="flex flex-col gap-3 mb-4">
+                <!-- Search input (Full Width) -->
+                <div class="glass-card flex items-center px-4 py-2.5 rounded-xl border-white/10 w-full">
+                    <span class="material-symbols-outlined text-on-surface-variant mr-2 shrink-0" style="font-size: 18px;">search</span>
                     <input id="user-search-input" class="bg-transparent border-none focus:ring-0 text-xs text-on-surface w-full p-0 placeholder:text-on-surface-variant/50" placeholder="Buscar usuário por nome, email ou tel..." type="text">
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-on-surface-variant whitespace-nowrap">Ordenar por:</span>
-                    <select id="user-sort-select" class="glass-card rounded-xl px-4 py-2 text-xs text-primary border-white/10 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all w-full sm:w-48 bg-[#0b1326] h-10">
-                        <option value="created_desc" class="bg-[#0b1326] text-on-surface" selected>Cadastro (Mais recente)</option>
-                        <option value="created_asc" class="bg-[#0b1326] text-on-surface">Cadastro (Mais antigo)</option>
-                        <option value="name_asc" class="bg-[#0b1326] text-on-surface">Alfabética (A-Z)</option>
-                        <option value="name_desc" class="bg-[#0b1326] text-on-surface">Alfabética (Z-A)</option>
-                        <option value="login_desc" class="bg-[#0b1326] text-on-surface">Último Login (Mais recente)</option>
-                        <option value="login_asc" class="bg-[#0b1326] text-on-surface">Último Login (Mais antigo)</option>
+
+                <!-- Controls Row: View Toggle, Filter Select & Sort Direction -->
+                <div class="flex items-center justify-between gap-2 w-full">
+                    <!-- View Mode Toggle Button (Cards / Lista) -->
+                    <button id="user-btn-view-toggle" onclick="toggleUserViewMode()" class="h-10 px-3.5 glass-card rounded-xl border border-white/10 text-primary hover:text-primary/80 transition-all flex items-center gap-1.5 shrink-0 text-xs font-bold active:scale-95" title="Alternar entre Visualização em Cards e Lista">
+                        <span id="user-view-icon" class="material-symbols-outlined text-base text-primary">grid_view</span>
+                        <span id="user-view-label">Cards</span>
+                    </button>
+
+                    <select id="user-sort-select" class="glass-card rounded-xl px-3.5 py-2 text-xs text-primary border-white/10 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all flex-1 min-w-0 bg-[#0b1326] h-10">
+                        <option value="created" class="bg-[#0b1326] text-on-surface" selected>Cadastro</option>
+                        <option value="expiry" class="bg-[#0b1326] text-on-surface">Vencimento</option>
+                        <option value="name" class="bg-[#0b1326] text-on-surface">Alfabética</option>
+                        <option value="login" class="bg-[#0b1326] text-on-surface">Último Login</option>
                     </select>
+
+                    <!-- Sort direction toggle button (Icon only) -->
+                    <button id="user-sort-dir-btn" onclick="toggleUserSortDirection()" class="h-10 w-10 glass-card rounded-xl border border-white/10 text-orange-400 hover:text-orange-300 transition-all flex items-center justify-center shrink-0 active:scale-95" title="Inverter Ordem">
+                        <span id="user-sort-icon" class="material-symbols-outlined text-lg text-orange-400">arrow_downward</span>
+                    </button>
                 </div>
             </div>
 
@@ -436,7 +447,35 @@
         let allClients = [];
         let userSearchQuery = '';
         let clientSearchQuery = '';
-        let userSortOption = 'created_desc';
+        let userSortOption = 'created';
+        let userSortDirection = 'desc'; // 'desc' ou 'asc'
+        let userViewMode = 'list'; // 'list' ou 'grid'
+
+        function toggleUserViewMode() {
+            userViewMode = userViewMode === 'list' ? 'grid' : 'list';
+            const icon = document.getElementById('user-view-icon');
+            const label = document.getElementById('user-view-label');
+            if (icon) {
+                icon.textContent = userViewMode === 'list' ? 'grid_view' : 'view_list';
+            }
+            if (label) {
+                label.textContent = userViewMode === 'list' ? 'Cards' : 'Lista';
+            }
+            renderUsers();
+        }
+
+        function toggleUserSortDirection() {
+            userSortDirection = userSortDirection === 'desc' ? 'asc' : 'desc';
+            const icon = document.getElementById('user-sort-icon');
+            const btn = document.getElementById('user-sort-dir-btn');
+            if (icon) {
+                icon.textContent = userSortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward';
+            }
+            if (btn) {
+                btn.title = userSortDirection === 'desc' ? 'Ordem Decrescente (Clique para Crescente)' : 'Ordem Crescente (Clique para Decrescente)';
+            }
+            renderUsers();
+        }
 
         // ─── Helpers ─────────────────────────────────────────────────────────────
         function formatDate(isoStr) {
@@ -481,32 +520,47 @@
             return map[status] || `<span class="badge">${status}</span>`;
         }
 
-        function actionsFor(user) {
+        function actionsFor(user, effectiveStatus = null) {
             if (user.role === 'Master') return '<span class="text-xs text-on-surface-variant italic">Conta Master</span>';
+            const status = effectiveStatus || user.status;
             let btns = '';
-            if (user.status === 'Pendente') {
+            if (status === 'Pendente') {
                 btns += `<button class="btn-approve" onclick="doApprove('${user.id}')">Aprovar</button>`;
                 btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Recusar</button>`;
-            } else if (user.status === 'Aprovado') {
+            } else if (status === 'Aprovado') {
                 btns += `<button class="btn-renew" onclick="doRenew('${user.id}')">+30 dias</button>`;
                 btns += `<button class="btn-renew" style="background: rgba(250,204,21,0.15); color: #facc15; border-color: rgba(250,204,21,0.3)" onclick="doFreeze('${user.id}')">Congelar</button>`;
                 btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Revogar</button>`;
-            } else if (user.status === 'Expirado') {
-                btns += `<button class="btn-approve" onclick="doApprove('${user.id}')">Renovar</button>`;
+            } else if (status === 'Expirado') {
+                btns += `<button class="btn-approve" onclick="doRenew('${user.id}')">Renovar</button>`;
                 btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Excluir</button>`;
-            } else if (user.status === 'Rejeitado') {
+            } else if (status === 'Rejeitado') {
                 btns += `<button class="btn-approve" onclick="doApprove('${user.id}')">Reativar</button>`;
-            } else if (user.status === 'Congelado') {
+            } else if (status === 'Congelado') {
                 btns += `<button class="btn-approve" onclick="doUnfreeze('${user.id}')">Descongelar</button>`;
                 btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Excluir</button>`;
             }
             return `<div class="flex gap-2 flex-wrap">${btns}</div>`;
         }
 
+        function getUserEffectiveStatus(u) {
+            if (u.status === 'Congelado') return 'Congelado';
+            if (u.status === 'Pendente') return 'Pendente';
+            if (u.status === 'Rejeitado') return 'Rejeitado';
+            if (u.status === 'Expirado') return 'Expirado';
+            if (u.status === 'Aprovado') {
+                if (u.expires_at && daysUntil(u.expires_at) <= 0) {
+                    return 'Expirado';
+                }
+                return 'Aprovado';
+            }
+            return u.status || 'Pendente';
+        }
+
         function renderUsers() {
             const body = document.getElementById('users-table-body');
             const empty = document.getElementById('empty-state');
-            let filtered = currentFilter === 'all' ? allUsers : allUsers.filter(u => u.status === currentFilter);
+            let filtered = currentFilter === 'all' ? allUsers : allUsers.filter(u => getUserEffectiveStatus(u) === currentFilter);
 
             if (userSearchQuery) {
                 const query = userSearchQuery.toLowerCase();
@@ -518,25 +572,25 @@
             }
  
             // Apply Sorting
+            const isDesc = userSortDirection === 'desc';
             filtered.sort((a, b) => {
-                if (userSortOption === 'name_asc') {
-                    return (a.name || '').localeCompare(b.name || '', 'pt-BR');
-                } else if (userSortOption === 'name_desc') {
-                    return (b.name || '').localeCompare(a.name || '', 'pt-BR');
-                } else if (userSortOption === 'created_asc') {
-                    return new Date(a.created_at || 0) - new Date(b.created_at || 0);
-                } else if (userSortOption === 'created_desc') {
-                    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-                } else if (userSortOption === 'login_asc') {
-                    if (!a.last_login) return 1;
-                    if (!b.last_login) return -1;
-                    return new Date(a.last_login) - new Date(b.last_login);
-                } else if (userSortOption === 'login_desc') {
-                    if (!a.last_login) return 1;
-                    if (!b.last_login) return -1;
-                    return new Date(b.last_login) - new Date(a.last_login);
+                let res = 0;
+                if (userSortOption === 'expiry') {
+                    const defaultTime = isDesc ? 0 : 9999999999999;
+                    const timeA = a.expires_at ? new Date(a.expires_at).getTime() : defaultTime;
+                    const timeB = b.expires_at ? new Date(b.expires_at).getTime() : defaultTime;
+                    res = timeA - timeB;
+                } else if (userSortOption === 'name') {
+                    res = (a.name || '').localeCompare(b.name || '', 'pt-BR');
+                } else if (userSortOption === 'created') {
+                    res = new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                } else if (userSortOption === 'login') {
+                    if (!a.last_login && !b.last_login) res = 0;
+                    else if (!a.last_login) return 1;
+                    else if (!b.last_login) return -1;
+                    else res = new Date(a.last_login) - new Date(b.last_login);
                 }
-                return 0;
+                return isDesc ? -res : res;
             });
 
             // Update stats always from allUsers
@@ -545,10 +599,10 @@
             const statFrozenEl = document.getElementById('stat-frozen');
             const statExpiredEl = document.getElementById('stat-expired');
 
-            if (statActiveEl) statActiveEl.textContent = allUsers.filter(u => u.status === 'Aprovado').length;
-            if (statPendingEl) statPendingEl.textContent = allUsers.filter(u => u.status === 'Pendente').length;
-            if (statFrozenEl) statFrozenEl.textContent = allUsers.filter(u => u.status === 'Congelado').length;
-            if (statExpiredEl) statExpiredEl.textContent = allUsers.filter(u => u.status === 'Expirado').length;
+            if (statActiveEl) statActiveEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Aprovado').length;
+            if (statPendingEl) statPendingEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Pendente').length;
+            if (statFrozenEl) statFrozenEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Congelado').length;
+            if (statExpiredEl) statExpiredEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Expirado').length;
 
             if (filtered.length === 0) {
                 body.innerHTML = '';
@@ -557,7 +611,14 @@
             }
             empty.classList.add('hidden');
 
+            if (userViewMode === 'grid') {
+                body.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4";
+            } else {
+                body.className = "space-y-2";
+            }
+
             body.innerHTML = filtered.map(user => {
+                const effectiveStatus = getUserEffectiveStatus(user);
                 const borderColors = {
                     'Aprovado': '#44f5be', // Verde (Ativo)
                     'Pendente': '#fbbc04', // Amarelo (Pendente)
@@ -565,10 +626,65 @@
                     'Expirado': '#ff5050', // Vermelho (Expirado)
                     'Rejeitado': '#ff7070'  // Recusado
                 };
-                const borderColor = borderColors[user.status] || '#8b90a0';
+                const borderColor = borderColors[effectiveStatus] || '#8b90a0';
+
+                if (userViewMode === 'grid') {
+                    return `
+                        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between gap-4 text-xs hover:bg-white/10 transition-all duration-200"
+                            style="border-top: 3px solid ${borderColor}" id="row-${user.id}">
+                            <div class="flex flex-col gap-3">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                            <span class="material-symbols-outlined text-base">person</span>
+                                        </div>
+                                        <div class="flex flex-col min-w-0">
+                                            <span class="font-bold text-on-surface text-sm truncate">${user.name}</span>
+                                            <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/5">
+                                    ${badgeFor(effectiveStatus)}
+                                    ${(user.plan === 'pro') ? '<span class="badge" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.2));color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-weight:800;">★ PRO</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#8b90a0;border:1px solid rgba(255,255,255,0.1);">NORMAL</span>'}
+                                </div>
+
+                                <div class="space-y-1 text-[11px] text-on-surface-variant/70 bg-white/5 p-2.5 rounded-xl border border-white/5">
+                                    <div class="flex justify-between items-center">
+                                        <span>Telefone:</span>
+                                        <span class="font-medium text-on-surface">${user.phone ? `<a href="https://wa.me/55${user.phone.replace(/\D/g, '')}" target="_blank" rel="noopener noreferrer" class="text-secondary hover:underline inline-flex items-center gap-0.5" title="Abrir WhatsApp"><span class="material-symbols-outlined text-[12px]">chat</span>${user.phone}</a>` : '—'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span>Cadastrado em:</span>
+                                        <span class="font-medium text-on-surface">${formatDate(user.created_at)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span>Último login:</span>
+                                        <span class="font-medium text-secondary/90">${formatDateTime(user.last_login)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center pt-1 border-t border-white/5">
+                                        <span class="uppercase text-[9px] tracking-wider text-on-surface-variant/60 font-bold">Vencimento:</span>
+                                        <span>${expiryLabel(user)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 border-t border-white/5 pt-3">
+                                ${user.role !== 'Master' ? `
+                                <select onchange="doChangePlan('${user.id}', this.value)" class="bg-white/5 border border-white/10 text-xs rounded-lg px-2 py-1 text-on-surface focus:outline-none focus:border-amber-400 font-semibold" title="Alterar Plano do Usuário">
+                                    <option value="normal" ${(!user.plan || user.plan === 'normal') ? 'selected' : ''} style="background:#131b2e;color:#dae2fd;">Normal</option>
+                                    <option value="pro" ${user.plan === 'pro' ? 'selected' : ''} style="background:#131b2e;color:#f59e0b;font-weight:bold;">Plan PRO ★</option>
+                                </select>
+                                ` : '<div></div>'}
+                                ${actionsFor(user, effectiveStatus)}
+                            </div>
+                        </div>
+                    `;
+                }
 
                 return `
-                    <div class="glass-card p-3 px-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
+                    <div class="glass-card p-3 px-5 rounded-xl flex items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
                         style="border-left: 2.5px solid ${borderColor}" id="row-${user.id}">
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
@@ -577,34 +693,20 @@
                             <div class="flex flex-col gap-0.5 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-bold text-on-surface text-sm truncate">${user.name}</span>
-                                    ${badgeFor(user.status)}
+                                    ${badgeFor(effectiveStatus)}
                                     ${(user.plan === 'pro') ? '<span class="badge" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.2));color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-weight:800;">★ PRO</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#8b90a0;border:1px solid rgba(255,255,255,0.1);">NORMAL</span>'}
                                 </div>
                                 <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email}</span>
-                                <span class="text-[10px] text-on-surface-variant/60 flex items-center gap-1.5 flex-wrap">
-                                    <span>Tel: ${user.phone ? `<a href="https://wa.me/55${user.phone.replace(/\D/g, '')}" target="_blank" rel="noopener noreferrer" class="text-secondary hover:underline inline-flex items-center gap-0.5" title="Abrir WhatsApp"><span class="material-symbols-outlined text-[11px]">chat</span>${user.phone}</a>` : '—'}</span>
-                                    <span>•</span>
-                                    <span>Cadastrado em: ${formatDate(user.created_at)}</span>
-                                </span>
-                                <span class="text-[10px] text-secondary/80 flex items-center gap-1 mt-0.5 font-medium">
-                                    <span class="material-symbols-outlined text-[12px]">login</span>
-                                    Último login: ${formatDateTime(user.last_login)}
-                                </span>
                             </div>
                         </div>
-                        <div class="flex flex-row md:flex-col items-start md:items-end justify-between md:justify-center gap-2 border-t border-white/5 pt-2.5 md:pt-0 md:border-none shrink-0">
-                            <div class="text-left md:text-right flex items-center gap-2 md:flex-col md:items-end md:gap-0">
+                        <div class="flex items-center gap-4 shrink-0 text-right">
+                            <div class="hidden sm:flex flex-col items-end text-[10px] text-on-surface-variant/60">
+                                <span>Cadastrado: ${formatDate(user.created_at)}</span>
+                                <span>Login: ${formatDateTime(user.last_login)}</span>
+                            </div>
+                            <div class="flex flex-col items-end">
                                 <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/50">Vencimento:</span>
                                 <span class="font-semibold text-xs mt-0.5">${expiryLabel(user)}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                ${user.role !== 'Master' ? `
-                                <select onchange="doChangePlan('${user.id}', this.value)" class="bg-white/5 border border-white/10 text-xs rounded-lg px-2 py-1 text-on-surface focus:outline-none focus:border-amber-400 font-semibold" title="Alterar Plano do Usuário">
-                                    <option value="normal" ${(!user.plan || user.plan === 'normal') ? 'selected' : ''} style="background:#131b2e;color:#dae2fd;">Normal</option>
-                                    <option value="pro" ${user.plan === 'pro' ? 'selected' : ''} style="background:#131b2e;color:#f59e0b;font-weight:bold;">Plan PRO ★</option>
-                                </select>
-                                ` : ''}
-                                ${actionsFor(user)}
                             </div>
                         </div>
                     </div>
