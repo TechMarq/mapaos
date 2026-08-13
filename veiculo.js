@@ -48,7 +48,12 @@ const vcDb = {
     },
     vehicles: {
         getAll: () => vcDb._run(sb => sb.from('vehicles').select('*').eq('user_id', getLoggedUserId()).order('created_at', { ascending: true })),
-        add: (v) => vcDb._run(sb => sb.from('vehicles').insert([{ ...v, user_id: getLoggedUserId() }]).select()),
+        add: (v) => {
+            if (vState.vehicles && vState.vehicles.length >= 2) {
+                return Promise.resolve({ data: null, error: new Error('Limite de 2 veículos atingido. Entre em contato com o suporte para liberar outro plano ou inclusão adicional de veículo.') });
+            }
+            return vcDb._run(sb => sb.from('vehicles').insert([{ ...v, user_id: getLoggedUserId() }]).select());
+        },
         update: (id, v) => vcDb._run(sb => sb.from('vehicles').update(v).eq('id', id).eq('user_id', getLoggedUserId()).select()),
         delete: (id) => vcDb._run(sb => sb.from('vehicles').delete().eq('id', id).eq('user_id', getLoggedUserId()))
     },
@@ -1710,9 +1715,56 @@ async function vcDeleteMaint(id) {
 }
 
 // ============================================================
-// VEHICLE MODAL (ADD/EDIT)
+// VEHICLE MODAL (ADD/EDIT & LIMIT)
 // ============================================================
+function vcOpenVehicleLimitModal() {
+    const modal = document.getElementById('vc-vehicle-limit-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('open'), 10);
+}
+
+function vcCloseVehicleLimitModal() {
+    const modal = document.getElementById('vc-vehicle-limit-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
+function vcContactSupportForVehicleLimit() {
+    let userName = 'Usuário';
+    let userEmail = '';
+    try {
+        const raw = localStorage.getItem('MAPAOS_LOGGED_USER');
+        if (raw) {
+            const user = JSON.parse(raw);
+            if (user) {
+                userName = user.name || userName;
+                userEmail = user.email ? ` (${user.email})` : '';
+            }
+        }
+    } catch(e) {}
+
+    const msg = `Olá! Sou *${userName}*${userEmail}. Atingi o limite de 2 veículos cadastrados no Mapa.OS e gostaria de solicitar um upgrade de plano ou inclusão adicional de veículo.`;
+    const encodedMsg = encodeURIComponent(msg);
+    const waUrl = `https://wa.me/5524992716045?text=${encodedMsg}`;
+    
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    vcCloseVehicleLimitModal();
+}
+
 function vcOpenVehicleModal(vehicleId = null) {
+    if (typeof vehicleId !== 'string' && typeof vehicleId !== 'number') {
+        vehicleId = null;
+    }
+
+    // Check vehicle limit (max 2 vehicles per account) when adding a new vehicle
+    if (!vehicleId && vState.vehicles && vState.vehicles.length >= 2) {
+        vcCloseVehiclePicker();
+        vcOpenVehicleLimitModal();
+        return;
+    }
+
     const modal = document.getElementById('vc-vehicle-modal');
     if (!modal) return;
     const form = document.getElementById('vc-form-vehicle');
@@ -1720,8 +1772,11 @@ function vcOpenVehicleModal(vehicleId = null) {
     document.getElementById('vc-veh-id').value = '';
     document.getElementById('vc-veh-modal-title').textContent = 'Novo Veículo';
 
+    const deleteBtn = document.getElementById('vc-veh-delete-btn');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
     if (vehicleId) {
-        const veh = vState.vehicles.find(v => v.id === vehicleId);
+        const veh = vState.vehicles.find(v => String(v.id) === String(vehicleId));
         if (veh) {
             document.getElementById('vc-veh-id').value = veh.id;
             document.getElementById('vc-veh-model').value = veh.model || '';
@@ -1734,6 +1789,7 @@ function vcOpenVehicleModal(vehicleId = null) {
             document.getElementById('vc-veh-km').value = veh.initial_km || veh.km_actual || 0;
             document.getElementById('vc-veh-obs').value = veh.obs || '';
             document.getElementById('vc-veh-modal-title').textContent = 'Editar Veículo';
+            if (deleteBtn) deleteBtn.style.display = 'flex';
         }
     }
     modal.style.display = 'flex';
@@ -1747,6 +1803,122 @@ function vcCloseVehicleModal() {
     setTimeout(() => modal.style.display = 'none', 300);
 }
 
+function vcTriggerDeleteFromModal() {
+    const id = document.getElementById('vc-veh-id').value;
+    if (id) {
+        vcCloseVehicleModal();
+        vcOpenDeleteConfirmModal(id);
+    }
+}
+
+// ============================================================
+// VEHICLE DELETE CONFIRMATION (6-DIGIT CODE)
+// ============================================================
+let vcDeleteConfirmCodeState = null;
+
+function vcOpenDeleteConfirmModal(vehicleId) {
+    const veh = vState.vehicles.find(v => String(v.id) === String(vehicleId));
+    if (!veh) return;
+
+    // Generate random 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    vcDeleteConfirmCodeState = code;
+
+    document.getElementById('vc-delete-veh-id').value = veh.id;
+    const nameEl = document.getElementById('vc-delete-veh-name');
+    if (nameEl) nameEl.textContent = `${veh.model} (${veh.plate})`;
+
+    const displayEl = document.getElementById('vc-delete-code-display');
+    if (displayEl) displayEl.textContent = code;
+
+    const inputEl = document.getElementById('vc-delete-code-input');
+    if (inputEl) {
+        inputEl.value = '';
+    }
+
+    const confirmBtn = document.getElementById('vc-btn-confirm-delete');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        confirmBtn.innerHTML = '<span class="material-symbols-outlined text-lg">delete_forever</span> Excluir Definitivamente';
+    }
+
+    const modal = document.getElementById('vc-delete-confirm-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('open'), 10);
+}
+
+function vcCloseDeleteConfirmModal() {
+    vcDeleteConfirmCodeState = null;
+    const modal = document.getElementById('vc-delete-confirm-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
+function vcVerifyDeleteCodeInput() {
+    const inputEl = document.getElementById('vc-delete-code-input');
+    const confirmBtn = document.getElementById('vc-btn-confirm-delete');
+    if (!inputEl || !confirmBtn) return;
+
+    const typedCode = inputEl.value.trim();
+    if (typedCode === vcDeleteConfirmCodeState) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+async function vcExecuteDeleteVehicle() {
+    const id = document.getElementById('vc-delete-veh-id').value;
+    const inputEl = document.getElementById('vc-delete-code-input');
+    
+    if (!id) return;
+    if (inputEl.value.trim() !== vcDeleteConfirmCodeState) {
+        alert('Código de confirmação incorreto.');
+        return;
+    }
+
+    const btn = document.getElementById('vc-btn-confirm-delete');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Excluindo...';
+    }
+
+    const { error } = await vcDb.vehicles.delete(id);
+    if (error) {
+        alert('Erro ao excluir veículo: ' + error.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined text-lg">delete_forever</span> Excluir Definitivamente';
+        }
+        return;
+    }
+
+    // Update local state
+    vState.vehicles = vState.vehicles.filter(v => String(v.id) !== String(id));
+    vState.fuelLogs = vState.fuelLogs.filter(l => String(l.vehicleId) !== String(id));
+    vState.maintenanceLogs = vState.maintenanceLogs.filter(m => String(m.vehicleId) !== String(id));
+
+    if (String(vState.activeVehicleId) === String(id)) {
+        vState.activeVehicleId = vState.vehicles.length > 0 ? vState.vehicles[0].id : null;
+        localStorage.setItem('vc_active_vehicle_id', vState.activeVehicleId || '');
+    }
+
+    vcCloseDeleteConfirmModal();
+    vcCloseVehicleModal();
+    vcCloseVehiclePicker();
+    vcUpdateVehicleHeader();
+    vcRenderVehiclePickerList();
+    vcRecalculateConsumptions();
+    vcRenderDashboard();
+
+    alert('Veículo e todos os dados associados foram excluídos com sucesso.');
+}
+
 async function vcSubmitVehicle(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -1755,6 +1927,15 @@ async function vcSubmitVehicle(e) {
     btn.disabled = true;
 
     const id = document.getElementById('vc-veh-id').value;
+
+    if (!id && vState.vehicles && vState.vehicles.length >= 2) {
+        btn.textContent = oriText;
+        btn.disabled = false;
+        vcCloseVehicleModal();
+        vcOpenVehicleLimitModal();
+        return;
+    }
+
     const vData = {
         model: document.getElementById('vc-veh-model').value,
         plate: document.getElementById('vc-veh-plate').value.toUpperCase(),
@@ -1796,19 +1977,7 @@ async function vcSubmitVehicle(e) {
 }
 
 async function vcDeleteVehicle(id) {
-    if (!confirm('Deletar este veículo e todos os seus registros?')) return;
-    const { error } = await vcDb.vehicles.delete(id);
-    if (error) { alert('Erro: ' + error.message); return; }
-    vState.vehicles = vState.vehicles.filter(v => v.id !== id);
-    vState.fuelLogs = vState.fuelLogs.filter(l => l.vehicleId !== id);
-    vState.maintenanceLogs = vState.maintenanceLogs.filter(m => m.vehicleId !== id);
-    if (vState.activeVehicleId === id) {
-        vState.activeVehicleId = vState.vehicles.length > 0 ? vState.vehicles[0].id : null;
-        localStorage.setItem('vc_active_vehicle_id', vState.activeVehicleId || '');
-    }
-    vcUpdateVehicleHeader();
-    vcRenderVehiclePickerList();
-    vcRenderDashboard();
+    vcOpenDeleteConfirmModal(id);
 }
 
 // ============================================================
@@ -1848,15 +2017,29 @@ function vcRenderVehiclePickerList() {
     list.innerHTML = vState.vehicles.map(veh => {
         const isActive = veh.id === vState.activeVehicleId;
         return `
-        <div onclick="vcSwitchVehicle('${veh.id}')" class="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all mb-2 ${isActive ? 'bg-primary/10 border border-primary/30' : 'bg-white/5 border border-white/10 hover:bg-white/8'}">
+        <div onclick="vcSwitchVehicle('${veh.id}')" class="flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all mb-2.5 ${isActive ? 'bg-primary/10 border border-primary/35' : 'bg-white/5 border border-white/10 hover:bg-white/8'}">
             <div class="flex items-center gap-3">
-                <span class="material-symbols-outlined text-primary text-xl">directions_car</span>
+                <div class="w-9 h-9 rounded-xl ${isActive ? 'bg-primary/20 text-primary' : 'bg-white/10 text-on-surface-variant'} flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">directions_car</span>
+                </div>
                 <div>
-                    <p class="text-sm font-bold text-on-surface">${veh.model}</p>
-                    <p class="text-xs text-on-surface-variant">${veh.plate}</p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-bold text-on-surface">${veh.model}</p>
+                        ${isActive ? '<span class="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-semibold">Ativo</span>' : ''}
+                    </div>
+                    <p class="text-xs text-on-surface-variant font-mono mt-0.5">${veh.plate}</p>
                 </div>
             </div>
-            ${isActive ? '<span class="material-symbols-outlined text-primary">check_circle</span>' : ''}
+            <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+                <button onclick="vcCloseVehiclePicker(); vcOpenVehicleModal('${veh.id}');" title="Editar"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all">
+                    <span class="material-symbols-outlined text-base">edit</span>
+                </button>
+                <button onclick="vcCloseVehiclePicker(); vcOpenDeleteConfirmModal('${veh.id}');" title="Excluir"
+                    class="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-all">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+            </div>
         </div>`;
     }).join('');
 }
