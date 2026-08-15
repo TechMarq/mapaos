@@ -648,6 +648,10 @@
                                 <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/5">
                                     ${badgeFor(effectiveStatus)}
                                     ${(user.plan === 'pro') ? '<span class="badge" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.2));color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-weight:800;">★ PRO</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#8b90a0;border:1px solid rgba(255,255,255,0.1);">NORMAL</span>'}
+                                    <button onclick="doTogglePaymentStatus('${user.id}')" title="Clique para alternar o status financeiro do usuário" class="badge transition-all active:scale-95 cursor-pointer ${user.payment_status === 'Pago' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30'}">
+                                        <span class="material-symbols-outlined text-[12px]">${user.payment_status === 'Pago' ? 'check_circle' : 'pending'}</span>
+                                        <span>${user.payment_status === 'Pago' ? 'Pago' : 'Em Aberto'}</span>
+                                    </button>
                                 </div>
 
                                 <div class="space-y-1 text-[11px] text-on-surface-variant/70 bg-white/5 p-2.5 rounded-xl border border-white/5">
@@ -695,6 +699,10 @@
                                     <span class="font-bold text-on-surface text-sm truncate">${user.name}</span>
                                     ${badgeFor(effectiveStatus)}
                                     ${(user.plan === 'pro') ? '<span class="badge" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.2));color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-weight:800;">★ PRO</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#8b90a0;border:1px solid rgba(255,255,255,0.1);">NORMAL</span>'}
+                                    <button onclick="doTogglePaymentStatus('${user.id}')" title="Clique para alternar o status financeiro do usuário" class="badge transition-all active:scale-95 cursor-pointer ${user.payment_status === 'Pago' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30'}">
+                                        <span class="material-symbols-outlined text-[12px]">${user.payment_status === 'Pago' ? 'check_circle' : 'pending'}</span>
+                                        <span>${user.payment_status === 'Pago' ? 'Pago' : 'Em Aberto'}</span>
+                                    </button>
                                 </div>
                                 <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email}</span>
                             </div>
@@ -824,6 +832,27 @@
             } catch (e) {
                 console.error('doChangePlan error:', e);
                 showToast('Erro de conexão ao alterar plano.', true);
+            }
+        };
+
+        window.doTogglePaymentStatus = async function(id) {
+            const u = allUsers.find(x => x.id === id);
+            if (!u) return;
+            const currentStatus = u.payment_status || 'Em Aberto';
+            const nextStatus = currentStatus === 'Pago' ? 'Em Aberto' : 'Pago';
+            
+            try {
+                const result = await dbTogglePaymentStatus(id, currentStatus);
+                if (result) {
+                    u.payment_status = result;
+                    renderUsers();
+                    showToast(`Status financeiro de ${u.name} alterado para "${result}"!`);
+                } else {
+                    showToast('Erro ao alterar status financeiro.', true);
+                }
+            } catch (e) {
+                console.error('doTogglePaymentStatus error:', e);
+                showToast('Erro ao conectar com o banco de dados.', true);
             }
         };
 
