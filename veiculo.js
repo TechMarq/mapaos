@@ -1413,15 +1413,11 @@ async function vcTriggerBarcodeScanner(mode = 'all') {
 
         html5QrCodeScannerInstance = new Html5Qrcode("vc-barcode-reader");
         const config = { 
-            fps: 20, 
-            qrbox: mode === 'qr' ? { width: 250, height: 250 } : { width: 300, height: 150 },
-            formatsToSupport: mode === 'qr' ? [ Html5QrcodeSupportedFormats.QR_CODE ] : [ 
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.CODE_39
-            ]
+            fps: 30,
+            aspectRatio: 1.0,
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            }
         };
 
         await html5QrCodeScannerInstance.start(

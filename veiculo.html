@@ -568,15 +568,15 @@
                 <div class="grid grid-cols-3 gap-2">
                     <div>
                         <label class="form-label text-[11px]">KM</label>
-                        <input type="number" id="vc-fuel-km" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs" placeholder="0" required min="0">
+                        <input type="number" id="vc-fuel-km" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs" placeholder="0" required min="0">
                     </div>
                     <div>
                         <label class="form-label text-[11px]">Litros / m³</label>
-                        <input type="number" id="vc-fuel-liters" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs" placeholder="0.00" step="0.001" min="0" required>
+                        <input type="number" id="vc-fuel-liters" inputmode="decimal" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs" placeholder="0.00" step="0.001" min="0" required>
                     </div>
                     <div>
                         <label class="form-label text-[11px]">Total (R$)</label>
-                        <input type="number" id="vc-fuel-total" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-secondary-container" placeholder="0,00" step="0.01" min="0" required>
+                        <input type="number" id="vc-fuel-total" inputmode="decimal" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-secondary-container" placeholder="0,00" step="0.01" min="0" required>
                     </div>
                 </div>
 
@@ -618,7 +618,7 @@
                     </div>
                     <div>
                         <label class="form-label text-[11px]">KM Realização</label>
-                        <input type="number" id="vc-maint-km" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs" placeholder="0" required min="0" oninput="vcCalculateNextMaint()">
+                        <input type="number" id="vc-maint-km" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs" placeholder="0" required min="0" oninput="vcCalculateNextMaint()">
                     </div>
                 </div>
 
@@ -640,7 +640,7 @@
                     </div>
                     <div>
                         <label class="form-label text-[11px]">Custo (R$)</label>
-                        <input type="number" id="vc-maint-cost" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary" placeholder="0,00" step="0.01" min="0" required>
+                        <input type="number" id="vc-maint-cost" inputmode="decimal" class="glass-input w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary" placeholder="0,00" step="0.01" min="0" required>
                     </div>
                 </div>
 
@@ -671,11 +671,11 @@
                         <div id="vc-maint-fields-km" class="grid grid-cols-2 gap-1.5">
                             <div>
                                 <label class="form-label text-[10px]">Interv.(KM)</label>
-                                <input type="number" id="vc-maint-interval-val" class="glass-input w-full px-1.5 py-1 rounded-lg text-xs" placeholder="10000" min="0" oninput="vcCalculateNextMaint()">
+                                <input type="number" id="vc-maint-interval-val" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full px-1.5 py-1 rounded-lg text-xs" placeholder="10000" min="0" oninput="vcCalculateNextMaint()">
                             </div>
                             <div>
                                 <label class="form-label text-[10px]">Próxima(KM)</label>
-                                <input type="number" id="vc-maint-next" class="glass-input w-full px-1.5 py-1 rounded-lg text-xs opacity-70" readonly>
+                                <input type="number" id="vc-maint-next" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full px-1.5 py-1 rounded-lg text-xs opacity-70" readonly>
                             </div>
                         </div>
                         <div id="vc-maint-fields-date" style="display:none;">
@@ -688,7 +688,7 @@
                         <div class="flex items-center gap-2">
                             <span class="text-xs font-bold text-on-surface">Garantia?</span>
                             <div id="vc-maint-warranty-container" style="display:none;" class="inline-flex items-center gap-1">
-                                <input type="number" id="vc-maint-warranty-months" class="glass-input w-16 px-1.5 py-0.5 rounded text-xs" placeholder="Meses" min="1">
+                                <input type="number" id="vc-maint-warranty-months" inputmode="numeric" pattern="[0-9]*" class="glass-input w-16 px-1.5 py-0.5 rounded text-xs" placeholder="Meses" min="1">
                                 <span class="text-[10px] text-on-surface-variant">meses</span>
                             </div>
                         </div>
@@ -771,7 +771,7 @@
             <div class="form-row">
                 <div>
                     <label class="form-label">Ano</label>
-                    <input type="number" id="vc-veh-year" class="glass-input w-full px-3 py-2.5 rounded-xl text-sm" placeholder="2020" min="1950" max="2030">
+                    <input type="number" id="vc-veh-year" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full px-3 py-2.5 rounded-xl text-sm" placeholder="2020" min="1950" max="2030">
                 </div>
                 <div>
                     <label class="form-label">Cor</label>
@@ -788,7 +788,7 @@
                     <label class="form-label">KM Inicial</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">route</span>
-                        <input type="number" id="vc-veh-km" class="glass-input w-full pl-9 pr-3 py-2.5 rounded-xl text-sm" placeholder="0" min="0" value="0">
+                        <input type="number" id="vc-veh-km" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full pl-9 pr-3 py-2.5 rounded-xl text-sm" placeholder="0" min="0" value="0">
                     </div>
                 </div>
             </div>
@@ -796,7 +796,7 @@
             <div class="form-row">
                 <div>
                     <label class="form-label">RENAVAM</label>
-                    <input type="text" id="vc-veh-renavam" class="glass-input w-full px-3 py-2.5 rounded-xl text-sm" placeholder="Opcional">
+                    <input type="text" id="vc-veh-renavam" inputmode="numeric" pattern="[0-9]*" class="glass-input w-full px-3 py-2.5 rounded-xl text-sm" placeholder="Opcional">
                 </div>
                 <div>
                     <label class="form-label">Chassi</label>
