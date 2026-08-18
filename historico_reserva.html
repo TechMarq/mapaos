@@ -1291,9 +1291,9 @@
                                 if (result && !result.success) {
                                     if (result.validationError) {
                                         // Alert user specifying the missing reservation numbers
-                                        alert(`CONCILIAÇÃO ABORTADA!\n\nO motivo é que as seguintes reservas importadas da planilha não constam cadastradas no sistema:\n\n• ${result.missing.join('\n• ')}\n\nNenhuma alteração foi salva no banco de dados.`);
+                                        alert(`CONCILIAÇÃO ABORTADA!\n\n${result.missing.length} reserva(s) importada(s) da planilha não constam cadastradas no sistema:\n\n• ${result.missing.join('\n• ')}\n\nNenhuma alteração foi salva no banco de dados.`, "Conciliação Abortada");
                                     } else {
-                                        alert(`Erro na conciliação: ${result.error}`);
+                                        alert(`Erro na conciliação: ${result.error}`, "Erro na Conciliação");
                                     }
                                     return;
                                 }
