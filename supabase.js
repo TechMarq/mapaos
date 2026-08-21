@@ -518,10 +518,17 @@ async function dbLoginUser(email, password) {
             if (expiresAt < new Date()) {
                 await supabaseClientInstance
                     .from('profiles')
-                    .update({ status: 'Expirado' })
+                    .update({ status: 'Expirado', payment_status: 'Em Aberto' })
                     .eq('id', userId);
                 profile.status = 'Expirado';
+                profile.payment_status = 'Em Aberto';
             }
+        } else if (profile.status === 'Expirado' && profile.payment_status !== 'Em Aberto') {
+            await supabaseClientInstance
+                .from('profiles')
+                .update({ payment_status: 'Em Aberto' })
+                .eq('id', userId);
+            profile.payment_status = 'Em Aberto';
         }
 
         // If the user's account is pending approval, do not let them log in
@@ -644,15 +651,35 @@ async function dbGrantUserAccess(userId, days = 30) {
     }
 }
 
+// Toggle payment status between 'Pago' and 'Em Aberto'
+async function dbTogglePaymentStatus(userId, currentStatus) {
+    if (!supabaseClientInstance) return false;
+    try {
+        const nextStatus = currentStatus === 'Pago' ? 'Em Aberto' : 'Pago';
+        const { error } = await supabaseClientInstance
+            .from('profiles')
+            .update({ payment_status: nextStatus })
+            .eq('id', userId);
+        if (error) throw error;
+        return nextStatus;
+    } catch (err) {
+        console.error('Supabase toggle payment status error:', err);
+        return false;
+    }
+}
+if (typeof window !== 'undefined') window.dbTogglePaymentStatus = dbTogglePaymentStatus;
+
 // Approve a user profile (sets expires_at = now + 30 days)
 async function dbApproveUser(userId) {
     return dbGrantUserAccess(userId, 30);
 }
+if (typeof window !== 'undefined') window.dbApproveUser = dbApproveUser;
 
 // Renew a user profile access (+30 days from today)
 async function dbRenewUser(userId) {
     return dbGrantUserAccess(userId, 30);
 }
+if (typeof window !== 'undefined') window.dbRenewUser = dbRenewUser;
 
 // Freeze user access (saves remaining days and sets status to Congelado)
 async function dbFreezeUser(userId) {
@@ -687,6 +714,7 @@ async function dbFreezeUser(userId) {
         return false;
     }
 }
+if (typeof window !== 'undefined') window.dbFreezeUser = dbFreezeUser;
 
 // Unfreeze user access (restores remaining days starting from now)
 async function dbUnfreezeUser(userId) {
@@ -719,6 +747,7 @@ async function dbUnfreezeUser(userId) {
         return false;
     }
 }
+if (typeof window !== 'undefined') window.dbUnfreezeUser = dbUnfreezeUser;
 
 // Get ALL profiles (Master use only)
 async function dbGetAllUsers() {
@@ -729,12 +758,42 @@ async function dbGetAllUsers() {
             .select('*')
             .order('created_at', { ascending: false });
         if (error) throw error;
+
+        // Auto-update expired users status and payment_status to 'Em Aberto'
+        const now = new Date();
+        const updates = [];
+        (data || []).forEach(u => {
+            const isExpiredByDate = u.expires_at && new Date(u.expires_at) < now;
+            if (isExpiredByDate && u.status === 'Aprovado') {
+                u.status = 'Expirado';
+                u.payment_status = 'Em Aberto';
+                updates.push(
+                    supabaseClientInstance
+                        .from('profiles')
+                        .update({ status: 'Expirado', payment_status: 'Em Aberto' })
+                        .eq('id', u.id)
+                );
+            } else if ((u.status === 'Expirado' || isExpiredByDate) && u.payment_status !== 'Em Aberto') {
+                u.payment_status = 'Em Aberto';
+                updates.push(
+                    supabaseClientInstance
+                        .from('profiles')
+                        .update({ payment_status: 'Em Aberto' })
+                        .eq('id', u.id)
+                );
+            }
+        });
+        if (updates.length > 0) {
+            Promise.all(updates).catch(e => console.error('Erro ao atualizar payment_status de usuários expirados:', e));
+        }
+
         return data;
     } catch (err) {
         console.error('Supabase get all profiles error:', err);
         return [];
     }
 }
+if (typeof window !== 'undefined') window.dbGetAllUsers = dbGetAllUsers;
 
 // Reject/Delete a user profile
 async function dbRejectUser(userId) {
@@ -751,6 +810,7 @@ async function dbRejectUser(userId) {
         return false;
     }
 }
+if (typeof window !== 'undefined') window.dbRejectUser = dbRejectUser;
 
 // Update a user profile name, phone, commission_rate, and commission_type
 async function dbUpdateProfile(userId, updates) {
