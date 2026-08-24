@@ -207,6 +207,12 @@
                     <span id="view-mode-icon" class="material-symbols-outlined text-sm">grid_view</span>
                     <span id="view-mode-text">Cards</span>
                 </button>
+
+                <!-- Batch Select Toggle Button -->
+                <button id="btn-batch-toggle" class="px-4 py-2 glass-card rounded-full text-label-sm font-label-sm text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all flex items-center gap-2 shrink-0 cursor-pointer" title="Seleção em Lote">
+                    <span id="batch-toggle-icon" class="material-symbols-outlined text-sm">checklist</span>
+                    <span id="batch-toggle-text">Selecionar</span>
+                </button>
             </div>
 
             <!-- Search Input Block & Sort Toggle Button -->
@@ -234,6 +240,31 @@
     </main>
     <!-- Bottom Navigation Bar (from JSON) -->
     <div id="bottom-nav-bar"></div>
+
+    <!-- Floating Batch Actions Bar -->
+    <div id="batch-actions-bar" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9990] hidden w-[92%] max-w-[700px] glass-card p-3 md:p-4 rounded-2xl border border-cyan-500/30 shadow-2xl bg-[#0b1326]/95 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-300 transform translate-y-10 opacity-0">
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+            <label class="flex items-center gap-2 text-xs font-semibold text-on-surface cursor-pointer select-none">
+                <input type="checkbox" id="batch-select-all-checkbox" class="w-4 h-4 rounded border-white/20 text-cyan-500 focus:ring-cyan-500 bg-white/10 cursor-pointer" />
+                <span>Selecionar Todos</span>
+            </label>
+            <span id="batch-selected-counter" class="text-xs text-cyan-400 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20">0 selecionados</span>
+        </div>
+        
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+            <button type="button" id="btn-batch-swap" disabled class="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 disabled:opacity-40 disabled:pointer-events-none font-semibold text-xs transition-all flex items-center gap-1.5 border border-cyan-500/30 active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-base">swap_horiz</span>
+                <span>Inverter OS / Reserva</span>
+            </button>
+            <button type="button" id="btn-batch-delete" disabled class="px-3.5 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 disabled:opacity-40 disabled:pointer-events-none font-semibold text-xs transition-all flex items-center gap-1.5 border border-red-500/30 active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-base">delete</span>
+                <span>Excluir</span>
+            </button>
+            <button type="button" id="btn-batch-cancel" class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant transition-colors flex items-center justify-center cursor-pointer" title="Cancelar Seleção">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+    </div>
     <!-- Reconciliation Modal -->
     <div id="reconciliation-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
         <div class="glass-card w-[90%] max-w-[480px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
@@ -425,6 +456,91 @@
         let currentFilteredReservations = [];
         let viewMode = localStorage.getItem('MAPAOS_VIEW_MODE') || 'cards'; // 'cards' (default) or 'list'
         let visibleLimit = 10; // Initial limit: 10 items, +5 on 'Ver Mais'
+
+        // Batch Mode State Variables
+        let isBatchMode = false;
+        let selectedBatchIds = new Set();
+
+        function toggleBatchMode(forceState = null) {
+            isBatchMode = forceState !== null ? forceState : !isBatchMode;
+            
+            const btnToggle = document.getElementById('btn-batch-toggle');
+            const toggleIcon = document.getElementById('batch-toggle-icon');
+            const toggleText = document.getElementById('batch-toggle-text');
+            const actionsBar = document.getElementById('batch-actions-bar');
+
+            if (isBatchMode) {
+                if (btnToggle) {
+                    btnToggle.classList.add('bg-cyan-500/20', 'border-cyan-500/40', 'text-cyan-300');
+                }
+                if (toggleIcon) toggleIcon.textContent = 'close';
+                if (toggleText) toggleText.textContent = 'Cancelar';
+
+                if (actionsBar) {
+                    actionsBar.classList.remove('hidden');
+                    actionsBar.offsetHeight;
+                    actionsBar.classList.remove('translate-y-10', 'opacity-0');
+                }
+            } else {
+                selectedBatchIds.clear();
+                if (btnToggle) {
+                    btnToggle.classList.remove('bg-cyan-500/20', 'border-cyan-500/40', 'text-cyan-300');
+                }
+                if (toggleIcon) toggleIcon.textContent = 'checklist';
+                if (toggleText) toggleText.textContent = 'Selecionar';
+
+                if (actionsBar) {
+                    actionsBar.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => actionsBar.classList.add('hidden'), 300);
+                }
+            }
+            
+            updateBatchCounter();
+            loadAndRenderReservations(false);
+        }
+
+        function toggleBatchItem(id, forceCheck = null) {
+            if (!id) return;
+            if (forceCheck !== null) {
+                if (forceCheck) selectedBatchIds.add(id);
+                else selectedBatchIds.delete(id);
+            } else {
+                if (selectedBatchIds.has(id)) selectedBatchIds.delete(id);
+                else selectedBatchIds.add(id);
+            }
+            updateBatchCounter();
+            
+            const checkboxes = document.querySelectorAll(`.batch-item-checkbox[data-id="${id}"]`);
+            checkboxes.forEach(cb => cb.checked = selectedBatchIds.has(id));
+
+            const rows = document.querySelectorAll(`.reservation-item-row[data-id="${id}"]`);
+            rows.forEach(row => {
+                if (selectedBatchIds.has(id)) {
+                    row.classList.add('ring-2', 'ring-cyan-500/50', 'bg-cyan-500/10');
+                } else {
+                    row.classList.remove('ring-2', 'ring-cyan-500/50', 'bg-cyan-500/10');
+                }
+            });
+        }
+
+        function updateBatchCounter() {
+            const counterBadge = document.getElementById('batch-selected-counter');
+            const btnSwap = document.getElementById('btn-batch-swap');
+            const btnDelete = document.getElementById('btn-batch-delete');
+            const selectAllCb = document.getElementById('batch-select-all-checkbox');
+
+            const count = selectedBatchIds.size;
+            if (counterBadge) counterBadge.textContent = `${count} selecionado${count !== 1 ? 's' : ''}`;
+
+            if (btnSwap) btnSwap.disabled = count === 0;
+            if (btnDelete) btnDelete.disabled = count === 0;
+
+            if (selectAllCb) {
+                const renderedIds = currentFilteredReservations.slice(0, visibleLimit).map(r => r.id);
+                const allSelected = renderedIds.length > 0 && renderedIds.every(id => selectedBatchIds.has(id));
+                selectAllCb.checked = allSelected;
+            }
+        }
 
         function parseItemDate(dateStr) {
             if (!dateStr) return new Date(0);
@@ -638,9 +754,14 @@
                 if (viewMode === 'list') {
                     // Simple compact square list row
                     itemHTML = `
-                        <div class="glass-card p-2 rounded-none relative overflow-hidden flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs mb-1 hover:bg-white/10 transition-colors duration-200"
+                        <div class="reservation-item-row glass-card p-2 rounded-none relative overflow-hidden flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs mb-1 hover:bg-white/10 transition-colors duration-200 cursor-pointer ${selectedBatchIds.has(item.id) ? 'ring-2 ring-cyan-500/50 bg-cyan-500/10' : ''}"
+                            data-id="${item.id}"
+                            onclick="if(isBatchMode) { toggleBatchItem('${item.id}'); }"
                             style="opacity: 0; transform: translateY(10px); transition: all 0.3s ease-out; border-left: 2.5px solid ${isPaid ? '#00f5be' : '#fb923c'}">
                             <div class="flex items-center gap-3 min-w-0">
+                                <div class="batch-checkbox-container ${isBatchMode ? 'flex' : 'hidden'} items-center shrink-0 pr-1">
+                                    <input type="checkbox" data-id="${item.id}" class="batch-item-checkbox w-4 h-4 rounded border-white/20 text-cyan-500 focus:ring-cyan-500 bg-white/10 cursor-pointer" ${selectedBatchIds.has(item.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleBatchItem('${item.id}', this.checked)" />
+                                </div>
                                 <span class="px-1.5 py-0.5 rounded-sm ${badgeColor} text-[8px] font-bold uppercase tracking-wider shrink-0">${item.status}</span>
                                 <div class="flex flex-col gap-0.5 min-w-0">
                                     <div class="flex items-center gap-2 flex-wrap">
@@ -687,11 +808,16 @@
                     }
 
                     itemHTML = `
-                        <div class="glass-card glass-card-hover p-5 rounded-2xl relative overflow-hidden group"
+                        <div class="reservation-item-row glass-card glass-card-hover p-5 rounded-2xl relative overflow-hidden group cursor-pointer ${selectedBatchIds.has(item.id) ? 'ring-2 ring-cyan-500/50 bg-cyan-500/10' : ''}"
+                            data-id="${item.id}"
+                            onclick="if(isBatchMode) { toggleBatchItem('${item.id}'); }"
                             style="opacity: 0; transform: translateY(20px); transition: all 0.5s ease-out;">
                             <div class="absolute top-0 left-0 w-1 h-full ${borderBg}"></div>
                             <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                 <div class="flex gap-4 items-center">
+                                    <div class="batch-checkbox-container ${isBatchMode ? 'flex' : 'hidden'} items-center shrink-0 pr-1 sm:pr-2">
+                                        <input type="checkbox" data-id="${item.id}" class="batch-item-checkbox w-5 h-5 rounded border-white/20 text-cyan-500 focus:ring-cyan-500 bg-white/10 cursor-pointer" ${selectedBatchIds.has(item.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleBatchItem('${item.id}', this.checked)" />
+                                    </div>
                                     <div class="w-12 h-12 rounded-xl ${iconWrapperColor} flex items-center justify-center border overflow-hidden shrink-0">
                                         ${clientPhotoUrl 
                                             ? `<img src="${clientPhotoUrl}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentNode.innerHTML='<span class=&quot;material-symbols-outlined&quot; data-icon=&quot;${iconName}&quot;>${iconName}</span>';">`
@@ -856,6 +982,87 @@
                     viewMode = viewMode === 'cards' ? 'list' : 'cards';
                     localStorage.setItem('MAPAOS_VIEW_MODE', viewMode);
                     loadAndRenderReservations(false);
+                });
+            }
+
+            // Wire Batch Toggle & Action buttons
+            const btnBatchToggle = document.getElementById('btn-batch-toggle');
+            if (btnBatchToggle) btnBatchToggle.addEventListener('click', () => toggleBatchMode());
+
+            const btnBatchCancel = document.getElementById('btn-batch-cancel');
+            if (btnBatchCancel) btnBatchCancel.addEventListener('click', () => toggleBatchMode(false));
+
+            const selectAllCb = document.getElementById('batch-select-all-checkbox');
+            if (selectAllCb) {
+                selectAllCb.addEventListener('change', (e) => {
+                    const renderedItems = currentFilteredReservations.slice(0, visibleLimit);
+                    if (e.target.checked) {
+                        renderedItems.forEach(item => selectedBatchIds.add(item.id));
+                    } else {
+                        renderedItems.forEach(item => selectedBatchIds.delete(item.id));
+                    }
+                    updateBatchCounter();
+                    loadAndRenderReservations(false);
+                });
+            }
+
+            const btnBatchSwap = document.getElementById('btn-batch-swap');
+            if (btnBatchSwap) {
+                btnBatchSwap.addEventListener('click', async () => {
+                    const count = selectedBatchIds.size;
+                    if (count === 0) return;
+
+                    showConfirm(`Deseja inverter os campos OS/Voucher e Reserva de ${count} reserva(s) selecionada(s)?`, async () => {
+                        const originalText = btnBatchSwap.innerHTML;
+                        btnBatchSwap.innerHTML = '<span class="material-symbols-outlined animate-spin text-xs">sync</span> Invertendo...';
+                        btnBatchSwap.disabled = true;
+
+                        let successCount = 0;
+                        for (const id of Array.from(selectedBatchIds)) {
+                            const item = allReservations.find(r => r.id === id);
+                            if (item) {
+                                const newOs = item.reserva_number || '';
+                                const newRes = item.os_number || '';
+                                const ok = await dbUpdateReservation(id, {
+                                    os_number: newOs,
+                                    reserva_number: newRes
+                                });
+                                if (ok) successCount++;
+                            }
+                        }
+
+                        btnBatchSwap.innerHTML = originalText;
+                        btnBatchSwap.disabled = false;
+                        showToast(`${successCount} reserva(s) invertida(s) com sucesso!`);
+                        toggleBatchMode(false);
+                        await loadAndRenderReservations(true);
+                    });
+                });
+            }
+
+            const btnBatchDelete = document.getElementById('btn-batch-delete');
+            if (btnBatchDelete) {
+                btnBatchDelete.addEventListener('click', async () => {
+                    const count = selectedBatchIds.size;
+                    if (count === 0) return;
+
+                    showConfirm(`Tem certeza que deseja excluir permanentemente ${count} reserva(s) selecionada(s)?`, async () => {
+                        const originalText = btnBatchDelete.innerHTML;
+                        btnBatchDelete.innerHTML = '<span class="material-symbols-outlined animate-spin text-xs">sync</span> Excluindo...';
+                        btnBatchDelete.disabled = true;
+
+                        let successCount = 0;
+                        for (const id of Array.from(selectedBatchIds)) {
+                            const ok = await dbDeleteReservation(id);
+                            if (ok) successCount++;
+                        }
+
+                        btnBatchDelete.innerHTML = originalText;
+                        btnBatchDelete.disabled = false;
+                        showToast(`${successCount} reserva(s) excluída(s) com sucesso!`);
+                        toggleBatchMode(false);
+                        await loadAndRenderReservations(true);
+                    });
                 });
             }
         });
