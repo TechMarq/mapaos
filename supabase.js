@@ -407,21 +407,18 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
 
             const resInfo = findMatch(record);
             if (!resInfo) {
-                const labelParts = [];
-                if (rawRes) labelParts.push(`Reserva #${rawRes}`);
-                if (rawOs) labelParts.push(`OS #${rawOs}`);
-                let label = labelParts.join(' / ') || 'Registro sem número';
+                const numParts = [];
+                if (rawOs) numParts.push(`OS #${rawOs}`);
+                if (rawRes) numParts.push(`Res #${rawRes}`);
+                const numStr = numParts.join(' | ') || 'Sem nº';
 
-                const extraInfo = [];
-                if (record.date) extraInfo.push(`Data: ${record.date}`);
-                if (record.client) extraInfo.push(`Cliente: ${record.client}`);
-                if (record.hour) extraInfo.push(`Hora: ${record.hour}`);
+                const details = [];
+                if (record.date) details.push(record.date);
+                if (record.hour) details.push(`às ${record.hour}`);
+                if (record.client) details.push(`(${record.client})`);
 
-                if (extraInfo.length > 0) {
-                    label += ` • ${extraInfo.join(' • ')}`;
-                }
-
-                missingReservations.push(label);
+                const fullLabel = `• ${numStr} — ${details.join(' ')}`;
+                missingReservations.push(fullLabel);
             } else {
                 matchedRecordMap.set(record, resInfo);
             }

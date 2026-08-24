@@ -51,7 +51,7 @@ function _escHtml(str) {
 
         const modalHTML = `
             <div id="custom-alert-modal" class="fixed inset-0 z-[20000] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md transition-all duration-300 p-4">
-                <div class="glass-card w-[90%] max-w-[450px] max-h-[85vh] p-6 rounded-2xl flex flex-col gap-4 border border-white/10 shadow-2xl animate-fade-in">
+                <div class="glass-card w-[95%] max-w-[620px] max-h-[85vh] p-6 rounded-2xl flex flex-col gap-4 border border-white/10 shadow-2xl animate-fade-in">
                     <div class="flex items-center gap-3 shrink-0">
                         <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-primary text-2xl">info</span>
@@ -65,7 +65,7 @@ function _escHtml(str) {
                         <p class="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line">${safeMessage}</p>
                     </div>
                     <button onclick="document.getElementById('custom-alert-modal').remove()" 
-                        class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-10 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center text-xs mt-2 shrink-0">
+                        class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-10 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center text-xs mt-2 shrink-0 cursor-pointer">
                         OK
                     </button>
                 </div>
@@ -86,7 +86,7 @@ function _escHtml(str) {
         const modalId = 'custom-confirm-modal';
         const modalHTML = `
             <div id="${modalId}" class="fixed inset-0 z-[20000] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md transition-all duration-300 p-4">
-                <div class="glass-card w-[90%] max-w-[450px] max-h-[85vh] p-6 rounded-2xl flex flex-col gap-4 border border-white/10 shadow-2xl animate-fade-in">
+                <div class="glass-card w-[95%] max-w-[620px] max-h-[85vh] p-6 rounded-2xl flex flex-col gap-4 border border-white/10 shadow-2xl animate-fade-in">
                     <div class="flex items-center gap-3 shrink-0">
                         <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-yellow-400 text-2xl">help_outline</span>
