@@ -410,7 +410,18 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
                 const labelParts = [];
                 if (rawRes) labelParts.push(`Reserva #${rawRes}`);
                 if (rawOs) labelParts.push(`OS #${rawOs}`);
-                missingReservations.push(labelParts.join(' / ') || 'Registro sem número');
+                let label = labelParts.join(' / ') || 'Registro sem número';
+
+                const extraInfo = [];
+                if (record.date) extraInfo.push(`Data: ${record.date}`);
+                if (record.client) extraInfo.push(`Cliente: ${record.client}`);
+                if (record.hour) extraInfo.push(`Hora: ${record.hour}`);
+
+                if (extraInfo.length > 0) {
+                    label += ` • ${extraInfo.join(' • ')}`;
+                }
+
+                missingReservations.push(label);
             } else {
                 matchedRecordMap.set(record, resInfo);
             }
