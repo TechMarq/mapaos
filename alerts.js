@@ -124,4 +124,30 @@ function _escHtml(str) {
             if (typeof onCancel === 'function') onCancel();
         });
     };
+
+    // 3. Define custom toast notification helper
+    window.showToast = function(message, isError = false) {
+        const existing = document.getElementById('custom-toast-notification');
+        if (existing) existing.remove();
+
+        const toastBg = isError ? 'bg-red-500/90 border-red-400/40 text-white' : 'bg-cyan-500/90 border-cyan-400/40 text-slate-950';
+        const icon = isError ? 'error' : 'check_circle';
+
+        const safeMessage = _escHtml(message);
+        const toastHTML = `
+            <div id="custom-toast-notification" class="fixed top-5 right-5 z-[30000] flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-y-0 opacity-100 ${toastBg}">
+                <span class="material-symbols-outlined text-lg">${icon}</span>
+                <span class="text-xs font-bold select-none">${safeMessage}</span>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', toastHTML);
+
+        setTimeout(() => {
+            const toast = document.getElementById('custom-toast-notification');
+            if (toast) {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 3000);
+    };
 })();

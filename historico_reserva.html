@@ -1041,7 +1041,9 @@
 
                         btnBatchSwap.innerHTML = originalText;
                         btnBatchSwap.disabled = false;
-                        showToast(`${successCount} reserva(s) invertida(s) com sucesso!`);
+                        if (typeof showToast === 'function') {
+                            showToast(`${successCount} reserva(s) invertida(s) com sucesso!`);
+                        }
                         toggleBatchMode(false);
                         await loadAndRenderReservations(true);
                     });
@@ -1070,7 +1072,9 @@
 
                         btnBatchDelete.innerHTML = originalText;
                         btnBatchDelete.disabled = false;
-                        showToast(`${successCount} reserva(s) excluída(s) com sucesso!`);
+                        if (typeof showToast === 'function') {
+                            showToast(`${successCount} reserva(s) excluída(s) com sucesso!`);
+                        }
                         toggleBatchMode(false);
                         await loadAndRenderReservations(true);
                     });
