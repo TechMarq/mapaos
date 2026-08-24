@@ -1456,35 +1456,108 @@
                         }
                         const netMultiplier = commissionType === 'ganho' ? (commissionRate / 100) : (1 - (commissionRate / 100));
 
-                        // Helper to check if a row contains spreadsheet headers
+                        // Helper to format Excel Serial Dates (e.g. 46158 -> 16/05/2026)
+                        const formatExcelDate = (val) => {
+                            if (!val) return '';
+                            const str = val.toString().trim();
+                            if (/^\d{4,5}(\.\d+)?$/.test(str)) {
+                                const serial = parseFloat(str);
+                                const utc_days = Math.floor(serial - 25569);
+                                const utc_value = utc_days * 86400;
+                                const date_info = new Date(utc_value * 1000);
+                                const day = String(date_info.getUTCDate() + 1).padStart(2, '0');
+                                const month = String(date_info.getUTCMonth() + 1).padStart(2, '0');
+                                const year = date_info.getUTCFullYear();
+                                return `${day}/${month}/${year}`;
+                            }
+                            return str;
+                        };
+
+                        // Helper to format Excel Serial Times (e.g. 0.20833 -> 05:00)
+                        const formatExcelTime = (val) => {
+                            if (!val) return '';
+                            const str = val.toString().trim();
+                            if (/^0\.\d+$/.test(str)) {
+                                const totalSeconds = Math.round(parseFloat(str) * 86400);
+                                const hours = Math.floor(totalSeconds / 3600);
+                                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                            }
+                            return str;
+                        };
+
+                        // Helper to check if a cell contains header labels
                         const isHeaderCell = (str) => {
                             if (!str) return false;
                             const l = str.toString().toLowerCase().trim();
-                            return l.includes('placa') || l.includes('voucher') || l.includes('reserva') || l.includes('cliente') || l.includes('total') || l.includes('o.s.');
+                            return l.includes('placa') || l.includes('voucher') || l.includes('reserva') || l.includes('cliente') || l.includes('total') || l.includes('o.s.') || l === 'km' || l.includes('valor');
                         };
+
+                        // Dynamically detect column header mapping from spreadsheet
+                        let colMap = {
+                            plate: 0,
+                            driver: 1,
+                            os: 2,
+                            reserva: 3,
+                            date: 4,
+                            km: 5,
+                            client: 6,
+                            hour: 7,
+                            total: 8
+                        };
+
+                        for (let r = 0; r < Math.min(10, rows.length); r++) {
+                            const row = rows[r];
+                            if (!row || row.length === 0) continue;
+                            let isHeader = false;
+                            const tempMap = {};
+
+                            row.forEach((cell, idx) => {
+                                if (!cell) return;
+                                const txt = cell.toString().toLowerCase().trim();
+                                if (txt.includes('placa')) { tempMap.plate = idx; isHeader = true; }
+                                else if (txt.includes('motorista')) { tempMap.driver = idx; isHeader = true; }
+                                else if (txt === 'os' || txt === 'o.s.' || txt.includes('voucher') || txt.includes('o.s')) { tempMap.os = idx; isHeader = true; }
+                                else if (txt.includes('reserva')) { tempMap.reserva = idx; isHeader = true; }
+                                else if (txt === 'data' || txt.includes('data')) { tempMap.date = idx; isHeader = true; }
+                                else if (txt.includes('cliente')) { tempMap.client = idx; isHeader = true; }
+                                else if (txt === 'km' || txt.includes('empresa')) { tempMap.km = idx; isHeader = true; }
+                                else if (txt === 'hora' || txt.includes('horário') || txt.includes('horario')) { tempMap.hour = idx; isHeader = true; }
+                                else if (txt.includes('valor') || txt.includes('total')) { tempMap.total = idx; isHeader = true; }
+                            });
+
+                            if (isHeader) {
+                                colMap = { ...colMap, ...tempMap };
+                                break;
+                            }
+                        }
 
                         // Loop through worksheet rows (skipping headers)
                         for (let i = 0; i < rows.length; i++) {
                             const cols = rows[i];
-                            if (!cols || cols.length < 8) continue; // sequence: Placa - Motorista - OS - Reserva - Data - Cliente - Hora - Total
+                            if (!cols || cols.length < 4) continue;
 
-                            const plate = cols[0] ? cols[0].toString().trim() : '';
-                            const driver = cols[1] ? cols[1].toString().trim() : '';
-                            const os = cols[2] ? cols[2].toString().trim() : '';
-                            const reserva = cols[3] ? cols[3].toString().trim() : '';
-                            const date = cols[4] ? cols[4].toString().trim() : '';
-                            const client = cols[5] ? cols[5].toString().trim() : '';
-                            const hour = cols[6] ? cols[6].toString().trim() : '';
+                            const plate = cols[colMap.plate] ? cols[colMap.plate].toString().trim() : '';
+                            const driver = cols[colMap.driver] ? cols[colMap.driver].toString().trim() : '';
+                            const os = cols[colMap.os] ? cols[colMap.os].toString().trim() : '';
+                            const reserva = cols[colMap.reserva] ? cols[colMap.reserva].toString().trim() : '';
+                            const rawDate = cols[colMap.date] ? cols[colMap.date].toString().trim() : '';
+                            const date = formatExcelDate(rawDate);
+                            
+                            const clientVal = cols[colMap.client] ? cols[colMap.client].toString().trim() : '';
+                            const kmVal = cols[colMap.km] ? cols[colMap.km].toString().trim() : '';
+                            const client = clientVal || kmVal;
+
+                            const rawHour = cols[colMap.hour] ? cols[colMap.hour].toString().trim() : '';
+                            const hour = formatExcelTime(rawHour);
 
                             // Skip header row if encountered anywhere in the spreadsheet
-                            if (isHeaderCell(plate) || isHeaderCell(os) || isHeaderCell(reserva) || isHeaderCell(client)) {
+                            if (isHeaderCell(plate) || isHeaderCell(os) || isHeaderCell(reserva) || isHeaderCell(date)) {
                                 continue;
                             }
                             
-                            const totalStr = cols[7] ? cols[7].toString().trim() : '0';
+                            const totalStr = cols[colMap.total] ? cols[colMap.total].toString().trim() : '0';
                             const totalVal = parseCurrency(totalStr);
-                            
-                            // Net Value calculation logic: Deduct user commission fee
                             const netVal = totalVal * netMultiplier;
 
                             records.push({
