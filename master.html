@@ -197,24 +197,28 @@
         <!-- Users Section -->
         <div id="section-users" class="space-y-6">
             <!-- Stats Row with Lens Bubble Indicator -->
-            <div id="stats-row" class="relative grid grid-cols-4 gap-2 sm:gap-4 mb-6 animate-fade-in p-1.5 rounded-2xl" style="animation-delay:.05s">
+            <div id="stats-row" class="relative grid grid-cols-5 gap-2 sm:gap-3 mb-6 animate-fade-in p-1.5 rounded-2xl" style="animation-delay:.05s">
                 <div id="card-bubble-indicator" class="absolute lens-bubble rounded-xl transition-all duration-300 ease-out z-0 opacity-0 pointer-events-none" style="height: 0px; top: 0px; left: 0px; width: 0px; will-change: transform, left, width;"></div>
                 
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-emerald-500/20 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Aprovado" onclick="toggleCardFilter('Aprovado', this)">
+                <div class="stat-card !py-2.5 !px-2.5 sm:!py-5 sm:!px-4 rounded-xl border-emerald-500/20 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Aprovado" onclick="toggleCardFilter('Aprovado', this)">
                     <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Ativos</p>
                     <p id="stat-active" class="text-base sm:text-3xl font-bold text-[#44f5be] pointer-events-none">—</p>
                 </div>
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-yellow-500/20 bg-yellow-500/5 cursor-pointer hover:bg-yellow-500/10 hover:border-yellow-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Pendente" onclick="toggleCardFilter('Pendente', this)">
+                <div class="stat-card !py-2.5 !px-2.5 sm:!py-5 sm:!px-4 rounded-xl border-yellow-500/20 bg-yellow-500/5 cursor-pointer hover:bg-yellow-500/10 hover:border-yellow-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Pendente" onclick="toggleCardFilter('Pendente', this)">
                     <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Pendentes</p>
                     <p id="stat-pending" class="text-base sm:text-3xl font-bold text-[#fbbc04] pointer-events-none">—</p>
                 </div>
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-orange-500/20 bg-orange-500/5 cursor-pointer hover:bg-orange-500/10 hover:border-orange-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Congelado" onclick="toggleCardFilter('Congelado', this)">
+                <div class="stat-card !py-2.5 !px-2.5 sm:!py-5 sm:!px-4 rounded-xl border-orange-500/20 bg-orange-500/5 cursor-pointer hover:bg-orange-500/10 hover:border-orange-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Congelado" onclick="toggleCardFilter('Congelado', this)">
                     <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Congelados</p>
                     <p id="stat-frozen" class="text-base sm:text-3xl font-bold text-[#ff9800] pointer-events-none">—</p>
                 </div>
-                <div class="stat-card !py-2.5 !px-3 sm:!py-5 sm:!px-6 rounded-xl border-red-500/20 bg-red-500/5 cursor-pointer hover:bg-red-500/10 hover:border-red-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Expirado" onclick="toggleCardFilter('Expirado', this)">
+                <div class="stat-card !py-2.5 !px-2.5 sm:!py-5 sm:!px-4 rounded-xl border-red-500/20 bg-red-500/5 cursor-pointer hover:bg-red-500/10 hover:border-red-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Expirado" onclick="toggleCardFilter('Expirado', this)">
                     <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none">Expirados</p>
                     <p id="stat-expired" class="text-base sm:text-3xl font-bold text-[#ff5050] pointer-events-none">—</p>
+                </div>
+                <div class="stat-card !py-2.5 !px-2.5 sm:!py-5 sm:!px-4 rounded-xl border-amber-500/20 bg-amber-500/5 cursor-pointer hover:bg-amber-500/10 hover:border-amber-500/40 active:scale-95 transition-all z-10 relative" data-card-status="Em Aberto" onclick="toggleCardFilter('Em Aberto', this)">
+                    <p class="text-on-surface-variant text-[9px] sm:text-xs uppercase tracking-wider mb-0.5 pointer-events-none truncate" title="Status Financeiro Em Aberto">Em Aberto</p>
+                    <p id="stat-em-aberto" class="text-base sm:text-3xl font-bold text-[#f59e0b] pointer-events-none">—</p>
                 </div>
             </div>
 
@@ -565,7 +569,9 @@
         function renderUsers() {
             const body = document.getElementById('users-table-body');
             const empty = document.getElementById('empty-state');
-            let filtered = currentFilter === 'all' ? allUsers : allUsers.filter(u => getUserEffectiveStatus(u) === currentFilter);
+            let filtered = currentFilter === 'all' ? allUsers :
+                           currentFilter === 'Em Aberto' ? allUsers.filter(u => (u.payment_status || 'Em Aberto') === 'Em Aberto') :
+                           allUsers.filter(u => getUserEffectiveStatus(u) === currentFilter);
 
             if (userSearchQuery) {
                 const query = userSearchQuery.toLowerCase();
@@ -603,11 +609,13 @@
             const statPendingEl = document.getElementById('stat-pending');
             const statFrozenEl = document.getElementById('stat-frozen');
             const statExpiredEl = document.getElementById('stat-expired');
+            const statEmAbertoEl = document.getElementById('stat-em-aberto');
 
             if (statActiveEl) statActiveEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Aprovado').length;
             if (statPendingEl) statPendingEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Pendente').length;
             if (statFrozenEl) statFrozenEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Congelado').length;
             if (statExpiredEl) statExpiredEl.textContent = allUsers.filter(u => getUserEffectiveStatus(u) === 'Expirado').length;
+            if (statEmAbertoEl) statEmAbertoEl.textContent = allUsers.filter(u => (u.payment_status || 'Em Aberto') === 'Em Aberto').length;
 
             if (filtered.length === 0) {
                 body.innerHTML = '';
@@ -632,6 +640,29 @@
                     'Rejeitado': '#ff7070'  // Recusado
                 };
                 const borderColor = borderColors[effectiveStatus] || '#8b90a0';
+
+                let sortHighlightLabel = 'VENCIMENTO:';
+                let sortHighlightVal = `<span class="font-semibold text-xs mt-0.5">${expiryLabel(user)}</span>`;
+                let secondaryDetailsHtml = `
+                    <span>Cadastrado: ${formatDate(user.created_at)}</span>
+                    <span>Login: ${formatDateTime(user.last_login)}</span>
+                `;
+
+                if (userSortOption === 'login') {
+                    sortHighlightLabel = 'ÚLTIMO LOGIN:';
+                    sortHighlightVal = `<span class="font-semibold text-xs text-secondary mt-0.5">${formatDateTime(user.last_login)}</span>`;
+                    secondaryDetailsHtml = `
+                        <span>Vencimento: ${expiryLabel(user)}</span>
+                        <span>Cadastrado: ${formatDate(user.created_at)}</span>
+                    `;
+                } else if (userSortOption === 'created') {
+                    sortHighlightLabel = 'CADASTRO:';
+                    sortHighlightVal = `<span class="font-semibold text-xs text-on-surface mt-0.5">${formatDate(user.created_at)}</span>`;
+                    secondaryDetailsHtml = `
+                        <span>Vencimento: ${expiryLabel(user)}</span>
+                        <span>Login: ${formatDateTime(user.last_login)}</span>
+                    `;
+                }
 
                 if (userViewMode === 'grid') {
                     return `
@@ -664,15 +695,15 @@
                                         <span>Telefone:</span>
                                         <span class="font-medium text-on-surface">${user.phone ? `<a href="https://wa.me/55${user.phone.replace(/\D/g, '')}" target="_blank" rel="noopener noreferrer" class="text-secondary hover:underline inline-flex items-center gap-0.5" title="Abrir WhatsApp"><span class="material-symbols-outlined text-[12px]">chat</span>${user.phone}</a>` : '—'}</span>
                                     </div>
-                                    <div class="flex justify-between items-center">
+                                    <div class="flex justify-between items-center ${userSortOption === 'created' ? 'text-primary font-semibold' : ''}">
                                         <span>Cadastrado em:</span>
                                         <span class="font-medium text-on-surface">${formatDate(user.created_at)}</span>
                                     </div>
-                                    <div class="flex justify-between items-center">
+                                    <div class="flex justify-between items-center ${userSortOption === 'login' ? 'text-secondary font-semibold' : ''}">
                                         <span>Último login:</span>
                                         <span class="font-medium text-secondary/90">${formatDateTime(user.last_login)}</span>
                                     </div>
-                                    <div class="flex justify-between items-center pt-1 border-t border-white/5">
+                                    <div class="flex justify-between items-center pt-1 border-t border-white/5 ${userSortOption === 'expiry' ? 'text-amber-400 font-semibold' : ''}">
                                         <span class="uppercase text-[9px] tracking-wider text-on-surface-variant/60 font-bold">Vencimento:</span>
                                         <span>${expiryLabel(user)}</span>
                                     </div>
@@ -693,15 +724,18 @@
                 }
 
                 return `
-                    <div class="glass-card p-3 px-5 rounded-xl flex items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
-                        style="border-left: 2.5px solid ${borderColor}" id="row-${user.id}">
-                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
-                                <span class="material-symbols-outlined text-sm">person</span>
+                    <div class="glass-card p-3.5 px-5 rounded-xl flex items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
+                        style="border-left: 3px solid ${borderColor}" id="row-${user.id}">
+                        <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                                <span class="material-symbols-outlined text-base">person</span>
                             </div>
-                            <div class="flex flex-col gap-0.5 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-bold text-on-surface text-sm truncate">${user.name}</span>
+                            <div class="flex flex-col gap-1 min-w-0">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="font-bold text-on-surface text-sm truncate" title="${user.name}">${user.name}</span>
+                                    <span class="text-[11px] text-on-surface-variant/60 truncate shrink-1 hidden sm:inline">• ${user.email}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
                                     ${badgeFor(effectiveStatus)}
                                     ${(user.plan === 'pro') ? '<span class="badge" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.2));color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-weight:800;">★ PRO</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#8b90a0;border:1px solid rgba(255,255,255,0.1);">NORMAL</span>'}
                                     <button onclick="doTogglePaymentStatus('${user.id}')" title="Clique para alternar o status financeiro do usuário" class="badge transition-all active:scale-95 cursor-pointer ${user.payment_status === 'Pago' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30'}">
@@ -709,17 +743,15 @@
                                         <span>${user.payment_status === 'Pago' ? 'Pago' : 'Em Aberto'}</span>
                                     </button>
                                 </div>
-                                <span class="text-[10px] text-on-surface-variant/70 truncate">${user.email}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-4 shrink-0 text-right">
-                            <div class="hidden sm:flex flex-col items-end text-[10px] text-on-surface-variant/60">
-                                <span>Cadastrado: ${formatDate(user.created_at)}</span>
-                                <span>Login: ${formatDateTime(user.last_login)}</span>
+                            <div class="hidden md:flex flex-col items-end text-[10px] text-on-surface-variant/60">
+                                ${secondaryDetailsHtml}
                             </div>
                             <div class="flex flex-col items-end">
-                                <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/50">Vencimento:</span>
-                                <span class="font-semibold text-xs mt-0.5">${expiryLabel(user)}</span>
+                                <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/50">${sortHighlightLabel}</span>
+                                ${sortHighlightVal}
                             </div>
                         </div>
                     </div>
