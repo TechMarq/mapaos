@@ -438,19 +438,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <!-- Nº OS/Voucher e Nº Reserva -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-unit">
-                            <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
-                            <div class="relative group">
-                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
-                                <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" />
-                            </div>
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between px-1">
+                            <span class="text-label-sm font-label-sm text-on-surface-variant">Identificação</span>
+                            <button type="button" id="btn-swap-modal-numbers" title="Inverter os valores dos campos OS e Reserva" class="text-xs text-primary hover:text-white bg-primary/10 hover:bg-primary/30 border border-primary/20 px-2.5 py-1 rounded-lg transition-all active:scale-95 flex items-center gap-1 font-medium cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">swap_horiz</span>
+                                <span>Inverter OS / Reserva</span>
+                            </button>
                         </div>
-                        <div class="flex flex-col gap-unit">
-                            <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
-                            <div class="relative group">
-                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
-                                <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" />
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-unit">
+                                <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº OS / Voucher</label>
+                                <div class="relative group">
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">receipt</span>
+                                    <input id="modal-os-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.000" type="text" inputmode="numeric" />
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-unit">
+                                <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nº Reserva</label>
+                                <div class="relative group">
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">bookmark</span>
+                                    <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1501,6 +1510,19 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         osInput.addEventListener('input', updateReservaRequired);
         updateReservaRequired();
+
+        const btnSwapModal = document.getElementById('btn-swap-modal-numbers');
+        if (btnSwapModal) {
+            btnSwapModal.addEventListener('click', () => {
+                const temp = osInput.value;
+                osInput.value = resInput.value;
+                resInput.value = temp;
+                updateReservaRequired();
+                if (typeof showToast === 'function') {
+                    showToast('Valores de OS e Reserva invertidos!');
+                }
+            });
+        }
     }
 
     // Autocomplete Lookup for Client Input
