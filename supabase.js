@@ -355,25 +355,64 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
             );
         };
 
-        // Pre-validate all spreadsheet rows: check if Reserva (or OS/Voucher if Reserva is empty) exists in database
+        const cleanNum = (val) => {
+            if (!val) return '';
+            const s = val.toString().trim();
+            if (isHeaderWord(s)) return '';
+            return s.replace(/\D/g, '').trim() || s.toUpperCase();
+        };
+
+        // Flexible matching helper: checks Reserva # first, then OS #, then cross-fields
+        const findMatch = (record) => {
+            const rawRes = record.reserva ? record.reserva.toString().trim() : '';
+            const rawOs = record.os ? record.os.toString().trim() : '';
+            
+            if (isHeaderWord(rawRes) || isHeaderWord(rawOs)) return null;
+
+            const cleanedRes = cleanNum(rawRes);
+            const cleanedOs = cleanNum(rawOs);
+
+            if (!cleanedRes && !cleanedOs) return null;
+
+            // 1. Try matching Reserva against dbResMap (by Reserva #)
+            if (cleanedRes && dbResMap.has(cleanedRes)) {
+                return { match: dbResMap.get(cleanedRes), rawRes, rawOs };
+            }
+            // 2. Try matching OS against dbOsMap (by OS #)
+            if (cleanedOs && dbOsMap.has(cleanedOs)) {
+                return { match: dbOsMap.get(cleanedOs), rawRes, rawOs };
+            }
+            // 3. Try matching Reserva against dbOsMap (cross-match)
+            if (cleanedRes && dbOsMap.has(cleanedRes)) {
+                return { match: dbOsMap.get(cleanedRes), rawRes, rawOs };
+            }
+            // 4. Try matching OS against dbResMap (cross-match)
+            if (cleanedOs && dbResMap.has(cleanedOs)) {
+                return { match: dbResMap.get(cleanedOs), rawRes, rawOs };
+            }
+
+            return null;
+        };
+
+        // Pre-validate all spreadsheet rows: check if Reserva or OS matches a record in database
         const missingReservations = [];
+        const matchedRecordMap = new Map();
+
         for (const record of records) {
             const rawRes = record.reserva ? record.reserva.toString().trim() : '';
             const rawOs = record.os ? record.os.toString().trim() : '';
             
-            // Skip header rows or labels
             if (isHeaderWord(rawRes) || isHeaderWord(rawOs)) continue;
+            if (!rawRes && !rawOs) continue;
 
-            // If Reserva field is empty, fallback to OS/Voucher number
-            const rawTarget = rawRes || rawOs;
-            if (!rawTarget) continue; // Skip empty rows
-
-            const cleanedTarget = rawTarget.replace(/\D/g, '').trim() || rawTarget.toUpperCase();
-            if (!cleanedTarget || isHeaderWord(cleanedTarget)) continue;
-
-            const match = dbResMap.get(cleanedTarget) || dbOsMap.get(cleanedTarget);
-            if (!match) {
-                missingReservations.push(rawTarget);
+            const resInfo = findMatch(record);
+            if (!resInfo) {
+                const labelParts = [];
+                if (rawRes) labelParts.push(`Reserva #${rawRes}`);
+                if (rawOs) labelParts.push(`OS #${rawOs}`);
+                missingReservations.push(labelParts.join(' / ') || 'Registro sem número');
+            } else {
+                matchedRecordMap.set(record, resInfo);
             }
         }
 
@@ -404,44 +443,44 @@ async function dbReconcileReservations(records, filename = 'Importação Sem Nom
         // All matched! Now execute the update operations in parallel for speed
         const updatePromises = [];
         for (const record of records) {
-            const rawRes = record.reserva ? record.reserva.toString().trim() : '';
-            const rawOs = record.os ? record.os.toString().trim() : '';
-            
-            if (isHeaderWord(rawRes) || isHeaderWord(rawOs)) continue;
+            const resInfo = matchedRecordMap.get(record);
+            if (!resInfo) continue;
 
-            const rawTarget = rawRes || rawOs;
-            if (!rawTarget) continue;
+            const dbMatch = resInfo.match;
+            const totalVal = record.total || 0;
+            const netVal = record.netValue || 0;
+            const plateVal = record.plate ? record.plate.toString().trim() : '';
+            const driverVal = record.driver ? record.driver.toString().trim() : '';
 
-            const cleanedTarget = rawTarget.replace(/\D/g, '').trim() || rawTarget.toUpperCase();
-            if (!cleanedTarget || isHeaderWord(cleanedTarget)) continue;
+            const updatePayload = {
+                status: 'Paga',
+                value: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                net_value: netVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                plate: plateVal,
+                driver: driverVal,
+                import_id: importId
+            };
 
-            const dbMatch = dbResMap.get(cleanedTarget) || dbOsMap.get(cleanedTarget);
-            if (dbMatch) {
-                const totalVal = record.total || 0;
-                const netVal = record.netValue || 0;
-                const plateVal = record.plate ? record.plate.toString().trim() : '';
-                const driverVal = record.driver ? record.driver.toString().trim() : '';
-
-                updatePromises.push(
-                    supabaseClientInstance
-                        .from('reservations')
-                        .update({
-                            status: 'Paga',
-                            value: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                            net_value: netVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                            plate: plateVal,
-                            driver: driverVal,
-                            import_id: importId
-                        })
-                        .eq('id', dbMatch.id)
-                        .then(({ error: updateErr }) => {
-                            if (updateErr) {
-                                console.error('Reconciliation update failed for reservation:', dbMatch.id, updateErr);
-                                throw updateErr;
-                            }
-                        })
-                );
+            // Auto-fill missing reserva_number or os_number in system if provided in spreadsheet
+            if (!dbMatch.reserva_number && resInfo.rawRes && !isHeaderWord(resInfo.rawRes)) {
+                updatePayload.reserva_number = resInfo.rawRes;
             }
+            if (!dbMatch.os_number && resInfo.rawOs && !isHeaderWord(resInfo.rawOs)) {
+                updatePayload.os_number = resInfo.rawOs;
+            }
+
+            updatePromises.push(
+                supabaseClientInstance
+                    .from('reservations')
+                    .update(updatePayload)
+                    .eq('id', dbMatch.id)
+                    .then(({ error: updateErr }) => {
+                        if (updateErr) {
+                            console.error('Reconciliation update failed for reservation:', dbMatch.id, updateErr);
+                            throw updateErr;
+                        }
+                    })
+            );
         }
 
         // Wait for all updates to complete simultaneously
