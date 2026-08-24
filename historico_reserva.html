@@ -1024,10 +1024,18 @@
                                 const newOs = item.reserva_number || '';
                                 const newRes = item.os_number || '';
                                 const ok = await dbUpdateReservation(id, {
+                                    client_name: item.client_name,
+                                    date: item.date,
+                                    time: item.time,
+                                    notes: item.notes,
                                     os_number: newOs,
                                     reserva_number: newRes
                                 });
-                                if (ok) successCount++;
+                                if (ok) {
+                                    successCount++;
+                                    item.os_number = ok.os_number || newOs;
+                                    item.reserva_number = ok.reserva_number || newRes;
+                                }
                             }
                         }
 
@@ -1054,7 +1062,10 @@
                         let successCount = 0;
                         for (const id of Array.from(selectedBatchIds)) {
                             const ok = await dbDeleteReservation(id);
-                            if (ok) successCount++;
+                            if (ok) {
+                                successCount++;
+                                allReservations = allReservations.filter(r => r.id !== id);
+                            }
                         }
 
                         btnBatchDelete.innerHTML = originalText;

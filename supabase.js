@@ -266,16 +266,17 @@ async function dbUpdateReservation(reservaId, updates) {
             }
         }
         
+        const updateData = {};
+        if (updates.client_name !== undefined) updateData.client_name = updates.client_name;
+        if (updates.date !== undefined) updateData.date = updates.date;
+        if (updates.time !== undefined) updateData.time = updates.time;
+        if (updates.os_number !== undefined) updateData.os_number = osNum;
+        if (updates.reserva_number !== undefined) updateData.reserva_number = resNum;
+        if (updates.notes !== undefined) updateData.notes = updates.notes;
+
         let query = supabaseClientInstance
             .from('reservations')
-            .update({
-                client_name: updates.client_name,
-                date: updates.date,
-                time: updates.time,
-                os_number: osNum,
-                reserva_number: resNum,
-                notes: updates.notes || null
-            })
+            .update(updateData)
             .eq('id', reservaId);
             
         if (userId && !isMaster) {
