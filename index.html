@@ -23,6 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <script src="navigation.js?v=5" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -549,13 +550,21 @@
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
+            // Calculate max value dynamically so peak data point reaches the top
+            let maxVal = 0;
+            datasets.forEach(ds => {
+                (ds.data || []).forEach(v => { if (v > maxVal) maxVal = v; });
+            });
+
             if (reservationsChart) {
                 reservationsChart.data.datasets = datasets;
                 reservationsChart.options.plugins.legend.display = datasets.length > 1;
+                reservationsChart.options.scales.y.max = maxVal > 0 ? maxVal : 5;
                 reservationsChart.update();
             } else {
                 reservationsChart = new Chart(ctx, {
                     type: 'line',
+                    plugins: [ChartDataLabels],
                     data: {
                         labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
                         datasets: datasets
@@ -563,7 +572,34 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 18,
+                                left: 5,
+                                right: 10,
+                                bottom: 5
+                            }
+                        },
                         plugins: {
+                            datalabels: {
+                                align: 'top',
+                                anchor: 'end',
+                                offset: 2,
+                                clip: false,
+                                backgroundColor: 'transparent',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                color: '#adc6ff',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 9,
+                                    weight: '600'
+                                },
+                                padding: 0,
+                                formatter: function(val) {
+                                    return val > 0 ? val : '';
+                                }
+                            },
                             legend: {
                                 display: datasets.length > 1,
                                 position: 'top',
@@ -608,12 +644,17 @@
                                 }
                             },
                             y: {
+                                min: 0,
+                                max: maxVal > 0 ? maxVal : 5,
+                                beginAtZero: true,
                                 grid: {
                                     color: 'rgba(255, 255, 255, 0.05)',
                                     drawBorder: false,
                                     borderDash: [5, 5]
                                 },
                                 ticks: {
+                                    precision: 0,
+                                    stepSize: 1,
                                     color: '#8b90a0',
                                     font: {
                                         family: "'Inter', sans-serif",

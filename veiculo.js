@@ -790,7 +790,8 @@ function vcRenderHistory() {
         logs.forEach(log => {
             const dateStr = new Date(log.date).toLocaleDateString('pt-BR');
             const pricePerL = log.liters > 0 ? log.total / log.liters : 0;
-            const costPerKm = log.consumption > 0 ? log.total / (log.liters * log.consumption) : 0;
+            const kmDriven = log.kmDriven || 0;
+            const costPerKm = (kmDriven > 0 && log.total > 0) ? (log.total / kmDriven) : (log.consumption > 0 ? log.total / (log.liters * log.consumption) : 0);
             const isList = vState.historyViewMode === 'list';
             const div = document.createElement('div');
             if (isList) {
@@ -805,10 +806,12 @@ function vcRenderHistory() {
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-bold text-on-surface text-xs">${log.type || 'Combustível'}</span>
                                 <span class="text-[11px] font-bold text-secondary-container">R$ ${(log.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                ${kmDriven > 0 ? `<span class="text-[10px] text-emerald-400 font-semibold">(+${kmDriven.toLocaleString('pt-BR')} km)</span>` : ''}
                             </div>
                             <p class="text-[10px] text-on-surface-variant/70 truncate">
                                 ${dateStr} • ${(log.liters || 0).toFixed(2)}L • R$ ${pricePerL.toFixed(2)}/L ${(log.km || 0) ? '• ' + (log.km || 0).toLocaleString('pt-BR') + ' km' : ''} ${log.station ? '• ' + log.station : ''}
                             </p>
+                            ${log.obs ? `<p class="text-[10px] text-amber-300/80 italic mt-0.5 truncate flex items-center gap-1"><span class="material-symbols-outlined text-[11px]">notes</span>${log.obs}</p>` : ''}
                         </div>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
@@ -843,25 +846,36 @@ function vcRenderHistory() {
                         </div>
                     </div>
 
-                    <!-- Stats Grid Box -->
-                    <div class="grid grid-cols-4 gap-2 p-3 rounded-xl bg-white/5 border border-white/10 mb-3 text-center sm:text-left">
+                    <!-- Stats Grid Box (5 Columns) -->
+                    <div class="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-white/5 border border-white/10 mb-3 text-center">
                         <div>
-                            <p class="text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider">Litros</p>
+                            <p class="text-[9px] sm:text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider truncate" title="KM Percorrido desde o abastecimento anterior">Percorrido</p>
+                            <p class="text-xs font-bold text-emerald-400 mt-0.5">${kmDriven > 0 ? kmDriven.toLocaleString('pt-BR') + ' km' : '--'}</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] sm:text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider truncate">Litros</p>
                             <p class="text-xs font-bold text-on-surface mt-0.5">${(log.liters || 0).toFixed(2)} L</p>
                         </div>
                         <div>
-                            <p class="text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider">Preço/L</p>
+                            <p class="text-[9px] sm:text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider truncate">Preço/L</p>
                             <p class="text-xs font-bold text-on-surface mt-0.5">R$ ${pricePerL.toFixed(2)}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider">Consumo</p>
+                            <p class="text-[9px] sm:text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider truncate">Consumo</p>
                             <p class="text-xs font-bold text-secondary-container mt-0.5">${log.consumption > 0 ? log.consumption.toFixed(1) + ' km/L' : '--'}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider">Custo/km</p>
+                            <p class="text-[9px] sm:text-[10px] uppercase font-semibold text-on-surface-variant tracking-wider truncate">Custo/km</p>
                             <p class="text-xs font-bold text-on-surface mt-0.5">${costPerKm > 0 ? 'R$ ' + costPerKm.toFixed(2) : '--'}</p>
                         </div>
                     </div>
+
+                    ${log.obs ? `
+                    <!-- Optional Notes Section -->
+                    <p class="text-[10px] text-on-surface-variant/70 italic mb-2.5 px-1 truncate">
+                        <span class="font-semibold not-italic">Obs:</span> ${log.obs}
+                    </p>
+                    ` : ''}
 
                     <!-- Bottom Footer Row: Station Info & Action Buttons (Edit + Delete) -->
                     <div class="flex items-center justify-between pt-1">
@@ -1114,9 +1128,10 @@ async function vcSubmitFuel(e) {
     const km = parseInt(document.getElementById('vc-fuel-km').value) || 0;
     const liters = parseFloat(document.getElementById('vc-fuel-liters').value) || 0;
     const total = parseFloat(document.getElementById('vc-fuel-total').value) || 0;
+    const obs = document.getElementById('vc-fuel-obs')?.value || '';
 
     if (vState.editingFuelId) {
-        const { data, error } = await vcDb.fuel.update(vState.editingFuelId, { date: date + 'T12:00:00Z', type, station, km, liters, total });
+        const { data, error } = await vcDb.fuel.update(vState.editingFuelId, { date: date + 'T12:00:00Z', type, station, km, liters, total, obs });
         if (error) { alert('Erro ao editar: ' + error.message); }
         else if (data && data.length > 0) {
             const idx = vState.fuelLogs.findIndex(l => l.id === vState.editingFuelId);
@@ -1124,7 +1139,7 @@ async function vcSubmitFuel(e) {
         }
         vState.editingFuelId = null;
     } else {
-        const newLog = { vehicle_id: vState.activeVehicleId, date: date + 'T12:00:00Z', type, station, km, liters, total, consumption: 0 };
+        const newLog = { vehicle_id: vState.activeVehicleId, date: date + 'T12:00:00Z', type, station, km, liters, total, obs, consumption: 0 };
         const { data, error } = await vcDb.fuel.add(newLog);
         if (error) { alert('Erro ao salvar: ' + error.message); }
         else if (data && data.length > 0) {
@@ -1161,18 +1176,30 @@ async function vcUpdateVehicleKm(newKm) {
 }
 
 function vcRecalculateConsumptions() {
-    const vehicleFuelLogs = vState.fuelLogs.filter(l => l.vehicleId === vState.activeVehicleId);
-    const sorted = [...vehicleFuelLogs].sort((a, b) => b.km - a.km);
+    const vehicleFuelLogs = vState.fuelLogs.filter(l => String(l.vehicleId) === String(vState.activeVehicleId));
+    // Sort chronologically ascending (oldest first) by date / KM to calculate distance driven
+    const sorted = [...vehicleFuelLogs].sort((a, b) => {
+        const timeA = new Date(a.date).getTime() || 0;
+        const timeB = new Date(b.date).getTime() || 0;
+        if (timeA !== timeB) return timeA - timeB;
+        return (a.km || 0) - (b.km || 0);
+    });
+
     for (let i = 0; i < sorted.length; i++) {
-        if (i < sorted.length - 1) {
-            const next = sorted[i + 1];
-            const kmDriven = sorted[i].km - next.km;
+        if (i > 0) {
+            const prev = sorted[i - 1];
+            const kmDriven = (sorted[i].km || 0) - (prev.km || 0);
+            sorted[i].kmDriven = kmDriven > 0 ? kmDriven : 0;
             sorted[i].consumption = (kmDriven > 0 && sorted[i].liters > 0) ? kmDriven / sorted[i].liters : 0;
         } else {
+            sorted[i].kmDriven = 0;
             sorted[i].consumption = 0;
         }
     }
-    vState.fuelLogs = vState.fuelLogs.filter(l => l.vehicleId !== vState.activeVehicleId).concat(sorted);
+
+    // Update vState.fuelLogs map with calculated properties
+    const calculatedMap = new Map(sorted.map(item => [item.id, item]));
+    vState.fuelLogs = vState.fuelLogs.map(l => calculatedMap.get(l.id) || l);
 }
 
 function vcEditFuel(id) {
@@ -1188,6 +1215,7 @@ function vcEditFuel(id) {
     document.getElementById('vc-fuel-km').value = log.km || 0;
     document.getElementById('vc-fuel-liters').value = log.liters || 0;
     document.getElementById('vc-fuel-total').value = log.total || 0;
+    if (document.getElementById('vc-fuel-obs')) document.getElementById('vc-fuel-obs').value = log.obs || '';
 
     const btn = document.querySelector('#vc-form-fuel button[type="submit"]');
     if (btn) btn.innerHTML = '<span class="material-symbols-outlined text-lg">save</span> Atualizar Abastecimento';

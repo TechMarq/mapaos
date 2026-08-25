@@ -687,9 +687,15 @@ async function dbGrantUserAccess(userId, days = 30) {
     try {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + days);
+        const lastRenewedAt = new Date().toISOString();
         const { error } = await supabaseClientInstance
             .from('profiles')
-            .update({ status: 'Aprovado', expires_at: expiresAt.toISOString(), frozen_days_remaining: null })
+            .update({ 
+                status: 'Aprovado', 
+                expires_at: expiresAt.toISOString(), 
+                last_renewed_at: lastRenewedAt,
+                frozen_days_remaining: null 
+            })
             .eq('id', userId);
         if (error) throw error;
         return true;

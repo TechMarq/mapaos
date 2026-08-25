@@ -241,6 +241,7 @@
                     <select id="user-sort-select" class="glass-card rounded-xl px-3.5 py-2 text-xs text-primary border-white/10 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all flex-1 min-w-0 bg-[#0b1326] h-10">
                         <option value="created" class="bg-[#0b1326] text-on-surface" selected>Cadastro</option>
                         <option value="expiry" class="bg-[#0b1326] text-on-surface">Vencimento</option>
+                        <option value="renovations" class="bg-[#0b1326] text-on-surface">Renovações</option>
                         <option value="name" class="bg-[#0b1326] text-on-surface">Alfabética</option>
                         <option value="login" class="bg-[#0b1326] text-on-surface">Último Login</option>
                     </select>
@@ -446,7 +447,8 @@
 
         // ─── State ───────────────────────────────────────────────────────────────
         let allUsers = [];
-        let currentFilter = 'all';
+        let currentFilter = 'all'; // Status filter: 'all', 'Aprovado', 'Pendente', 'Congelado', 'Expirado'
+        let filterEmAbertoOnly = false; // Toggle para filtrar apenas 'Em Aberto' simultaneamente
         let activeMainTab = 'users';
         let allClients = [];
         let userSearchQuery = '';
@@ -534,15 +536,16 @@
             } else if (status === 'Aprovado') {
                 btns += `<button class="btn-renew" onclick="doRenew('${user.id}')">+30 dias</button>`;
                 btns += `<button class="btn-renew" style="background: rgba(250,204,21,0.15); color: #facc15; border-color: rgba(250,204,21,0.3)" onclick="doFreeze('${user.id}')">Congelar</button>`;
-                btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Revogar</button>`;
+                btns += `<button class="btn-reject" onclick="doRevoke('${user.id}')">Revogar</button>`;
             } else if (status === 'Expirado') {
                 btns += `<button class="btn-approve" onclick="doRenew('${user.id}')">Renovar</button>`;
-                btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Excluir</button>`;
+                btns += `<button class="btn-reject" onclick="doDeleteUser('${user.id}')">Excluir</button>`;
             } else if (status === 'Rejeitado') {
                 btns += `<button class="btn-approve" onclick="doApprove('${user.id}')">Reativar</button>`;
+                btns += `<button class="btn-reject" onclick="doDeleteUser('${user.id}')">Excluir</button>`;
             } else if (status === 'Congelado') {
                 btns += `<button class="btn-approve" onclick="doUnfreeze('${user.id}')">Descongelar</button>`;
-                btns += `<button class="btn-reject" onclick="doReject('${user.id}')">Excluir</button>`;
+                btns += `<button class="btn-reject" onclick="doDeleteUser('${user.id}')">Excluir</button>`;
             }
             return `<div class="flex gap-2 flex-wrap">${btns}</div>`;
         }
@@ -569,9 +572,23 @@
         function renderUsers() {
             const body = document.getElementById('users-table-body');
             const empty = document.getElementById('empty-state');
-            let filtered = currentFilter === 'all' ? allUsers :
-                           currentFilter === 'Em Aberto' ? allUsers.filter(u => (u.payment_status || 'Em Aberto') === 'Em Aberto') :
-                           allUsers.filter(u => getUserEffectiveStatus(u) === currentFilter);
+            
+            let filtered = [];
+
+            if (currentFilter === 'all') {
+                filtered = [...allUsers];
+            } else if (currentFilter === 'Em Aberto') {
+                // Quando apenas "Em Aberto" está selecionado sozinho (sem nenhum status específico)
+                filtered = allUsers.filter(u => (u.payment_status || 'Em Aberto') === 'Em Aberto');
+            } else {
+                // Um status específico está selecionado (ex: 'Aprovado' / Ativos)
+                filtered = allUsers.filter(u => getUserEffectiveStatus(u) === currentFilter);
+                
+                // Se o card "Em Aberto" também estiver ativado junto com o status selecionado:
+                if (filterEmAbertoOnly) {
+                    filtered = filtered.filter(u => (u.payment_status || 'Em Aberto') === 'Em Aberto');
+                }
+            }
 
             if (userSearchQuery) {
                 const query = userSearchQuery.toLowerCase();
@@ -591,6 +608,11 @@
                     const timeA = a.expires_at ? new Date(a.expires_at).getTime() : defaultTime;
                     const timeB = b.expires_at ? new Date(b.expires_at).getTime() : defaultTime;
                     res = timeA - timeB;
+                } else if (userSortOption === 'renovations') {
+                    if (!a.last_renewed_at && !b.last_renewed_at) res = 0;
+                    else if (!a.last_renewed_at) return 1;
+                    else if (!b.last_renewed_at) return -1;
+                    else res = new Date(a.last_renewed_at) - new Date(b.last_renewed_at);
                 } else if (userSortOption === 'name') {
                     res = (a.name || '').localeCompare(b.name || '', 'pt-BR');
                 } else if (userSortOption === 'created') {
@@ -645,21 +667,32 @@
                 let sortHighlightVal = `<span class="font-semibold text-xs mt-0.5">${expiryLabel(user)}</span>`;
                 let secondaryDetailsHtml = `
                     <span>Cadastrado: ${formatDate(user.created_at)}</span>
+                    <span>Renovado em: ${user.last_renewed_at ? formatDateTime(user.last_renewed_at) : 'Nunca'}</span>
                     <span>Login: ${formatDateTime(user.last_login)}</span>
                 `;
 
-                if (userSortOption === 'login') {
+                if (userSortOption === 'renovations') {
+                    sortHighlightLabel = 'ÚLTIMA RENOVAÇÃO:';
+                    sortHighlightVal = `<span class="font-semibold text-xs text-emerald-400 mt-0.5">${user.last_renewed_at ? formatDateTime(user.last_renewed_at) : 'Nunca renovado'}</span>`;
+                    secondaryDetailsHtml = `
+                        <span>Vencimento: ${expiryLabel(user)}</span>
+                        <span>Cadastrado: ${formatDate(user.created_at)}</span>
+                        <span>Login: ${formatDateTime(user.last_login)}</span>
+                    `;
+                } else if (userSortOption === 'login') {
                     sortHighlightLabel = 'ÚLTIMO LOGIN:';
                     sortHighlightVal = `<span class="font-semibold text-xs text-secondary mt-0.5">${formatDateTime(user.last_login)}</span>`;
                     secondaryDetailsHtml = `
                         <span>Vencimento: ${expiryLabel(user)}</span>
                         <span>Cadastrado: ${formatDate(user.created_at)}</span>
+                        <span>Renovado em: ${user.last_renewed_at ? formatDateTime(user.last_renewed_at) : 'Nunca'}</span>
                     `;
                 } else if (userSortOption === 'created') {
                     sortHighlightLabel = 'CADASTRO:';
                     sortHighlightVal = `<span class="font-semibold text-xs text-on-surface mt-0.5">${formatDate(user.created_at)}</span>`;
                     secondaryDetailsHtml = `
                         <span>Vencimento: ${expiryLabel(user)}</span>
+                        <span>Renovado em: ${user.last_renewed_at ? formatDateTime(user.last_renewed_at) : 'Nunca'}</span>
                         <span>Login: ${formatDateTime(user.last_login)}</span>
                     `;
                 }
@@ -698,6 +731,10 @@
                                     <div class="flex justify-between items-center ${userSortOption === 'created' ? 'text-primary font-semibold' : ''}">
                                         <span>Cadastrado em:</span>
                                         <span class="font-medium text-on-surface">${formatDate(user.created_at)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center ${userSortOption === 'renovations' ? 'text-emerald-400 font-semibold' : ''}">
+                                        <span>Última renovação:</span>
+                                        <span class="font-medium text-emerald-400/90">${user.last_renewed_at ? formatDateTime(user.last_renewed_at) : 'Nunca'}</span>
                                     </div>
                                     <div class="flex justify-between items-center ${userSortOption === 'login' ? 'text-secondary font-semibold' : ''}">
                                         <span>Último login:</span>
@@ -761,18 +798,61 @@
 
         function toggleCardFilter(status, cardEl) {
             const indicator = document.getElementById('card-bubble-indicator');
-            if (currentFilter === status) {
-                // If clicking active card again, reset filter to 'all'
-                currentFilter = 'all';
-                if (indicator) {
-                    indicator.classList.add('opacity-0');
-                    indicator.classList.remove('opacity-100');
+
+            if (status === 'Em Aberto') {
+                if (currentFilter !== 'all' && currentFilter !== 'Em Aberto') {
+                    // Um card de status (ex: Ativos) já está selecionado!
+                    // Alterna a combinação do filtro Em Aberto
+                    filterEmAbertoOnly = !filterEmAbertoOnly;
+                    
+                    // Destaca visualmente o card Em Aberto quando combinado
+                    if (filterEmAbertoOnly) {
+                        cardEl.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/20');
+                        cardEl.classList.remove('bg-amber-500/5');
+                    } else {
+                        cardEl.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/20');
+                        cardEl.classList.add('bg-amber-500/5');
+                    }
+                } else {
+                    // Nenhum outro card de status selecionado: funciona normalmente unificado
+                    filterEmAbertoOnly = false;
+                    resetEmAbertoCardStyle();
+                    if (currentFilter === 'Em Aberto') {
+                        currentFilter = 'all';
+                        if (indicator) {
+                            indicator.classList.add('opacity-0');
+                            indicator.classList.remove('opacity-100');
+                        }
+                    } else {
+                        currentFilter = 'Em Aberto';
+                        updateCardBubbleIndicator(cardEl);
+                    }
                 }
             } else {
-                currentFilter = status;
-                updateCardBubbleIndicator(cardEl);
+                // Selecionou um card de status (Ativos, Pendentes, Congelados, Expirados)
+                if (currentFilter === status) {
+                    currentFilter = 'all';
+                    filterEmAbertoOnly = false;
+                    resetEmAbertoCardStyle();
+                    if (indicator) {
+                        indicator.classList.add('opacity-0');
+                        indicator.classList.remove('opacity-100');
+                    }
+                } else {
+                    currentFilter = status;
+                    updateCardBubbleIndicator(cardEl);
+                }
             }
+
             renderUsers();
+        }
+
+        function resetEmAbertoCardStyle() {
+            const emAbertoCard = document.querySelector('[data-card-status="Em Aberto"]');
+            if (emAbertoCard) {
+                emAbertoCard.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/20');
+                emAbertoCard.classList.add('bg-amber-500/5');
+            }
         }
 
         function updateCardBubbleIndicator(cardEl) {
@@ -831,6 +911,7 @@
                     u.status = 'Aprovado';
                     const d = new Date(); d.setDate(d.getDate() + 30);
                     u.expires_at = d.toISOString();
+                    u.last_renewed_at = new Date().toISOString();
                 }
                 renderUsers();
                 showToast('Usuário aprovado por 30 dias!');
@@ -847,6 +928,7 @@
                     u.status = 'Aprovado';
                     const d = new Date(); d.setDate(d.getDate() + 30);
                     u.expires_at = d.toISOString();
+                    u.last_renewed_at = new Date().toISOString();
                 }
                 renderUsers();
                 showToast('+30 dias adicionados com sucesso!');
@@ -941,16 +1023,35 @@
             });
         }
 
-        async function doReject(id) {
-            showConfirm('Tem certeza que deseja recusar/excluir este usuário?', async () => {
+        async function doRevoke(id) {
+            showConfirm('Deseja realmente REVOGAR o acesso deste usuário? Ele ficará sem acesso mas você poderá reativá-lo depois.', async () => {
+                try {
+                    const { error } = await supabaseClientInstance.from('profiles').update({ status: 'Rejeitado' }).eq('id', id);
+                    if (!error) {
+                        const u = allUsers.find(x => x.id === id);
+                        if (u) u.status = 'Rejeitado';
+                        renderUsers();
+                        showToast('Acesso do usuário revogado com sucesso!');
+                    } else {
+                        showToast('Erro ao revogar acesso.', true);
+                    }
+                } catch (e) {
+                    console.error('doRevoke error:', e);
+                    showToast('Erro de conexão ao revogar acesso.', true);
+                }
+            });
+        }
+
+        async function doDeleteUser(id) {
+            showConfirm('Atenção: Deseja EXCLUIR PERMANENTEMENTE a conta deste usuário?', async () => {
                 const rejectFn = window.dbRejectUser || (typeof dbRejectUser !== 'undefined' ? dbRejectUser : null);
                 const ok = rejectFn ? await rejectFn(id) : false;
                 if (ok) {
                     allUsers = allUsers.filter(x => x.id !== id);
                     renderUsers();
-                    showToast('Usuário removido.', false);
+                    showToast('Conta do usuário excluída permanentemente.', false);
                 } else {
-                    showToast('Erro ao remover usuário.', true);
+                    showToast('Erro ao excluir conta do usuário.', true);
                 }
             });
         }
