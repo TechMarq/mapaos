@@ -1117,12 +1117,12 @@
 
             // 2. Add Filters Description Section
             doc.setTextColor(11, 19, 38);
-            doc.setFontSize(11);
+            doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            doc.text("Filtros Ativos no Relatório:", 15, 46);
+            doc.text("Filtros Ativos no Relatório:", 15, 43);
 
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
+            doc.setFontSize(8.5);
             doc.setTextColor(70, 80, 95);
 
             let filterText = `Período: ${dateRangeFilter === 'Todos' ? 'Todas as Datas' : dateRangeFilter}`;
@@ -1130,14 +1130,87 @@
             if (searchQuery) {
                 filterText += `   |   Busca: "${searchQuery}"`;
             }
-            doc.text(filterText, 15, 52);
+            doc.text(filterText, 15, 48);
 
-            // Divider Line
-            doc.setDrawColor(220, 225, 235);
-            doc.line(15, 58, 195, 58);
+            // 3. Calculate Financial Metrics & KPI Cards
+            let countPaid = 0;
+            let countPending = 0;
+            let totalGross = 0;
+            let totalNet = 0;
 
-            // 3. Prepare Table Headers and Rows
-            const tableHeaders = [["O.S.", "Reserva", "Data/Hora", "Cliente", "Motorista / Placa", "Total", "Líquido (70%)", "Status"]];
+            let commissionRate = 30;
+            let commissionType = 'descontado';
+            if (loggedUserRaw) {
+                try {
+                    const uObj = JSON.parse(loggedUserRaw);
+                    if (uObj) {
+                        if (uObj.commission_rate !== undefined && uObj.commission_rate !== null) {
+                            commissionRate = parseFloat(uObj.commission_rate);
+                        }
+                        if (uObj.commission_type) {
+                            commissionType = uObj.commission_type;
+                        }
+                    }
+                } catch(e) {}
+            }
+            const netMultiplier = commissionType === 'ganho' ? (commissionRate / 100) : (1 - (commissionRate / 100));
+            const pdfCommissionLabel = commissionType === 'ganho' ? `${commissionRate}%` : `${100 - commissionRate}%`;
+
+            currentFilteredReservations.forEach(item => {
+                const isPaid = item.status === 'Paga';
+                if (isPaid) countPaid++;
+                else countPending++;
+
+                const gross = parseCurrency(item.value);
+                totalGross += gross;
+
+                let net = 0;
+                if (isPaid && item.net_value) {
+                    net = parseCurrency(item.net_value);
+                } else if (item.net_value) {
+                    net = parseCurrency(item.net_value);
+                } else {
+                    net = gross * netMultiplier;
+                }
+                totalNet += net;
+            });
+
+            // Draw KPI Metric Cards
+            const cardWidth = 42;
+            const cardHeight = 18;
+            const cardY = 53;
+
+            const cardsData = [
+                { label: "PAGAS", value: `${countPaid}`, color: [16, 185, 129] },
+                { label: "PENDENTES", value: `${countPending}`, color: [249, 115, 22] },
+                { label: "TOTAL BRUTO", value: `R$ ${totalGross.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: [11, 19, 38] },
+                { label: `TOTAL LÍQUIDO (${pdfCommissionLabel})`, value: `R$ ${totalNet.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: [14, 116, 144] }
+            ];
+
+            cardsData.forEach((card, idx) => {
+                const cardX = 15 + idx * (cardWidth + 4);
+
+                // Card background box
+                doc.setFillColor(245, 247, 250);
+                doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 2, 2, 'F');
+                doc.setDrawColor(226, 232, 240);
+                doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 2, 2, 'S');
+
+                // Card label
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(6.5);
+                doc.setTextColor(100, 116, 139);
+                doc.text(card.label, cardX + 4, cardY + 6);
+
+                // Card value
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9.5);
+                doc.setTextColor(card.color[0], card.color[1], card.color[2]);
+                doc.text(card.value, cardX + 4, cardY + 13.5);
+            });
+
+            // 4. Prepare Table Headers and Rows
+            const tableHeaders = [["O.S.", "Reserva", "Data/Hora", "Cliente", "Motorista / Placa", "Total", `Líquido (${pdfCommissionLabel})`, "Status"]];
             const tableRows = currentFilteredReservations.map(item => {
                 const driverPlate = [item.driver || '—', item.plate ? `(${item.plate})` : ''].filter(Boolean).join(' ');
                 return [
@@ -1152,9 +1225,9 @@
                 ];
             });
 
-            // 4. Generate Table
+            // 5. Generate Table
             doc.autoTable({
-                startY: 64,
+                startY: cardY + cardHeight + 6,
                 head: tableHeaders,
                 body: tableRows,
                 theme: 'striped',
@@ -1372,25 +1445,27 @@
         }
 
         function parseCurrency(val) {
-            if (val === undefined || val === null) return 0;
-            if (typeof val === 'number') return val;
+            if (val === undefined || val === null || val === '') return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
             
             let s = val.toString().trim();
-            s = s.replace(/R\$\s?/g, ''); // Remove R$
+            if (!s) return 0;
             
-            // If it has a comma, it is Brazilian format (e.g. "1.250,50" or "75,74")
-            if (s.includes(',')) {
+            // Remove R$, r$, spaces, non-breaking spaces (\u00A0)
+            s = s.replace(/R\$\s?/gi, '').replace(/\u00A0/g, '').trim();
+            
+            if (s.includes('.') && s.includes(',')) {
                 s = s.replace(/\./g, '').replace(',', '.');
-            }
-            // If it has no comma but has a dot, determine if it's a thousands separator (e.g. "1.000") or decimal dot (e.g. "75.74")
-            else if (s.includes('.')) {
+            } else if (s.includes(',')) {
+                s = s.replace(',', '.');
+            } else if (s.includes('.')) {
                 const parts = s.split('.');
-                const lastPart = parts[parts.length - 1];
-                if (lastPart.length === 3) {
-                    s = s.replace(/\./g, ''); // Thousands separator
+                if (parts.length === 2 && parts[1].length === 3 && parts[0].length >= 1) {
+                    s = s.replace(/\./g, '');
                 }
             }
             
+            s = s.replace(/[^0-9.-]/g, '');
             const parsed = parseFloat(s);
             return isNaN(parsed) ? 0 : parsed;
         }
@@ -1427,8 +1502,8 @@
                         const firstSheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[firstSheetName];
                         
-                        // Convert worksheet cells to nested arrays
-                        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        // Convert worksheet cells to nested arrays with defval: '' to maintain exact column alignment
+                        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
                         const records = [];
 
                         if (rows.length < 2) {
@@ -1465,7 +1540,7 @@
                                 const utc_days = Math.floor(serial - 25569);
                                 const utc_value = utc_days * 86400;
                                 const date_info = new Date(utc_value * 1000);
-                                const day = String(date_info.getUTCDate() + 1).padStart(2, '0');
+                                const day = String(date_info.getUTCDate()).padStart(2, '0');
                                 const month = String(date_info.getUTCMonth() + 1).padStart(2, '0');
                                 const year = date_info.getUTCFullYear();
                                 return `${day}/${month}/${year}`;
@@ -1490,7 +1565,7 @@
                         const isHeaderCell = (str) => {
                             if (!str) return false;
                             const l = str.toString().toLowerCase().trim();
-                            return l.includes('placa') || l.includes('voucher') || l.includes('reserva') || l.includes('cliente') || l.includes('total') || l.includes('o.s.') || l === 'km' || l.includes('valor');
+                            return l.includes('placa') || l.includes('voucher') || l.includes('reserva') || l.includes('cliente') || l.includes('total') || l.includes('o.s.') || l === 'km' || l.includes('valor') || l.includes('vlr') || l.includes('preço') || l.includes('preco');
                         };
 
                         // Dynamically detect column header mapping from spreadsheet
@@ -1506,27 +1581,27 @@
                             total: 8
                         };
 
-                        for (let r = 0; r < Math.min(10, rows.length); r++) {
+                        for (let r = 0; r < Math.min(15, rows.length); r++) {
                             const row = rows[r];
                             if (!row || row.length === 0) continue;
-                            let isHeader = false;
                             const tempMap = {};
+                            let matchCount = 0;
 
                             row.forEach((cell, idx) => {
                                 if (!cell) return;
                                 const txt = cell.toString().toLowerCase().trim();
-                                if (txt.includes('placa')) { tempMap.plate = idx; isHeader = true; }
-                                else if (txt.includes('motorista')) { tempMap.driver = idx; isHeader = true; }
-                                else if (txt === 'os' || txt === 'o.s.' || txt.includes('voucher') || txt.includes('o.s')) { tempMap.os = idx; isHeader = true; }
-                                else if (txt.includes('reserva')) { tempMap.reserva = idx; isHeader = true; }
-                                else if (txt === 'data' || txt.includes('data')) { tempMap.date = idx; isHeader = true; }
-                                else if (txt.includes('cliente')) { tempMap.client = idx; isHeader = true; }
-                                else if (txt === 'km' || txt.includes('empresa')) { tempMap.km = idx; isHeader = true; }
-                                else if (txt === 'hora' || txt.includes('horário') || txt.includes('horario')) { tempMap.hour = idx; isHeader = true; }
-                                else if (txt.includes('valor') || txt.includes('total')) { tempMap.total = idx; isHeader = true; }
+                                if (txt.includes('placa')) { tempMap.plate = idx; matchCount++; }
+                                else if (txt.includes('motorista')) { tempMap.driver = idx; matchCount++; }
+                                else if (txt === 'os' || txt === 'o.s.' || txt.includes('voucher') || txt.includes('o.s')) { tempMap.os = idx; matchCount++; }
+                                else if (txt.includes('reserva')) { tempMap.reserva = idx; matchCount++; }
+                                else if (txt === 'data' || txt.includes('data')) { tempMap.date = idx; matchCount++; }
+                                else if (txt.includes('cliente')) { tempMap.client = idx; matchCount++; }
+                                else if (txt === 'km' || txt.includes('empresa')) { tempMap.km = idx; matchCount++; }
+                                else if (txt === 'hora' || txt.includes('horário') || txt.includes('horario')) { tempMap.hour = idx; matchCount++; }
+                                else if (txt.includes('valor') || txt.includes('total') || txt.includes('vlr') || txt.includes('preço') || txt.includes('preco') || txt.includes('montante')) { tempMap.total = idx; matchCount++; }
                             });
 
-                            if (isHeader) {
+                            if (matchCount >= 2) {
                                 colMap = { ...colMap, ...tempMap };
                                 break;
                             }
@@ -1556,7 +1631,7 @@
                                 continue;
                             }
                             
-                            const totalStr = cols[colMap.total] ? cols[colMap.total].toString().trim() : '0';
+                            const totalStr = cols[colMap.total] !== undefined && cols[colMap.total] !== null ? cols[colMap.total].toString().trim() : '0';
                             const totalVal = parseCurrency(totalStr);
                             const netVal = totalVal * netMultiplier;
 
