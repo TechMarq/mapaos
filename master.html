@@ -81,6 +81,15 @@
         }
         .glass-input:focus { outline: none; border-color: #adc6ff; box-shadow: 0 0 0 2px rgba(173,198,255,0.1); }
 
+        select {
+            color-scheme: dark;
+        }
+        select option {
+            background-color: #0b1326 !important;
+            color: #dae2fd !important;
+            padding: 6px 10px;
+        }
+
         /* Status badges */
         .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
         .badge-aprovado  { background: rgba(68,245,190,0.12); color: #44f5be; border: 1px solid rgba(68,245,190,0.3); }
@@ -274,18 +283,77 @@
 
         <!-- Client Management Section -->
         <div id="section-clients" class="hidden space-y-6 animate-fade-in">
-            <!-- Add Client Card -->
-            <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-4 justify-between">
-                <div class="flex-1">
-                    <h2 class="text-sm font-semibold text-on-surface">Cadastrar Novo Cliente</h2>
-                    <p class="text-xs text-on-surface-variant mt-0.5">Adicione novos clientes para estarem disponíveis no formulário de reservas.</p>
-                </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl w-full">
-                    <input type="text" id="new-client-name" class="glass-input h-10 px-4 rounded-xl text-xs flex-1 uppercase" placeholder="Nome do Cliente (ex: HONDA)" />
-                    <input type="text" id="new-client-photo" class="glass-input h-10 px-4 rounded-xl text-xs flex-1" placeholder="Link da Foto (URL)" />
-                    <button onclick="handleCreateClient()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all shrink-0">
-                        <span class="material-symbols-outlined text-sm">add</span> Cadastrar
-                    </button>
+            <!-- Add Client Card (Collapsible Accordion) -->
+            <div class="glass-card rounded-2xl border border-white/10 overflow-hidden transition-all duration-300">
+                <button type="button" onclick="toggleAddClientCard()" class="w-full p-4 md:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.03] transition-colors cursor-pointer select-none">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                            <span class="material-symbols-outlined text-lg">domain_add</span>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                                Cadastrar Novo Cliente
+                            </h2>
+                            <p class="text-[11px] text-on-surface-variant/70 mt-0.5">Toque para expandir e cadastrar novo cliente</p>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant hover:text-on-surface shrink-0" id="btn-toggle-client-card">
+                        <span class="material-symbols-outlined text-lg transition-transform duration-300" id="icon-toggle-client-card">expand_more</span>
+                    </div>
+                </button>
+                
+                <div id="add-client-form-body" class="hidden px-5 pb-5 pt-2 flex flex-col gap-4 border-t border-white/5 animate-fade-in">
+                    <p class="text-xs text-on-surface-variant/80">Defina as regras de fechamento e prazos para cálculo automático de competência e previsão de pagamento.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                        <div class="lg:col-span-2 flex flex-col gap-1">
+                            <label class="text-[11px] font-semibold text-on-surface-variant px-1">Nome do Cliente *</label>
+                            <input type="text" id="new-client-name" class="glass-input h-10 px-3 rounded-xl text-xs uppercase" placeholder="Ex: NISSAN" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-semibold text-on-surface-variant px-1">Dia de Fechamento</label>
+                            <select id="new-client-closing-day" class="glass-input h-10 px-3 rounded-xl text-xs bg-[#0b1326] text-on-surface cursor-pointer">
+                                <option value="fim_do_mes" selected>Final do Mês (28/30/31)</option>
+                                <option value="1">Dia 01</option><option value="2">Dia 02</option><option value="3">Dia 03</option><option value="4">Dia 04</option><option value="5">Dia 05</option>
+                                <option value="6">Dia 06</option><option value="7">Dia 07</option><option value="8">Dia 08</option><option value="9">Dia 09</option><option value="10">Dia 10</option>
+                                <option value="11">Dia 11</option><option value="12">Dia 12</option><option value="13">Dia 13</option><option value="14">Dia 14</option><option value="15">Dia 15</option>
+                                <option value="16">Dia 16</option><option value="17">Dia 17</option><option value="18">Dia 18</option><option value="19">Dia 19</option><option value="20">Dia 20</option>
+                                <option value="21">Dia 21</option><option value="22">Dia 22</option><option value="23">Dia 23</option><option value="24">Dia 24</option><option value="25">Dia 25</option>
+                                <option value="26">Dia 26</option><option value="27">Dia 27</option><option value="28">Dia 28</option><option value="29">Dia 29</option><option value="30">Dia 30</option><option value="31">Dia 31</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-semibold text-on-surface-variant px-1">Prazo de Pagamento</label>
+                            <select id="new-client-payment-term" class="glass-input h-10 px-3 rounded-xl text-xs bg-[#0b1326] text-on-surface cursor-pointer">
+                                <option value="15">15 dias</option>
+                                <option value="30" selected>30 dias (1 mês)</option>
+                                <option value="45">45 dias</option>
+                                <option value="60">60 dias (2 meses)</option>
+                                <option value="90">90 dias (3 meses)</option>
+                                <option value="120">120 dias (4 meses)</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-semibold text-on-surface-variant px-1">Dia do Pagamento</label>
+                            <select id="new-client-payment-day" class="glass-input h-10 px-3 rounded-xl text-xs bg-[#0b1326] text-on-surface cursor-pointer">
+                                <option value="5">Dia 05</option>
+                                <option value="10" selected>Dia 10 (Padrão)</option>
+                                <option value="15">Dia 15</option>
+                                <option value="20">Dia 20</option>
+                                <option value="25">Dia 25</option>
+                                <option value="30">Dia 30</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between pt-2 border-t border-white/5">
+                        <div class="flex-1">
+                            <input type="text" id="new-client-photo" class="glass-input h-10 px-3 rounded-xl text-xs w-full" placeholder="Link do Logo/Foto (URL opcional)" />
+                        </div>
+                        <button onclick="handleCreateClient()" class="h-10 px-5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shrink-0 shadow-md cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">add</span> Cadastrar Cliente
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -396,13 +464,13 @@
 
     <!-- Edit Client Modal -->
     <div id="edit-client-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#060e20]/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" style="display: none;">
-        <div class="glass-card w-[90%] max-w-[450px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
+        <div class="glass-card w-[90%] max-w-[500px] p-6 md:p-8 rounded-2xl flex flex-col gap-6 transform scale-95 transition-all duration-300 border-t-white/20">
             <div class="flex justify-between items-start">
                 <div>
                     <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">Editar Cliente</h3>
-                    <p class="text-on-surface-variant text-sm mt-1">Altere o nome e o link da foto do cliente.</p>
+                    <p class="text-on-surface-variant text-sm mt-1">Altere o nome, regras de fechamento e prazos do cliente.</p>
                 </div>
-                <button id="close-edit-client-modal" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center">
+                <button id="close-edit-client-modal" class="text-on-surface-variant hover:text-on-surface hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center cursor-pointer">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
@@ -410,17 +478,55 @@
             <form id="edit-client-form" class="flex flex-col gap-4" onsubmit="event.preventDefault(); handleUpdateClient();">
                 <input type="hidden" id="edit-client-id" />
                 <div class="flex flex-col gap-unit">
-                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nome do Cliente</label>
-                    <input type="text" id="edit-client-name" class="glass-input h-12 px-4 rounded-xl text-on-surface uppercase" required />
+                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Nome do Cliente *</label>
+                    <input type="text" id="edit-client-name" class="glass-input h-11 px-4 rounded-xl text-on-surface uppercase text-xs" required />
                 </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[11px] font-semibold text-on-surface-variant px-1">Fechamento</label>
+                        <select id="edit-client-closing-day" class="glass-input h-10 px-2 rounded-xl text-xs bg-[#0b1326] text-on-surface cursor-pointer">
+                            <option value="fim_do_mes">Fim do Mês</option>
+                            <option value="1">Dia 01</option><option value="2">Dia 02</option><option value="3">Dia 03</option><option value="4">Dia 04</option><option value="5">Dia 05</option>
+                            <option value="6">Dia 06</option><option value="7">Dia 07</option><option value="8">Dia 08</option><option value="9">Dia 09</option><option value="10">Dia 10</option>
+                            <option value="11">Dia 11</option><option value="12">Dia 12</option><option value="13">Dia 13</option><option value="14">Dia 14</option><option value="15">Dia 15</option>
+                            <option value="16">Dia 16</option><option value="17">Dia 17</option><option value="18">Dia 18</option><option value="19">Dia 19</option><option value="20">Dia 20</option>
+                            <option value="21">Dia 21</option><option value="22">Dia 22</option><option value="23">Dia 23</option><option value="24">Dia 24</option><option value="25">Dia 25</option>
+                            <option value="26">Dia 26</option><option value="27">Dia 27</option><option value="28">Dia 28</option><option value="29">Dia 29</option><option value="30">Dia 30</option><option value="31">Dia 31</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[11px] font-semibold text-on-surface-variant px-1">Prazo Pagamento</label>
+                        <select id="edit-client-payment-term" class="glass-input h-10 px-2 rounded-xl text-xs bg-[#0b1326] text-on-surface cursor-pointer">
+                            <option value="15">15 dias</option>
+                            <option value="30">30 dias</option>
+                            <option value="45">45 dias</option>
+                            <option value="60">60 dias</option>
+                            <option value="90">90 dias</option>
+                            <option value="120">120 dias</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[11px] font-semibold text-on-surface-variant px-1">Dia Pagamento</label>
+                        <select id="edit-client-payment-day" class="glass-input h-10 px-2 rounded-xl text-xs bg-[#0b1326] text-on-surface cursor-pointer">
+                            <option value="5">Dia 05</option>
+                            <option value="10">Dia 10</option>
+                            <option value="15">Dia 15</option>
+                            <option value="20">Dia 20</option>
+                            <option value="25">Dia 25</option>
+                            <option value="30">Dia 30</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="flex flex-col gap-unit">
-                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Link da Foto (URL)</label>
-                    <input type="text" id="edit-client-photo" class="glass-input h-12 px-4 rounded-xl text-on-surface" placeholder="https://exemplo.com/foto.jpg" />
+                    <label class="text-label-sm font-label-sm text-on-surface-variant px-1">Link da Foto / Logo (URL)</label>
+                    <input type="text" id="edit-client-photo" class="glass-input h-11 px-4 rounded-xl text-on-surface text-xs" placeholder="https://exemplo.com/foto.jpg" />
                 </div>
                 
-                <button type="submit" id="btn-edit-client-submit" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-12 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2">
+                <button type="submit" id="btn-edit-client-submit" class="primary-glow bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold h-11 rounded-xl active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-unit mt-2 cursor-pointer text-xs">
                     <span>Salvar Alterações</span>
-                    <span class="material-symbols-outlined text-lg">check</span>
+                    <span class="material-symbols-outlined text-base">check</span>
                 </button>
             </form>
         </div>
@@ -1361,24 +1467,45 @@
 
             body.innerHTML = filteredClients.map(c => {
                 const imgHTML = c.photo_url 
-                    ? `<img src="${c.photo_url}" class="w-8 h-8 rounded-lg object-cover shrink-0 border border-white/10" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;32&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;%23adc6ff&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;20&quot; height=&quot;20&quot; rx=&quot;2.18&quot; ry=&quot;2.18&quot;></rect><line x1=&quot;6&quot; y1=&quot;2&quot; x2=&quot;6&quot; y2=&quot;22&quot;></line><line x1=&quot;18&quot; y1=&quot;2&quot; x2=&quot;18&quot; y2=&quot;22&quot;></line><line x1=&quot;2&quot; y1=&quot;12&quot; x2=&quot;22&quot; y2=&quot;12&quot;></line></svg>';'">`
-                    : `<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0"><span class="material-symbols-outlined text-sm">domain</span></div>`;
+                    ? `<img src="${c.photo_url}" class="w-9 h-9 rounded-lg object-cover shrink-0 border border-white/10" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;32&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;%23adc6ff&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;20&quot; height=&quot;20&quot; rx=&quot;2.18&quot; ry=&quot;2.18&quot;></rect><line x1=&quot;6&quot; y1=&quot;2&quot; x2=&quot;6&quot; y2=&quot;22&quot;></line><line x1=&quot;18&quot; y1=&quot;2&quot; x2=&quot;18&quot; y2=&quot;22&quot;></line><line x1=&quot;2&quot; y1=&quot;12&quot; x2=&quot;22&quot; y2=&quot;12&quot;></line></svg>';'">`
+                    : `<div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0"><span class="material-symbols-outlined text-base">domain</span></div>`;
+
+                const closingVal = c.closing_day || 'fim_do_mes';
+                const closingLabel = closingVal === 'fim_do_mes' ? 'Fim do Mês' : `Dia ${closingVal}`;
+                const termDays = c.payment_term_days || 30;
+                const payDay = c.payment_day || 10;
 
                 return `
-                    <div class="glass-card p-3 px-5 rounded-xl flex items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
-                        style="border-left: 2.5px solid #adc6ff" id="client-row-${c.id}">
-                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <div class="glass-card p-3.5 px-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs hover:bg-white/10 transition-all duration-200"
+                        style="border-left: 3px solid #adc6ff" id="client-row-${c.id}">
+                        <div class="flex items-center gap-3.5 min-w-0 flex-1">
                             ${imgHTML}
-                            <div class="flex flex-col gap-0.5 min-w-0">
-                                <span class="font-bold text-on-surface text-sm truncate">${c.name}</span>
-                                <span class="text-[10px] text-on-surface-variant/60">Cadastrado em: ${formatDate(c.created_at)}</span>
+                            <div class="flex flex-col gap-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-on-surface text-sm truncate">${c.name}</span>
+                                    <span class="text-[10px] text-on-surface-variant/60">• Cadastrado em: ${formatDate(c.created_at)}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-on-surface-variant font-medium">
+                                        <span class="material-symbols-outlined text-[12px] text-amber-400">event_repeat</span>
+                                        Fechamento: <strong class="text-on-surface">${closingLabel}</strong>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-on-surface-variant font-medium">
+                                        <span class="material-symbols-outlined text-[12px] text-blue-400">hourglass_top</span>
+                                        Prazo: <strong class="text-on-surface">${termDays} dias</strong>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-on-surface-variant font-medium">
+                                        <span class="material-symbols-outlined text-[12px] text-emerald-400">payments</span>
+                                        Pagamento: <strong class="text-on-surface">Dia ${payDay}</strong>
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex gap-2 shrink-0">
-                            <button onclick="openEditClientModal('${c.id}', \`${c.name.replace(/'/g, "\\'")}\`, '${c.photo_url || ''}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all flex items-center justify-center" title="Editar">
+                        <div class="flex gap-2 shrink-0 self-end sm:self-center">
+                            <button onclick="openEditClientModal('${c.id}', \`${c.name.replace(/'/g, "\\'")}\`, '${c.photo_url || ''}', '${closingVal}', ${termDays}, ${payDay})" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary active:scale-95 transition-all flex items-center justify-center cursor-pointer" title="Editar">
                                 <span class="material-symbols-outlined text-sm">edit</span>
                             </button>
-                            <button onclick="handleDeleteClient('${c.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center" title="Excluir">
+                            <button onclick="handleDeleteClient('${c.id}')" class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-red-500/10 text-error active:scale-95 transition-all flex items-center justify-center cursor-pointer" title="Excluir">
                                 <span class="material-symbols-outlined text-sm">delete</span>
                             </button>
                         </div>
@@ -1387,21 +1514,50 @@
             }).join('');
         }
 
+        window.toggleAddClientCard = function(forceOpen) {
+            const body = document.getElementById('add-client-form-body');
+            const icon = document.getElementById('icon-toggle-client-card');
+            if (!body || !icon) return;
+
+            const shouldOpen = forceOpen !== undefined ? forceOpen : body.classList.contains('hidden');
+            if (shouldOpen) {
+                body.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+                const inputName = document.getElementById('new-client-name');
+                if (inputName) setTimeout(() => inputName.focus(), 100);
+            } else {
+                body.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        };
+
         async function handleCreateClient() {
             const inputName = document.getElementById('new-client-name');
             const inputPhoto = document.getElementById('new-client-photo');
+            const closingSelect = document.getElementById('new-client-closing-day');
+            const termSelect = document.getElementById('new-client-payment-term');
+            const payDaySelect = document.getElementById('new-client-payment-day');
+
             const name = inputName.value.trim();
             const photoUrl = inputPhoto.value.trim();
+            const closingDay = closingSelect ? closingSelect.value : 'fim_do_mes';
+            const paymentTermDays = termSelect ? parseInt(termSelect.value, 10) : 30;
+            const paymentDay = payDaySelect ? parseInt(payDaySelect.value, 10) : 10;
+
             if (!name) {
                 showToast('Por favor, informe o nome do cliente.', true);
                 return;
             }
 
-            const client = await dbCreateClient(name, photoUrl);
+            const client = await dbCreateClient(name, photoUrl, closingDay, paymentTermDays, paymentDay);
             if (client) {
                 inputName.value = '';
                 inputPhoto.value = '';
+                if (closingSelect) closingSelect.value = 'fim_do_mes';
+                if (termSelect) termSelect.value = '30';
+                if (payDaySelect) payDaySelect.value = '10';
                 showToast('Cliente cadastrado com sucesso!');
+                toggleAddClientCard(false); // Recolher card após cadastro com sucesso
                 loadAndRenderClients();
             } else {
                 showToast('Erro ao cadastrar cliente.', true);
@@ -1425,11 +1581,20 @@
         const closeEditClientBtn = document.getElementById('close-edit-client-modal');
         const editClientForm = document.getElementById('edit-client-form');
 
-        window.openEditClientModal = function(id, name, photoUrl) {
+        window.openEditClientModal = function(id, name, photoUrl, closingDay = 'fim_do_mes', paymentTerm = 30, paymentDay = 10) {
             if (editClientModal) {
                 document.getElementById('edit-client-id').value = id;
                 document.getElementById('edit-client-name').value = name;
                 document.getElementById('edit-client-photo').value = photoUrl || '';
+                
+                const closingEl = document.getElementById('edit-client-closing-day');
+                if (closingEl) closingEl.value = closingDay || 'fim_do_mes';
+
+                const termEl = document.getElementById('edit-client-payment-term');
+                if (termEl) termEl.value = String(paymentTerm || 30);
+
+                const payDayEl = document.getElementById('edit-client-payment-day');
+                if (payDayEl) payDayEl.value = String(paymentDay || 10);
 
                 editClientModal.style.display = 'flex';
                 editClientModal.offsetHeight;
@@ -1473,6 +1638,14 @@
             const id = document.getElementById('edit-client-id').value;
             const name = document.getElementById('edit-client-name').value.trim();
             const photoUrl = document.getElementById('edit-client-photo').value.trim();
+            const closingEl = document.getElementById('edit-client-closing-day');
+            const termEl = document.getElementById('edit-client-payment-term');
+            const payDayEl = document.getElementById('edit-client-payment-day');
+
+            const closingDay = closingEl ? closingEl.value : 'fim_do_mes';
+            const paymentTerm = termEl ? parseInt(termEl.value, 10) : 30;
+            const paymentDay = payDayEl ? parseInt(payDayEl.value, 10) : 10;
+
             if (!name) {
                 showToast('Por favor, informe o nome do cliente.', true);
                 return;
@@ -1483,7 +1656,7 @@
             submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Salvando...';
             submitBtn.disabled = true;
 
-            const client = await dbUpdateClient(id, name, photoUrl);
+            const client = await dbUpdateClient(id, name, photoUrl, closingDay, paymentTerm, paymentDay);
             
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;

@@ -181,7 +181,10 @@ async function dbCreateReservation(reserva) {
                 time: reserva.time,
                 status: 'Pendente',
                 value: '—',
-                notes: reserva.notes || null
+                notes: reserva.notes || null,
+                competencia: reserva.competencia || null,
+                payment_estimate_date: reserva.payment_estimate_date || null,
+                estimated_value: reserva.estimated_value || null
             }])
             .select();
         if (error) throw error;
@@ -273,6 +276,9 @@ async function dbUpdateReservation(reservaId, updates) {
         if (updates.os_number !== undefined) updateData.os_number = osNum;
         if (updates.reserva_number !== undefined) updateData.reserva_number = resNum;
         if (updates.notes !== undefined) updateData.notes = updates.notes;
+        if (updates.competencia !== undefined) updateData.competencia = updates.competencia;
+        if (updates.payment_estimate_date !== undefined) updateData.payment_estimate_date = updates.payment_estimate_date;
+        if (updates.estimated_value !== undefined) updateData.estimated_value = updates.estimated_value;
 
         let query = supabaseClientInstance
             .from('reservations')
@@ -903,13 +909,108 @@ async function dbGetClients() {
     }
 }
 
+// Calculate Competência and Payment Estimate based on Reservation Date and Client Config
+function calculateReservationBillingInfo(dateStr, clientObj) {
+    if (!dateStr) {
+        return { competencia: '', payment_estimate_date: '', closing_date: '' };
+    }
+
+    let day = 1, month = 1, year = new Date().getFullYear();
+    
+    if (typeof dateStr === 'string') {
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                day = parseInt(parts[0], 10);
+                month = parseInt(parts[1], 10);
+                year = parseInt(parts[2], 10);
+            }
+        } else if (dateStr.includes('-')) {
+            const parts = dateStr.split('T')[0].split('-');
+            if (parts.length === 3) {
+                year = parseInt(parts[0], 10);
+                month = parseInt(parts[1], 10);
+                day = parseInt(parts[2], 10);
+            }
+        }
+    }
+
+    if (isNaN(day) || isNaN(month) || isNaN(year) || month < 1 || month > 12) {
+        return { competencia: '', payment_estimate_date: '', closing_date: '' };
+    }
+
+    const closingDayRaw = clientObj && clientObj.closing_day !== undefined && clientObj.closing_day !== null 
+        ? String(clientObj.closing_day).trim() 
+        : 'fim_do_mes';
+    const isEndOfMonth = closingDayRaw === 'fim_do_mes' || isNaN(parseInt(closingDayRaw, 10));
+    const closingDayNum = isEndOfMonth ? 99 : parseInt(closingDayRaw, 10);
+    const termDays = clientObj && clientObj.payment_term_days ? parseInt(clientObj.payment_term_days, 10) : 30;
+    const paymentDay = clientObj && clientObj.payment_day ? parseInt(clientObj.payment_day, 10) : 10;
+
+    let competenciaMonth = month;
+    let competenciaYear = year;
+    let closingDayActual = 30;
+
+    if (isEndOfMonth) {
+        // Closes on the last day of the reservation's month
+        competenciaMonth = month;
+        competenciaYear = year;
+        closingDayActual = new Date(competenciaYear, competenciaMonth, 0).getDate();
+    } else {
+        // Closes on a specific day of the month (e.g. 15)
+        if (day <= closingDayNum) {
+            // Belongs to the current month's closing cycle
+            competenciaMonth = month;
+            competenciaYear = year;
+        } else {
+            // Belongs to the next month's closing cycle
+            competenciaMonth = month + 1;
+            competenciaYear = year;
+            if (competenciaMonth > 12) {
+                competenciaMonth = 1;
+                competenciaYear += 1;
+            }
+        }
+        const maxDaysInMonth = new Date(competenciaYear, competenciaMonth, 0).getDate();
+        closingDayActual = Math.min(closingDayNum, maxDaysInMonth);
+    }
+
+    const competencia = `${String(competenciaMonth).padStart(2, '0')}/${competenciaYear}`;
+    const closingDate = `${String(closingDayActual).padStart(2, '0')}/${String(competenciaMonth).padStart(2, '0')}/${competenciaYear}`;
+
+    // Target payment date calculation:
+    // monthsToAdd represents the months of the payment term (e.g. 30d -> +1m, 60d -> +2m, 90d -> +3m)
+    const monthsToAdd = Math.max(1, Math.round(termDays / 30));
+    let payMonth = competenciaMonth + monthsToAdd;
+    let payYear = competenciaYear;
+    while (payMonth > 12) {
+        payMonth -= 12;
+        payYear += 1;
+    }
+    const maxPayDaysInMonth = new Date(payYear, payMonth, 0).getDate();
+    const actualPayDay = Math.min(paymentDay, maxPayDaysInMonth);
+    const paymentEstimateDate = `${String(actualPayDay).padStart(2, '0')}/${String(payMonth).padStart(2, '0')}/${payYear}`;
+
+    return {
+        competencia,
+        payment_estimate_date: paymentEstimateDate,
+        closing_date: closingDate
+    };
+}
+
 // Create a new client (Master only)
-async function dbCreateClient(name, photoUrl = '') {
+async function dbCreateClient(name, photoUrl = '', closingDay = 'fim_do_mes', paymentTermDays = 30, paymentDay = 10) {
     if (!supabaseClientInstance) return null;
     try {
         const { data, error } = await supabaseClientInstance
             .from('clients')
-            .insert([{ name: name.trim().toUpperCase(), photo_url: photoUrl.trim() }])
+            .insert([{ 
+                name: name.trim().toUpperCase(), 
+                photo_url: photoUrl.trim(),
+                closing_day: closingDay || 'fim_do_mes',
+                payment_term_days: parseInt(paymentTermDays, 10) || 30,
+                payment_day: parseInt(paymentDay, 10) || 10
+            }])
             .select();
         if (error) throw error;
         return data[0];
@@ -921,7 +1022,7 @@ async function dbCreateClient(name, photoUrl = '') {
 }
 
 // Update a client (Master only)
-async function dbUpdateClient(id, name, photoUrl = '') {
+async function dbUpdateClient(id, name, photoUrl = '', closingDay = 'fim_do_mes', paymentTermDays = 30, paymentDay = 10) {
     if (!supabaseClientInstance) return null;
     try {
         const newName = name.trim().toUpperCase();
@@ -944,7 +1045,13 @@ async function dbUpdateClient(id, name, photoUrl = '') {
         // 2. Perform the update on client record
         const { data, error } = await supabaseClientInstance
             .from('clients')
-            .update({ name: newName, photo_url: photoUrl.trim() })
+            .update({ 
+                name: newName, 
+                photo_url: photoUrl.trim(),
+                closing_day: closingDay || 'fim_do_mes',
+                payment_term_days: parseInt(paymentTermDays, 10) || 30,
+                payment_day: parseInt(paymentDay, 10) || 10
+            })
             .eq('id', id)
             .select();
         if (error) throw error;

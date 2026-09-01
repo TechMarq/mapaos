@@ -368,7 +368,12 @@ function vcGetAllActiveExpirations(veh, maintLogs) {
     const items = [];
     const now = new Date();
 
-    maintLogs.forEach(m => {
+    if (!veh || !maintLogs) return items;
+
+    // Filter to ensure only maintenance logs belonging to THIS vehicle are included
+    const vehicleLogs = maintLogs.filter(m => String(m.vehicleId || m.vehicle_id) === String(veh.id));
+
+    vehicleLogs.forEach(m => {
         const nextKm = m.next ?? m.next_km;
         const nextDate = m.nextDate || m.next_date;
 
@@ -452,15 +457,17 @@ function vcGetAllActiveExpirations(veh, maintLogs) {
     });
 }
 
-function vcRenderMaintenanceReminders(veh, _ignored) {
+function vcRenderMaintenanceReminders(veh, maintLogs) {
     try {
         const el = document.getElementById('vc-reminders-list');
         if (!el || !veh) return;
 
         const now = new Date();
-        const logs = vState.maintenanceLogs || [];
+        const logsSource = (maintLogs && maintLogs.length > 0) ? maintLogs : (vState.maintenanceLogs || []);
+        // Strictly filter to ensure only maintenance logs belonging to THIS vehicle are included
+        const logs = logsSource.filter(m => String(m.vehicleId || m.vehicle_id) === String(veh.id));
 
-        // If data not loaded yet, wait
+        // If no maintenance logs registered for this vehicle
         if (logs.length === 0) {
             el.innerHTML = '<p class="text-xs text-on-surface-variant text-center py-4">Sem vencimentos cadastrados.</p>';
             return;
@@ -593,7 +600,7 @@ function vcOpenAlertsModal() {
     const list = document.getElementById('vc-alerts-modal-list');
     if (!modal || !list) return;
 
-    const veh = vState.vehicles.find(v => v.id === vState.activeVehicleId);
+    const veh = vState.vehicles.find(v => String(v.id) === String(vState.activeVehicleId));
     if (!veh) return;
 
     const allExpirations = vcGetAllActiveExpirations(veh, vState.maintenanceLogs || []);
@@ -658,7 +665,7 @@ async function vcAcknowledgeWarranty(logId) {
     await vcDb.maintenance.update(logId, { warranty_dismissed: true });
 
     // Re-render UI & update global navigation red alert dot
-    const veh = vState.vehicles.find(v => v.id === vState.activeVehicleId);
+    const veh = vState.vehicles.find(v => String(v.id) === String(vState.activeVehicleId));
     if (veh) {
         vcRenderMaintenanceReminders(veh, []);
         vcOpenAlertsModal();
@@ -670,8 +677,10 @@ async function vcAcknowledgeWarranty(logId) {
 
 function vcRenderNextMaintCard(veh, maintLogs) {
     const card = document.getElementById('vc-next-maint-card');
-    if (!card) return;
-    const futures = maintLogs.filter(m => m.intervalType === 'km' && m.next > veh.km_actual).sort((a, b) => a.next - b.next);
+    if (!card || !veh) return;
+    const logsSource = (maintLogs && maintLogs.length > 0) ? maintLogs : (vState.maintenanceLogs || []);
+    const vehicleLogs = logsSource.filter(m => String(m.vehicleId || m.vehicle_id) === String(veh.id));
+    const futures = vehicleLogs.filter(m => m.intervalType === 'km' && m.next > veh.km_actual).sort((a, b) => a.next - b.next);
     if (futures.length > 0) {
         card.style.display = 'flex';
         vcSetText('vc-next-maint-type', futures[0].type);

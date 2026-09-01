@@ -145,26 +145,34 @@
             <!-- Filters Row -->
             <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
                 <!-- Date Filter Selector -->
-                <select id="filter-date-range" class="glass-card rounded-full px-4 py-2 text-xs font-semibold text-primary border-white/5 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all">
+                <select id="filter-date-range" class="glass-card rounded-full px-4 py-2 text-xs font-semibold text-primary border-white/5 focus:ring-0 focus:border-primary cursor-pointer hover:bg-white/5 transition-all bg-[#0b1326] [color-scheme:dark]">
                     <option value="mes" class="bg-[#0b1326] text-on-surface" selected>Este Mês</option>
                     <option value="15D" class="bg-[#0b1326] text-on-surface">15 dias</option>
                     <option value="anterior" class="bg-[#0b1326] text-on-surface">Mês Anterior</option>
+                    <option value="competencia" class="bg-[#0b1326] text-on-surface">Competência</option>
+                    <option value="previsao_pagamento" class="bg-[#0b1326] text-on-surface">Previsão de Pagamento</option>
                     <option value="Todos" class="bg-[#0b1326] text-on-surface">Todas as Datas</option>
                     <option value="custom" class="bg-[#0b1326] text-on-surface">Personalizado</option>
                 </select>
 
+                <!-- Month/Year Input for Competência or Previsão de Pagamento -->
+                <div id="month-year-container" class="hidden flex items-center gap-1.5 shrink-0">
+                    <span id="month-year-label" class="text-[11px] text-on-surface-variant font-medium hidden sm:inline">Mês/Ano:</span>
+                    <input id="filter-month-year" class="glass-card rounded-full px-3.5 py-1.5 text-xs text-on-surface border-white/10 focus:ring-0 cursor-pointer bg-[#0b1326] [color-scheme:dark]" type="month" />
+                </div>
+
                 <!-- Custom Range Inputs (Hidden by default) -->
                 <div id="custom-date-container" class="hidden flex items-center gap-1.5 shrink-0">
-                    <input id="custom-start-date" class="glass-card rounded-full px-3 py-1.5 text-xs text-on-surface border-white/5 focus:ring-0 w-28" type="date">
+                    <input id="custom-start-date" class="glass-card rounded-full px-3 py-1.5 text-xs text-on-surface border-white/5 focus:ring-0 w-28 bg-[#0b1326] [color-scheme:dark]" type="date">
                     <span class="text-[10px] text-on-surface-variant">a</span>
-                    <input id="custom-end-date" class="glass-card rounded-full px-3 py-1.5 text-xs text-on-surface border-white/5 focus:ring-0 w-28" type="date">
+                    <input id="custom-end-date" class="glass-card rounded-full px-3 py-1.5 text-xs text-on-surface border-white/5 focus:ring-0 w-28 bg-[#0b1326] [color-scheme:dark]" type="date">
                 </div>
             </div>
         </div>
 
-        <!-- Bento Grid for Stats (Mesma linha / Estilo compacto Home) -->
-        <div class="grid grid-cols-2 gap-3 md:gap-4 mb-6 pt-3">
-            <!-- Received (Paga) Card -->
+        <!-- Bento Grid for Stats (Compacto & Responsivo) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-6 pt-3">
+            <!-- Received (Paga / Conciliada) Card -->
             <div class="glass-card rounded-xl px-3 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-16 md:h-20 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
                 <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-secondary/30 flex items-center justify-center shadow-lg">
                     <span class="material-symbols-outlined text-secondary text-base md:text-lg">check_circle</span>
@@ -174,8 +182,18 @@
                 <span id="metric-received-count" class="text-[8px] md:text-[10px] text-on-surface-variant/70 mt-0.5">0 OS conciliadas</span>
             </div>
 
-            <!-- Total Runs (Corridas Totais) Card -->
+            <!-- Estimated (Pendente / Estimado) Card -->
             <div class="glass-card rounded-xl px-3 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-16 md:h-20 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-amber-400/30 flex items-center justify-center shadow-lg">
+                    <span class="material-symbols-outlined text-amber-400 text-base md:text-lg">hourglass_top</span>
+                </div>
+                <span class="text-[8px] md:text-[10px] font-bold text-amber-400 uppercase tracking-wider truncate max-w-full mt-1.5 md:mt-2">PREVISÃO ESTIMADA</span>
+                <div id="metric-pending" class="text-sm md:text-xl font-extrabold text-amber-400 leading-none mt-0.5">R$ 0,00</div>
+                <span id="metric-pending-count" class="text-[8px] md:text-[10px] text-on-surface-variant/70 mt-0.5">0 OS pendentes</span>
+            </div>
+
+            <!-- Total Runs (Corridas Totais) Card -->
+            <div class="col-span-2 sm:col-span-1 glass-card rounded-xl px-3 py-2 md:px-4 md:py-3 flex flex-col items-center justify-center h-16 md:h-20 hover:-translate-y-0.5 transition-transform duration-300 relative text-center">
                 <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#171f33] border border-primary/30 flex items-center justify-center shadow-lg">
                     <span class="material-symbols-outlined text-primary text-base md:text-lg">directions_car</span>
                 </div>
@@ -202,7 +220,8 @@
                             <tr class="text-on-surface-variant border-b border-white/5">
                                 <th class="pb-2 font-medium">Cliente</th>
                                 <th class="pb-2 font-medium text-center">Corridas</th>
-                                <th class="pb-2 font-medium text-right">Líquido Recebido</th>
+                                <th class="pb-2 font-medium text-right text-amber-400">Previsão (Est.)</th>
+                                <th class="pb-2 font-medium text-right text-secondary">Líquido Recebido</th>
                             </tr>
                         </thead>
                         <tbody id="clients-table-body" class="divide-y divide-white/5">
@@ -246,6 +265,7 @@
     <script src="supabase.js"></script>
     <script>
         let allReservations = [];
+        let allClients = [];
         let dateRangeFilter = 'mes'; // Default to current month
         let financialChart = null;
 
@@ -254,6 +274,9 @@
             const customDateContainer = document.getElementById('custom-date-container');
             const customStartDate = document.getElementById('custom-start-date');
             const customEndDate = document.getElementById('custom-end-date');
+            const monthYearContainer = document.getElementById('month-year-container');
+            const monthYearInput = document.getElementById('filter-month-year');
+            const monthYearLabel = document.getElementById('month-year-label');
 
             // Set current month start and end dates in datepicker
             const today = new Date();
@@ -263,9 +286,15 @@
             
             customStartDate.value = `${year}-${month}-01`;
             customEndDate.value = `${year}-${month}-${lastDay}`;
+            if (monthYearInput) {
+                monthYearInput.value = `${year}-${month}`;
+            }
 
-            // Fetch reservations initial
-            allReservations = await dbGetReservations();
+            // Fetch reservations and clients
+            if (typeof dbGetClients === 'function') {
+                allClients = (await dbGetClients()) || [];
+            }
+            allReservations = (await dbGetReservations()) || [];
             calculateAndRenderFinance();
 
             // Date Range Selection event
@@ -273,9 +302,17 @@
                 selectDate.addEventListener('change', (e) => {
                     dateRangeFilter = e.target.value;
                     if (dateRangeFilter === 'custom') {
-                        customDateContainer.classList.remove('hidden');
+                        if (customDateContainer) customDateContainer.classList.remove('hidden');
+                        if (monthYearContainer) monthYearContainer.classList.add('hidden');
+                    } else if (dateRangeFilter === 'competencia' || dateRangeFilter === 'previsao_pagamento') {
+                        if (customDateContainer) customDateContainer.classList.add('hidden');
+                        if (monthYearContainer) monthYearContainer.classList.remove('hidden');
+                        if (monthYearLabel) {
+                            monthYearLabel.textContent = dateRangeFilter === 'competencia' ? 'Competência:' : 'Recebimento:';
+                        }
                     } else {
-                        customDateContainer.classList.add('hidden');
+                        if (customDateContainer) customDateContainer.classList.add('hidden');
+                        if (monthYearContainer) monthYearContainer.classList.add('hidden');
                     }
                     calculateAndRenderFinance();
                 });
@@ -283,6 +320,7 @@
 
             if (customStartDate) customStartDate.addEventListener('change', calculateAndRenderFinance);
             if (customEndDate) customEndDate.addEventListener('change', calculateAndRenderFinance);
+            if (monthYearInput) monthYearInput.addEventListener('change', calculateAndRenderFinance);
         });
 
         // Helper to parse dates in DD/MM/AAAA
@@ -361,6 +399,36 @@
                             return itemDate >= startDate && itemDate <= endDate;
                         });
                     }
+                } else if (dateRangeFilter === 'competencia') {
+                    const monthVal = document.getElementById('filter-month-year') ? document.getElementById('filter-month-year').value : '';
+                    if (monthVal && monthVal.includes('-')) {
+                        const [y, m] = monthVal.split('-');
+                        const targetComp = `${m}/${y}`;
+                        filtered = filtered.filter(item => {
+                            let comp = item.competencia;
+                            if (!comp && typeof calculateReservationBillingInfo === 'function') {
+                                const clientObj = allClients.find(c => c.name && c.name.toUpperCase() === (item.client_name || '').toUpperCase());
+                                const billing = calculateReservationBillingInfo(item.date, clientObj);
+                                comp = billing ? billing.competencia : null;
+                            }
+                            return comp === targetComp;
+                        });
+                    }
+                } else if (dateRangeFilter === 'previsao_pagamento') {
+                    const monthVal = document.getElementById('filter-month-year') ? document.getElementById('filter-month-year').value : '';
+                    if (monthVal && monthVal.includes('-')) {
+                        const [y, m] = monthVal.split('-');
+                        const targetSuffix = `${m}/${y}`;
+                        filtered = filtered.filter(item => {
+                            let payEst = item.payment_estimate_date;
+                            if (!payEst && typeof calculateReservationBillingInfo === 'function') {
+                                const clientObj = allClients.find(c => c.name && c.name.toUpperCase() === (item.client_name || '').toUpperCase());
+                                const billing = calculateReservationBillingInfo(item.date, clientObj);
+                                payEst = billing ? billing.payment_estimate_date : null;
+                            }
+                            return payEst && (payEst.endsWith(targetSuffix) || payEst.includes(targetSuffix));
+                        });
+                    }
                 }
             }
 
@@ -404,15 +472,20 @@
                 
                 // Net value logic:
                 // If Paid, use net_value column. If empty, calculate net value using user commission
-                // If Pending, estimate net value using user commission
+                // If Pending, check estimated_value first; fallback to user commission
                 let netValue = 0;
+                let estimatedNet = 0;
                 if (isPaid) {
                     netValue = item.net_value ? parseCurrency(item.net_value) : (totalValue * netMultiplier);
                     totalReceived += netValue;
                     countReceived++;
                 } else {
-                    netValue = totalValue * netMultiplier;
-                    totalPending += netValue;
+                    if (item.estimated_value) {
+                        estimatedNet = parseCurrency(item.estimated_value);
+                    } else if (totalValue > 0) {
+                        estimatedNet = totalValue * netMultiplier;
+                    }
+                    totalPending += estimatedNet;
                     countPending++;
                 }
 
@@ -425,7 +498,7 @@
                 if (isPaid) {
                     clientStats[client].received += netValue;
                 } else {
-                    clientStats[client].pending += netValue;
+                    clientStats[client].pending += estimatedNet;
                 }
             });
 
@@ -435,9 +508,28 @@
             document.getElementById('metric-received').textContent = totalReceived.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('metric-received-count').textContent = `${countReceived} OS conciliadas`;
 
+            const metricPending = document.getElementById('metric-pending');
+            if (metricPending) metricPending.textContent = totalPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const metricPendingCount = document.getElementById('metric-pending-count');
+            if (metricPendingCount) metricPendingCount.textContent = `${countPending} OS pendentes`;
+
             const totalRunsEl = document.getElementById('metric-total-runs');
+            const totalRunsSubtitle = document.getElementById('metric-total-runs-subtitle');
             if (totalRunsEl) {
                 totalRunsEl.textContent = filtered.length;
+            }
+            if (totalRunsSubtitle) {
+                if (dateRangeFilter === 'competencia') {
+                    const monthVal = document.getElementById('filter-month-year') ? document.getElementById('filter-month-year').value : '';
+                    const [y, m] = (monthVal || '').split('-');
+                    totalRunsSubtitle.textContent = `OS na comp. ${m}/${y}`;
+                } else if (dateRangeFilter === 'previsao_pagamento') {
+                    const monthVal = document.getElementById('filter-month-year') ? document.getElementById('filter-month-year').value : '';
+                    const [y, m] = (monthVal || '').split('-');
+                    totalRunsSubtitle.textContent = `Pagamento em ${m}/${y}`;
+                } else {
+                    totalRunsSubtitle.textContent = `OS no período`;
+                }
             }
 
             // Render Client Table
@@ -453,7 +545,7 @@
             if (sortedClients.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="py-6 text-center text-on-surface-variant">Nenhum faturamento registrado neste período.</td>
+                        <td colspan="4" class="py-6 text-center text-on-surface-variant">Nenhum faturamento registrado neste período.</td>
                     </tr>
                 `;
             } else {
@@ -462,7 +554,8 @@
                         <tr class="hover:bg-white/5 transition-colors">
                             <td class="py-2.5 font-semibold text-on-surface">${c.name}</td>
                             <td class="py-2.5 text-center text-on-surface-variant/80">${c.count}</td>
-                            <td class="py-2.5 text-right text-secondary font-medium">${c.received.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                            <td class="py-2.5 text-right text-amber-400/90 font-medium">${c.pending > 0 ? c.pending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td>
+                            <td class="py-2.5 text-right text-secondary font-medium">${c.received > 0 ? c.received.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', row);

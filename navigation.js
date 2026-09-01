@@ -34,6 +34,8 @@
             #bottom-nav-bar { min-height: 80px; }
             .glass-input { background: rgba(255, 255, 255, 0.06) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: #dae2fd !important; transition: all 0.2s ease !important; }
             .glass-input:focus { outline: none !important; border-color: #adc6ff !important; box-shadow: 0 0 0 2px rgba(173,198,255,0.1) !important; background: rgba(255, 255, 255, 0.08) !important; }
+            select { color-scheme: dark !important; }
+            select option { background-color: #0b1326 !important; color: #dae2fd !important; padding: 6px 10px; }
             .lens-bubble { background: rgba(255, 255, 255, 0.05) !important; backdrop-filter: blur(12px) saturate(1.8) !important; -webkit-backdrop-filter: blur(12px) saturate(1.8) !important; border: 1.5px solid rgba(255, 255, 255, 0.18) !important; pointer-events: none !important; will-change: transform, left, width, top, height !important; box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.25), inset -3px -3px 8px rgba(167, 139, 250, 0.5), inset 3px 3px 8px rgba(110, 231, 183, 0.5), inset 0 0 10px rgba(173, 198, 255, 0.3), 0 8px 24px rgba(0, 0, 0, 0.5) !important; }
             .nav-desktop-item { position: relative; z-index: 10; padding: 6px 16px; border-radius: 12px; transition: color 0.3s, transform 0.3s !important; transform: scale(1); }
             .nav-desktop-item.scale-110 { transform: scale(1.1) !important; color: #ffffff !important; text-shadow: 0 0 8px rgba(173, 198, 255, 0.4); }
@@ -364,11 +366,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dynamic clients list loaded from Supabase database
     let clientsList = [];
+    let rawClientsObjects = [];
     async function fetchClients() {
         if (typeof dbGetClients === 'function') {
             try {
                 const list = await dbGetClients();
-                clientsList = list.map(c => c.name.toUpperCase());
+                rawClientsObjects = list || [];
+                clientsList = rawClientsObjects.map(c => c.name.toUpperCase());
             } catch (e) {
                 console.error("Erro ao carregar clientes do banco:", e);
             }
@@ -437,6 +441,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
+                    <!-- Competência e Previsão de Pagamento Preview Card -->
+                    <div id="modal-billing-preview" class="hidden p-3 rounded-xl bg-primary/10 border border-primary/25 flex flex-col gap-2 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-primary flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                Previsão de Faturamento
+                            </span>
+                            <span id="modal-preview-client-badge" class="text-[10px] text-on-surface-variant font-medium px-2 py-0.5 rounded-md bg-white/5 border border-white/10"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-primary/15">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-on-surface-variant">Competência:</span>
+                                <strong id="modal-preview-competencia" class="text-on-surface font-bold text-sm">—</strong>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-on-surface-variant">Previsão Pagamento:</span>
+                                <strong id="modal-preview-payment" class="text-secondary font-bold text-sm">—</strong>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Nº OS/Voucher e Nº Reserva -->
                     <div class="flex flex-col gap-1.5">
                         <div class="flex items-center justify-between px-1">
@@ -461,6 +486,18 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <input id="modal-reserva-number" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40" placeholder="Ex: 1.250" type="text" inputmode="numeric" />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Valor Estimado (Líquido) -->
+                    <div class="flex flex-col gap-unit">
+                        <div class="flex items-center justify-between px-1">
+                            <label class="text-label-sm font-label-sm text-on-surface-variant">Valor Estimado Líquido (Opcional)</label>
+                            <span class="text-[10px] text-amber-400 font-medium">Previsão financeira</span>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-amber-400 transition-colors">payments</span>
+                            <input id="modal-estimated-value" class="glass-input w-full h-12 pl-12 pr-4 rounded-xl text-on-surface placeholder:text-on-surface-variant/40 font-semibold" placeholder="Ex: 150,00" type="text" inputmode="numeric" />
                         </div>
                     </div>
 
@@ -1499,6 +1536,22 @@ document.addEventListener('DOMContentLoaded', () => {
     applyThousandsMask(osInput);
     applyThousandsMask(resInput);
 
+    // Currency Masking for Estimated Value (R$)
+    const estInput = document.getElementById('modal-estimated-value');
+    if (estInput) {
+        estInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, '');
+            if (!v) {
+                e.target.value = '';
+                return;
+            }
+            v = (parseInt(v, 10) / 100).toFixed(2);
+            v = v.replace('.', ',');
+            v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+            e.target.value = v;
+        });
+    }
+
     // Dynamic requirement: Nº Reserva is required only when Nº OS / Voucher is empty
     if (osInput && resInput) {
         const updateReservaRequired = () => {
@@ -1525,6 +1578,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Real-time Billing Preview in Reservation Modal
+    function updateModalBillingPreview() {
+        const clientSearchInput = document.getElementById('modal-client-search');
+        const dateDisplayInput = document.getElementById('modal-date-display');
+        const previewCard = document.getElementById('modal-billing-preview');
+        const clientBadge = document.getElementById('modal-preview-client-badge');
+        const compEl = document.getElementById('modal-preview-competencia');
+        const payEl = document.getElementById('modal-preview-payment');
+
+        if (!previewCard || !clientSearchInput || !dateDisplayInput) return;
+
+        const clientNameUpper = (clientSearchInput.value || '').trim().toUpperCase();
+        const dateVal = (dateDisplayInput.value || '').trim();
+
+        if (!clientNameUpper || !dateVal || dateVal.length < 10) {
+            previewCard.classList.add('hidden');
+            return;
+        }
+
+        const clientObj = rawClientsObjects.find(c => c.name.toUpperCase() === clientNameUpper);
+        if (!clientObj) {
+            previewCard.classList.add('hidden');
+            return;
+        }
+
+        if (typeof calculateReservationBillingInfo === 'function') {
+            const billing = calculateReservationBillingInfo(dateVal, clientObj);
+            if (billing && billing.competencia) {
+                const closingText = (!clientObj.closing_day || clientObj.closing_day === 'fim_do_mes') ? 'Fim do Mês' : `Dia ${clientObj.closing_day}`;
+                if (clientBadge) clientBadge.textContent = `Fechamento: ${closingText} • Prazo: ${clientObj.payment_term_days || 30}d`;
+                if (compEl) compEl.textContent = billing.competencia;
+                if (payEl) payEl.textContent = billing.payment_estimate_date;
+                previewCard.classList.remove('hidden');
+                return;
+            }
+        }
+        previewCard.classList.add('hidden');
+    }
+
     // Autocomplete Lookup for Client Input
     const clientSearch = document.getElementById('modal-client-search');
     const autocompleteList = document.getElementById('client-autocomplete-list');
@@ -1533,6 +1625,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clientSearch.addEventListener('input', (e) => {
             const val = e.target.value.toUpperCase();
             autocompleteList.innerHTML = '';
+            updateModalBillingPreview();
             if (!val) {
                 autocompleteList.classList.add('hidden');
                 return;
@@ -1558,6 +1651,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.addEventListener('click', () => {
                     clientSearch.value = client;
                     autocompleteList.classList.add('hidden');
+                    updateModalBillingPreview();
                 });
                 autocompleteList.appendChild(item);
             });
@@ -1571,6 +1665,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 autocompleteList.classList.add('hidden');
             }
         });
+    }
+
+    if (dateDisplay) {
+        dateDisplay.addEventListener('input', updateModalBillingPreview);
+    }
+    if (datePicker) {
+        datePicker.addEventListener('change', updateModalBillingPreview);
     }
 
     // Form Submission Logic & dynamic list update
@@ -1596,10 +1697,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const resVal = resInput.value;
             const notesInput = document.getElementById('modal-notes');
             const notesVal = notesInput ? notesInput.value : '';
+            const estVal = estInput ? estInput.value.trim() : '';
 
             // Verificar se o cliente informado está cadastrado no sistema
             const formattedClientInput = clientName.toUpperCase();
-            const isRegistered = clientsList.some(c => c === formattedClientInput);
+            const matchedClient = rawClientsObjects.find(c => c.name.toUpperCase() === formattedClientInput);
+            const isRegistered = !!matchedClient;
 
             if (!isRegistered) {
                 submitBtn.innerHTML = originalContent;
@@ -1621,6 +1724,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Calculate competencia and payment estimate date
+            let billingInfo = { competencia: null, payment_estimate_date: null };
+            if (typeof calculateReservationBillingInfo === 'function') {
+                billingInfo = calculateReservationBillingInfo(dateVal, matchedClient);
+            }
+
             // Save reservation to database
             dbCreateReservation({
                 os_number: osVal,
@@ -1628,7 +1737,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 client_name: clientName,
                 date: dateVal,
                 time: timeVal,
-                notes: notesVal
+                notes: notesVal,
+                competencia: billingInfo.competencia,
+                payment_estimate_date: billingInfo.payment_estimate_date,
+                estimated_value: estVal || null
             }).then((result) => {
                 // If result is null, dbCreateReservation already showed an error — restore button and stop
                 if (!result) {
